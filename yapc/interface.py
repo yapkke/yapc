@@ -29,6 +29,18 @@ class component:
         raise RuntimeException("Component "+str(self.__class__.__name__)+\
                                    "has to override processevent function")
 
+class cleanup:
+    """Base component to handle shutdown
+
+    @author ykk
+    @date Oct 2010
+    """
+    def cleanup(self):
+        """Dummy function to cleanup
+        """
+        raise RuntimeException("Component "+str(self.__class__.__name__)+\
+                                   "has to override cleanup function")
+    
 class infostore:
     """Base for information storage (hard state)
     

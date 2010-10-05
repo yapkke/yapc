@@ -43,6 +43,11 @@ class connection:
         ##Datapath id of connection
         self.dpid = None
 
+    def __del__(self):
+        """Destructor
+        """
+        self.sock.close()
+
     def dohandshake(self, msg):
         """Function to carry out handshake
 
@@ -143,7 +148,7 @@ class ofsockmanager(comm.sockmanager):
         msg = message(self.sock, packet)
         self.scheduler.postevent(msg)
 
-class ofserver:
+class ofserver(yapc.cleanup):
     """Class to create OpenFlow server socket
 
     @author ykk
@@ -160,6 +165,11 @@ class ofserver:
         self.ofservermgr = ofservermgr 
         if (self.ofservermgr  == None):
             self.ofservermgr = ofserversocket()
+
+    def cleanup(self):
+        """Function to clean up server socket
+        """
+        self.server.close()
 
     def bind(self, server):
         """Bind core scheduler and receive thread

@@ -26,7 +26,14 @@ class eventdispatcher:
         self.__events = []
         ##Event processing registration
         self.__processors = {}
-    
+        ##List of shutdown components
+        self.cleanups = []
+
+    def registercleanup(self, shutdown):
+        """Register shutdown
+        """
+        self.cleanups.append(shutdown)
+
     def registereventhandler(self, eventname, handler):
         """Register handler for event
         
@@ -138,5 +145,7 @@ class server:
     def signalhandler(self, signal, frame):
         """Handle signal
         """
-        print "Exiting COIN server..."
+        output.info("Exiting COIN server...", self.__class__.__name__)
+        for shutdown in self.scheduler.cleanups:
+            shutdown.cleanup()
         sys.exit(0)
