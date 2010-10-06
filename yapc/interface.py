@@ -16,7 +16,10 @@ class event:
 class component:
     """Base component for events
    
-    Should only stores soft state used internally
+    Should only stores soft state used internally.
+    I would argue that all hard state should be done by
+    on systems like memcached. YAPC's framework allows 
+    you to shoot yourself in the foot nonetheless.
 
     @author ykk
     @date Oct 2010
@@ -26,11 +29,10 @@ class component:
 
         Return True for continue, else stop
         """
-        raise RuntimeException("Component "+str(self.__class__.__name__)+\
-                                   "has to override processevent function")
+        return True
 
 class cleanup:
-    """Base component to handle shutdown
+    """Base component that handles shutdown
 
     @author ykk
     @date Oct 2010
@@ -38,17 +40,4 @@ class cleanup:
     def cleanup(self):
         """Dummy function to cleanup
         """
-        raise RuntimeException("Component "+str(self.__class__.__name__)+\
-                                   "has to override cleanup function")
-    
-class infostore:
-    """Base for information storage (hard state)
-    
-    @author ykk
-    @date Oct 2010
-    """
-    def save(self):
-        """Store information
-        """
-        raise RuntimeException("Component "+str(self.__class__.__name__)+\
-                                   "has to override ssave function")
+        return
