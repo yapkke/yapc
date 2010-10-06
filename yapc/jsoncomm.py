@@ -9,6 +9,7 @@ import yapc.output as output
 import socket
 import simplejson
 import os
+import stat
 
 class message(yapc.event):
     """JSON message event
@@ -132,6 +133,7 @@ class jsonserver(yapc.cleanup):
         self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.server.bind(file)
         self.server.listen(backlog)
+        os.chmod(file, stat.S_IRWXO | stat.S_IRWXG | stat.S_IRWXU)
         #Create server manager
         self.jsonservermgr = jsonservermgr
         if (self.jsonservermgr  == None):
