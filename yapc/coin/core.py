@@ -11,8 +11,8 @@ import yapc.jsoncomm as jsoncomm
 import yapc.output as output
 import yapc.pyopenflow as pyopenflow
 
-class openflowhandler(yapc.component):
-    """Class to handle OpenFlow packets
+class connectionhandler(yapc.component):
+    """Class to handle connections
 
     @author ykk
     @date Oct 2010
@@ -26,7 +26,7 @@ class openflowhandler(yapc.component):
         self.jsonconnections = jsoncomm.connections()
 
     def processevent(self, event):
-        """Process OpenFlow messages
+        """Process OpenFlow and JSON messages
         """
         if isinstance(event, ofcomm.message):
             #OpenFlow messages
@@ -37,8 +37,13 @@ class openflowhandler(yapc.component):
                 self.connections.db[event.sock].dohandshake(event)
             elif (event.header.type == pyopenflow.OFPT_ECHO_REQUEST):
                 self.connections.db[event.sock].replyecho(event)
+            elif (event.header.type == pyopenflow.OFPT_ERROR):
+                oem = pyopenflow.ofp_error_msg()
+                oem.unpack(event.message)
+                output.warn("Error of type "+str(oem.type)+" code "+str(oem.code),
+                            self.__class__.__name__)
             else:
-                output.dbg("Receive message "+header.show().strip().replace("\n",";"),
+                output.dbg("Receive message "+event.header.show().strip().replace("\n",";"),
                            self.__class__.__name__)
 
         elif isinstance(event, jsoncomm.message):

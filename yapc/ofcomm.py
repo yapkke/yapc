@@ -22,7 +22,7 @@ class message(yapc.event):
         ##Header
         self.header = pyopenflow.ofp_header()
         self.header.unpack(msg)
-        ##Socket message is received from
+        ##Connection message is received from
         self.sock = sock
         ##Message
         self.message = msg

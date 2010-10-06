@@ -8,10 +8,52 @@ import yapc.ofcomm as ofcomm
 import yapc.jsoncomm as jsoncomm
 import yapc.output as output
 import yapc.coin.core as coin
+import yapc.coin.bond as coinbond
 import sys
+import getopt
+
+##Print usage guide
+def usage():
+    """Display usage
+    """
+    print "Usage "+sys.argv[0]+" [options] command <parameters>"
+    print "\tCOIN server"
+    print  "Options:"
+    print "-h/--help\n\tPrint this usage guide"
+    print "-v/--verbose\n\tVerbose output"
+    print "-d/--daemon\n\tRun as daemon"
+
+#Parse options and arguments
+try:
+    opts, args = getopt.getopt(sys.argv[1:], "hvd",
+                               ["help","verbose","daemon"])
+except getopt.GetoptError:
+    print "Option error!"
+    usage()
+    sys.exit(2)
+
+#Parse options
+##Verbose debug output or not
+debug = False
+##Run as daemon
+daemon = False
+for opt,arg in opts:
+    if (opt in ("-h","--help")):
+        usage()
+        sys.exit(0)
+    elif (opt in ("-v","--verbose")):
+        debug=True
+    elif (opt in ("-d","--daemon")):
+        daemon=True
+    else:
+        print "Unhandled option :"+opt
+        sys.exit(2)
 
 #Set output mode
-output.set_mode("DBG")
+if (debug):
+    output.set_mode("DBG")
+else:
+    output.set_mode("INFO")
 
 #Create yapc base
 server = core.server()
@@ -19,12 +61,19 @@ ofcomm.ofserver().bind(server)
 jsoncomm.jsonserver().bind(server)
 
 #Create coin base
-coinserver = coin.openflowhandler()
+coinserver = coin.connectionhandler()
+coinbond = coinbond.handler(coinserver)
 server.scheduler.registereventhandler(ofcomm.message.name,
                                       coinserver)
 server.scheduler.registereventhandler(jsoncomm.message.name,
                                       coinserver)
+server.scheduler.registereventhandler(jsoncomm.message.name,
+                                      coinbond)
+server.scheduler.registereventhandler(ofcomm.message.name,
+                                      coinbond)
 #Start
-#server.daemonize()
-server.run()
+if (daemon):
+    server.daemonize()
+else:
+    server.run()
 sys.exit(0)
