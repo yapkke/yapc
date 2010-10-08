@@ -124,12 +124,28 @@ class handler(yapc.component):
                 reply["status"] = 0
 
         elif event.message["command"] == "liberate":
-            #Enslave
+            #Liberate
             reply["command"] = "liberated"
             if intf not in self.bondinterfaces[bondi].slaves:
                 reply["status"] = "not enslaved, no action done"
             else:
                 self.bondinterfaces[bondi].liberate(intf)
+                reply["status"] = 0
+
+        elif event.message["command"] == "get-active-slave":
+            #Get-active-slave
+            reply["command"] = "got-active-slave"
+            reply["status"] = str(self.bondinterfaces[bondi].activeslave)
+
+        elif event.message["command"] == "set-active-slave":
+            #Set-active-slave
+            reply["command"] = "set-active-slave"
+            if intf not in self.bondinterfaces[bondi].slaves)
+                reply["status"] = str(intf)+" is not slave of "+str(bondi)+", make active slave"
+            elif intf == self.bondinterfaces[bondi].activeslave)
+                reply["status"] = "already active slave, no action done"
+            else:
+                self.bondinterfaces[bondi].setactiveslave(intf)
                 reply["status"] = 0
 
         else:
@@ -158,6 +174,36 @@ class bondstate:
         commands.getoutput("ovs-dpctl add-if "+self.dp+" "+self.interface)
         ##Interfaces enslaved
         self.slaves = []
+        ##Active slave (i.e., who to send to)
+        self.activeslave = None
+
+    def setactiveslave(self, interface):
+        """Set active slave interface
+        """
+        if (self.activeslave != None):
+            #Remove OpenFlow rule
+            ofm = pyopenflow.ofp_flow_mod()
+            ofm.match = self.__getmatch(self.interface)
+            ofm.command = pyopenflow.OFPFC_DELETE_STRICT
+            ofm.out_port = self.__ports[self.activeslave]
+            ofm.buffer_id = 4294967295
+            ofm.flags = pyopenflow.OFPFF_SEND_FLOW_REM
+            self.__conn.send(ofm.pack())
+
+        if (interface != None):
+            #Set OpenFlow rule
+            ofm = pyopenflow.ofp_flow_mod()
+            ofm.match = self.__getmatch(self.interface)
+            ofm.command = pyopenflow.OFPFC_ADD
+            ofm.buffer_id = 4294967295
+            ofm.flags = pyopenflow.OFPFF_SEND_FLOW_REM
+            oao = pyopenflow.ofp_action_output()
+            oao.len = len(oao)
+            oao.port = self.__ports[interface]
+            ofm.actions.append(oao)
+            self.__conn.send(ofm.pack())
+
+        self.activeslave = interface
 
     def enslave(self, interface):
         """Enslave interface
@@ -189,6 +235,8 @@ class bondstate:
         self.__conn.send(ofm.pack())
         #Add to slave list
         self.slaves.remove(interface)
+        if self.activeslave == interface:
+            setactiveslave(None)
 
     def __getmatch(self, interface):
         """Return ofp_matc for bonding interface

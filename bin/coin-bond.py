@@ -25,6 +25,8 @@ def usage():
     print "liberate [bond-interface] [interface]\n\tunbond interface to bonding interface"
     print "set-active-slave [bond-interface] [interface]\n\tset interface as active slave "+\
         "to bonding interface"
+    print "get-active-slave [bond-interface]\n\tget interface as active slave "+\
+        "to bonding interface"
 
 #Parse options and arguments
 try:
@@ -59,7 +61,8 @@ if (args[0] != "create"):
         usage()
         sys.exit(2)
 
-if (args[0] != "create") and (args[0] != "delete"):
+if (args[0] != "create") and (args[0] != "delete") and \
+        (args[0] != "get-active-slave"):
     if not (len(args) >= 3):
         print "Missing interface"
         usage()
