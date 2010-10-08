@@ -16,7 +16,7 @@ class handler(yapc.component):
     """Class to handle commands for bonding driver using COIN
     
     @author ykk
-    @date 2010
+    @date Oct 2010
     """
     def __init__(self, connections):
         """Initialize
@@ -201,7 +201,8 @@ class bondstate:
     def delete(self):
         """Delete bond interface if no more slaves
         """
-        if len(self.slaves) == 0:
+        if len(self.slaves) == 0:  
+            commands.getoutput("ovs-dpctl del-if "+self.dp+" "+self.interface)
             (status, out) = commands.getstatusoutput("ip link del "+self.interface)
             return status
         else:
