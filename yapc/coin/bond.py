@@ -92,8 +92,10 @@ class handler(yapc.component):
                 reply["command"] = "error"
                 reply["status"] = "Unknown bond-interface "+bondi
                 return reply
+
         if ((event.message["command"] != "create") and
-            (event.message["command"] != "delete")):
+            (event.message["command"] != "delete") and
+            (event.message["command"] != "get-active-slave")):
             intf = event.message["interface"]
             if intf not in self.listofinterfaces():
                 reply["command"] = "error"
@@ -140,9 +142,9 @@ class handler(yapc.component):
         elif event.message["command"] == "set-active-slave":
             #Set-active-slave
             reply["command"] = "set-active-slave"
-            if intf not in self.bondinterfaces[bondi].slaves)
+            if intf not in self.bondinterfaces[bondi].slaves:
                 reply["status"] = str(intf)+" is not slave of "+str(bondi)+", make active slave"
-            elif intf == self.bondinterfaces[bondi].activeslave)
+            elif intf == self.bondinterfaces[bondi].activeslave:
                 reply["status"] = "already active slave, no action done"
             else:
                 self.bondinterfaces[bondi].setactiveslave(intf)
@@ -236,7 +238,7 @@ class bondstate:
         #Add to slave list
         self.slaves.remove(interface)
         if self.activeslave == interface:
-            setactiveslave(None)
+            self.setactiveslave(None)
 
     def __getmatch(self, interface):
         """Return ofp_matc for bonding interface

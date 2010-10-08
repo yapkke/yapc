@@ -82,7 +82,8 @@ msg["subtype"] = "bond"
 msg["command"] = args[0]
 if (args[0] != "create"):
     msg["bond-interface"] = args[1]
-if (args[0] != "create") and (args[0] != "delete"):
+if (args[0] != "create") and (args[0] != "delete") and \
+        (args[0] != "get-active-slave"):
     msg["interface"] = args[2]
 
 sock = jsoncomm.client()
