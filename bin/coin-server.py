@@ -9,6 +9,7 @@ import yapc.jsoncomm as jsoncomm
 import yapc.output as output
 import yapc.coin.core as coin
 import yapc.coin.bond as coinbond
+import yapc.coin.ipupbond as coinipupbond
 import sys
 import getopt
 
@@ -63,6 +64,7 @@ jsoncomm.jsonserver().bind(server)
 #Create coin base
 coinserver = coin.connectionhandler()
 coinbond = coinbond.handler(coinserver)
+coinipupbond = coinipupbond.handler(coinserver)
 server.scheduler.registereventhandler(ofcomm.message.name,
                                       coinserver)
 server.scheduler.registereventhandler(jsoncomm.message.name,
@@ -71,6 +73,10 @@ server.scheduler.registereventhandler(jsoncomm.message.name,
                                       coinbond)
 server.scheduler.registereventhandler(ofcomm.message.name,
                                       coinbond)
+server.scheduler.registereventhandler(jsoncomm.message.name,
+                                      coinipupbond)
+server.scheduler.registereventhandler(ofcomm.message.name,
+                                      coinipupbond)
 #Start
 if (daemon):
     server.daemonize()
