@@ -68,6 +68,15 @@ class connection:
         self.sock.send(simplejson.dumps(msg))
         output.dbg("Send message "+simplejson.dumps(msg),
                    self.__class__.__name__)
+
+    def getpeerid(self):
+        """Get peer pid, uid and gid of socket
+        """
+        SO_PEERCRED = 17
+        pid, uid, gid = struct.unpack('3i', self.sock.getsockopt(
+            socket.SOL_SOCKET, SO_PEERCRED, struct.calcsize('3i')))
+        
+        return (pid, uid, gid)
             
 class connections:
     """Class to manage JSON connections
