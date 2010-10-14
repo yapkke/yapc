@@ -83,12 +83,12 @@ msg["command"] = args[0]
 if (args[0] != "create"):
     msg["bond-interface"] = args[1]
 if (args[0] != "create") and (args[0] != "delete") and \
-        (args[0] != "get-active-slave"):
+       (args[0] != "get-active-slave"):
     msg["interface"] = args[2]
 
 sock = jsoncomm.client()
 output.dbg("Sending "+simplejson.dumps(msg),"coin-bond")
 sock.sock.send(simplejson.dumps(msg))
-output.info("Recevied "+simplejson.dumps(simplejson.loads(sock.sock.recv(1024)),
+output.info("Received "+simplejson.dumps(simplejson.loads(sock.sock.recv(1024)),
                                          indent=4))
 sys.exit(0)
