@@ -139,7 +139,9 @@ class server:
             self.scheduler.dispatchnextevent()
             
             #Sleep if looping too fast
-            time.sleep(self.sleep-(time.clock()-self.__starttime))
+            sleeptime = self.sleep-(time.clock()-self.__starttime)
+            if (sleeptime > 0):
+                time.sleep(sleeptime)
             self.__starttime == time.clock()
 
     def signalhandler(self, signal, frame):
