@@ -12,6 +12,8 @@ import yapc.output as output
 import yapc.pyopenflow as pyopenflow
 import netifaces
 
+SOCK_NAME = "coin.sock"
+
 class interfacemgr:
     """Interface manager class to manage interfaces
 

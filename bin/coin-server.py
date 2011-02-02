@@ -64,7 +64,7 @@ else:
 #Create yapc base
 server = core.server()
 ofcomm.ofserver().bind(server)
-jsoncomm.jsonserver(file="coin.sock", forcebind=forcejson).bind(server)
+jsoncomm.jsonserver(file=coin.SOCK_NAME, forcebind=forcejson).bind(server)
 
 #COIN main server
 coinserver = coin.server()

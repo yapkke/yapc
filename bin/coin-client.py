@@ -3,6 +3,7 @@
 # @author ykk
 # @date Feb 2011
 #
+import yapc.coin.core as coin
 import yapc.jsoncomm as jsoncomm
 import yapc.output as output
 import simplejson
@@ -61,7 +62,7 @@ msg["type"] = "coin"
 msg["subtype"] = "global"
 msg["command"] = args[0]
 
-sock = jsoncomm.client("coin.sock")
+sock = jsoncomm.client(coin.SOCK_NAME)
 output.dbg("Sending "+simplejson.dumps(msg),"coin-client")
 sock.sock.send(simplejson.dumps(msg))
 output.info("Received "+simplejson.dumps(simplejson.loads(sock.sock.recv(2048)),
