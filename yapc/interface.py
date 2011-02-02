@@ -27,7 +27,8 @@ class component:
     def processevent(self, event):
         """Dummy function to process event
 
-        Return True for continue, else stop
+        @param event reference to event
+        @return True for continue, else stop
         """
         return True
 

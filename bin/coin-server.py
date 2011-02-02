@@ -61,22 +61,26 @@ server = core.server()
 ofcomm.ofserver().bind(server)
 jsoncomm.jsonserver().bind(server)
 
-#Create coin base
-coinserver = coin.connectionhandler()
-coinbond = coinbond.handler(coinserver)
-coinipupbond = coinipupbond.handler(coinserver)
+#COIN main server
+coinserver = coin.server()
 server.scheduler.registereventhandler(ofcomm.message.name,
                                       coinserver)
 server.scheduler.registereventhandler(jsoncomm.message.name,
                                       coinserver)
-server.scheduler.registereventhandler(jsoncomm.message.name,
-                                      coinbond)
-server.scheduler.registereventhandler(ofcomm.message.name,
-                                      coinbond)
-server.scheduler.registereventhandler(jsoncomm.message.name,
-                                      coinipupbond)
-server.scheduler.registereventhandler(ofcomm.message.name,
-                                      coinipupbond)
+
+
+
+#coinbond = coinbond.handler(coinserver)
+#coinipupbond = coinipupbond.handler(coinserver)
+#server.scheduler.registereventhandler(jsoncomm.message.name,
+#                                      coinbond)
+#server.scheduler.registereventhandler(ofcomm.message.name,
+#                                      coinbond)
+#server.scheduler.registereventhandler(jsoncomm.message.name,
+#                                      coinipupbond)
+#server.scheduler.registereventhandler(ofcomm.message.name,
+#coinipupbond)
+
 #Start
 if (daemon):
     server.daemonize()
