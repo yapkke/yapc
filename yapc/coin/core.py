@@ -29,10 +29,19 @@ class interfacemgr:
         """
         return netifaces.interfaces()
 
-    def ifaddresses(self, intf):
-        """Return IPv4 addresses
+    def ifaddresses(self, intf=None):
+        """Return IPv4 addresses for specified interface or all interfaces
+        
+        @param intf interface
+        @return IP addresses
         """
-        return netifaces.ifaddresses(intf)
+        if (intf == None):
+            result = {}
+            for i in self.interfaces():
+                result[i] = netifaces.ifaddresses(i)
+            return result
+        else:
+            return netifaces.ifaddresses(intf)
 
 class server(yapc.component):
     """Class to handle connections and configuration for COIN
@@ -132,25 +141,28 @@ class server(yapc.component):
             self.jsonconnections.add(event.sock)
         
         if (event.message["type"] == "coin" and
-            event.message["subtype"] == "mode"):
-            reply = self.__processmode(event)
+            event.message["subtype"] == "global"):
+            reply = self.__processglobal(event)
             if (reply != None):
                 self.jsonconnections.db[event.sock].send(reply)
         else:
             output.dbg("Receive JSON message "+simplejson.dumps(event.message),
                        self.__class__.__name__)
 
-    def __processmode(self, event):
+    def __processglobal(self, event):
         """Process mode related JSON messages
         
         @param event yapc.jsoncomm.message event
         """
         reply = {}
         reply["type"] = "coin"
-        reply["subtype"] = "mode"
         
         if (event.message["command"] == "get_mode"):
+            reply["subtype"] = "mode"
             reply["mode"] = str(self.get_config("mode"))
+        elif (event.message["command"] == "get_interfaces"):
+            reply["subtype"] = "interfaces"
+            reply["interfaces"] = self.ifmgr.ifaddresses()
         else:
             output.dbg("Receive message "+str(event.message),
                        self.__class__.__name__)

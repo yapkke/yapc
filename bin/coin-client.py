@@ -20,6 +20,7 @@ def usage():
     print "-v/--verbose\n\tVerbose output"
     print  "Commands:"
     print "get_mode\n\tGet current mode of COIN"
+    print "get_interfaces\n\tGet current interfaces of device"
 
 #Parse options and arguments
 try:
@@ -57,12 +58,12 @@ else:
 #Construct
 msg = {}
 msg["type"] = "coin"
-msg["subtype"] = "mode"
+msg["subtype"] = "global"
 msg["command"] = args[0]
 
 sock = jsoncomm.client("coin.sock")
 output.dbg("Sending "+simplejson.dumps(msg),"coin-client")
 sock.sock.send(simplejson.dumps(msg))
-output.info("Received "+simplejson.dumps(simplejson.loads(sock.sock.recv(1024)),
+output.info("Received "+simplejson.dumps(simplejson.loads(sock.sock.recv(2048)),
                                          indent=4))
 sys.exit(0)
