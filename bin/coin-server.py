@@ -8,8 +8,7 @@ import yapc.ofcomm as ofcomm
 import yapc.jsoncomm as jsoncomm
 import yapc.output as output
 import yapc.coin.core as coin
-import yapc.coin.bond as coinbond
-import yapc.coin.ipupbond as coinipupbond
+import yapc.coin.ovs as coinovs
 import sys
 import getopt
 
@@ -73,18 +72,9 @@ server.scheduler.registereventhandler(ofcomm.message.name,
 server.scheduler.registereventhandler(jsoncomm.message.name,
                                       coinserver)
 
-
-
-#coinbond = coinbond.handler(coinserver)
-#coinipupbond = coinipupbond.handler(coinserver)
-#server.scheduler.registereventhandler(jsoncomm.message.name,
-#                                      coinbond)
-#server.scheduler.registereventhandler(ofcomm.message.name,
-#                                      coinbond)
-#server.scheduler.registereventhandler(jsoncomm.message.name,
-#                                      coinipupbond)
-#server.scheduler.registereventhandler(ofcomm.message.name,
-#coinipupbond)
+#OVS fabric manager
+ovs = coinovs.switch(coinserver)
+server.scheduler.registereventhandler(jsoncomm.message.name, ovs)
 
 #Start
 if (daemon):
