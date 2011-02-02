@@ -157,6 +157,11 @@ class jsonserver(yapc.cleanup):
         if (self.jsonservermgr  == None):
             self.jsonservermgr = jsonserversocket()
 
+    def __del__(self):
+        """Destructor, thus cleanup
+        """
+        self.cleanup()
+        
     def cleanup(self):
         """Function to clean up server socket
         """
