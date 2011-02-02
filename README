@@ -12,19 +12,15 @@ Background
 
 I (KK Yap) have working on NOX for a while now, and there has been a
 few other OpenFlow controllers created too.  At the time of writing,
-onix and beacon are the other significant complete controllers.
+Onix and Beacon are the other significant complete controllers.
 However, none of them are simple to install and use.  Swig is a pain
 and OSGI is not small either.  As a bid for simplicity, YAPC is
 created.
 
-YAPC incorporates many ideas and lessons I have learnt through working
-with NOX.  It is really an manifestion of how I think an OpenFlow
-controller should be written at a certain point in time.
-
-Finally, as you mentioned by now, my family name is Yap.  And the
+Finally, as you noticed by now, my family name is Yap.  And the
 project is named YAPC.  I would like to dedicate the controller to my
 son Cayden Yap, who have less attention from Dad as I writes this
-controller.
+piece of code.
 
 Installation
 ============
@@ -33,6 +29,7 @@ You need Python the dependencies listed below.  That's it.
 
 Dependencies:
 * simplejson: for JSON message parsing
+* netifaces: for network interfaces
 
 YAPC also depends on other external packages to generate some of the
 libraries used.  They are listed as follows, though you dun really
