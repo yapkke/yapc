@@ -60,7 +60,7 @@ msg["type"] = "coin"
 msg["subtype"] = "mode"
 msg["command"] = args[0]
 
-sock = jsoncomm.client()
+sock = jsoncomm.client("coin.sock")
 output.dbg("Sending "+simplejson.dumps(msg),"coin-client")
 sock.sock.send(simplejson.dumps(msg))
 output.info("Received "+simplejson.dumps(simplejson.loads(sock.sock.recv(1024)),

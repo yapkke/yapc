@@ -133,14 +133,23 @@ class jsonserver(yapc.cleanup):
     @author ykk
     @date Oct 2010
     """
-    def __init__(self, file='json.sock', backlog=10, jsonservermgr=None):
+    def __init__(self, file='json.sock', backlog=10, jsonservermgr=None,
+                 forcebind=True):
         """Initialize
         """
         #Reference to socket file
         self.__file = file
         #Create server connection
         self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.server.bind(file)
+        try:
+            self.server.bind(file)
+        except socket.error:
+            if (forcebind):
+                os.remove(file)
+                self.server.bind(file)
+            else:
+                raise
+
         self.server.listen(backlog)
         os.chmod(file, stat.S_IRWXO | stat.S_IRWXG | stat.S_IRWXU)
         #Create server manager

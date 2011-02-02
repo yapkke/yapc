@@ -134,7 +134,8 @@ class server(yapc.component):
         if (event.message["type"] == "coin" and
             event.message["subtype"] == "mode"):
             reply = self.__processmode(event)
-            self.jsonconnections.db[event.sock].send(reply)
+            if (reply != None):
+                self.jsonconnections.db[event.sock].send(reply)
         else:
             output.dbg("Receive JSON message "+simplejson.dumps(event.message),
                        self.__class__.__name__)
@@ -153,5 +154,6 @@ class server(yapc.component):
         else:
             output.dbg("Receive message "+str(event.message),
                        self.__class__.__name__)
+            return None
 
         return reply
