@@ -19,14 +19,15 @@ def usage():
     print  "Options:"
     print "-h/--help\n\tPrint this usage guide"
     print "-v/--verbose\n\tVerbose output"
+    print "-s/--sock\n\tSocket to communicate to (default: "+coin.SOCK_NAME+")"
     print  "Commands:"
     print "get_mode\n\tGet current mode of COIN"
     print "get_interfaces\n\tGet current interfaces of device"
 
 #Parse options and arguments
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "hv",
-                               ["help","verbose"])
+    opts, args = getopt.getopt(sys.argv[1:], "hvs:",
+                               ["help","verbose","sock="])
 except getopt.GetoptError:
     print "Option error!"
     usage()
@@ -35,12 +36,16 @@ except getopt.GetoptError:
 #Parse options
 ##Verbose debug output or not
 debug = False
+##Socket to talk to
+sock = coin.SOCK_NAME
 for opt,arg in opts:
     if (opt in ("-h","--help")):
         usage()
         sys.exit(0)
     elif (opt in ("-v","--verbose")):
         debug=True
+    elif (opt in ("-s","--sock")):
+        sock = arg
     else:
         print "Unhandled option :"+opt
         sys.exit(2)
@@ -62,7 +67,7 @@ msg["type"] = "coin"
 msg["subtype"] = "global"
 msg["command"] = args[0]
 
-sock = jsoncomm.client(coin.SOCK_NAME)
+sock = jsoncomm.client(sock)
 output.dbg("Sending "+simplejson.dumps(msg),"coin-client")
 sock.sock.send(simplejson.dumps(msg))
 output.info("Received "+simplejson.dumps(simplejson.loads(sock.sock.recv(2048)),

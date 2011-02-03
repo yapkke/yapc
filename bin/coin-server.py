@@ -21,13 +21,15 @@ def usage():
     print  "Options:"
     print "-h/--help\n\tPrint this usage guide"
     print "-f/--force-json\n\tForced binding for JSON UNIX socket"
+    print "-s/--sock\n\tSocket to communicate to (default: "+coin.SOCK_NAME+")"
     print "-v/--verbose\n\tVerbose output"
     print "-d/--daemon\n\tRun as daemon"
 
 #Parse options and arguments
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "hvdf",
-                               ["help","verbose","daemon", "force-json"])
+    opts, args = getopt.getopt(sys.argv[1:], "hvdfs:",
+                               ["help","verbose","daemon", 
+                                "force-json","sock="])
 except getopt.GetoptError:
     print "Option error!"
     usage()
@@ -40,6 +42,8 @@ debug = False
 daemon = False
 ##Force JSON connection or not
 forcejson = False
+##Socket to talk to
+sock = coin.SOCK_NAME
 for opt,arg in opts:
     if (opt in ("-h","--help")):
         usage()
@@ -48,6 +52,8 @@ for opt,arg in opts:
         debug=True
     elif (opt in ("-d","--daemon")):
         daemon=True
+    elif (opt in ("-s","--sock")):
+        sock = arg
     elif (opt in ("-f","--force-json")):
         forcejson=True
     else:
@@ -63,7 +69,7 @@ else:
 #Create yapc base
 server = core.server()
 ofcomm.ofserver().bind(server)
-jsoncomm.jsonserver(file=coin.SOCK_NAME, forcebind=forcejson).bind(server)
+jsoncomm.jsonserver(file=sock, forcebind=forcejson).bind(server)
 
 #COIN main server
 coinserver = coin.server()
