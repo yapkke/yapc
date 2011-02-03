@@ -143,10 +143,12 @@ class jsonserver(yapc.cleanup):
         self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         try:
             self.server.bind(file)
+            output.dbg("Binding to "+file, self.__class__.__name__)
         except socket.error:
             if (forcebind):
                 os.remove(file)
                 self.server.bind(file)
+                output.dbg("Force binding to "+file, self.__class__.__name__)
             else:
                 raise
 

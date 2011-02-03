@@ -160,6 +160,8 @@ class ofserver(yapc.cleanup):
         #Create server connection
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind((host, port))
+        output.dbg("Binding OpenFlow to "+str(host)+":"+str(port),
+                   self.__class__.__name__)
         self.server.listen(backlog)
         #Create server manager
         self.ofservermgr = ofservermgr 
