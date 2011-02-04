@@ -108,9 +108,13 @@ class datapath:
         @param intf name of interface
         @return command's exit status
         """
-        self.interfaces.remove(intf)
-        return cmd.run_cmd(DPCTL+" del-if "+self.name+" "+intf,
-                           self.__class__.__name__)
+        if (intf in self.interfaces):
+            self.interfaces.remove(intf)
+            return cmd.run_cmd(DPCTL+" del-if "+self.name+" "+intf,
+                               self.__class__.__name__)
+        else:
+            output.warn("Interface "+intf+" do not exist for deletion",
+                        self.__class__.__name__)
 
     def connect(self, controller, port=6633):
         """Connect datapath to controller
