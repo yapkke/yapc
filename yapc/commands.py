@@ -15,7 +15,7 @@ def run_cmd(cmd, classname):
     @param classname name of class calling command
     """
     ret = os.system(cmd)
-    output.dbg(cmd+" returns ("+str(ret)+")", classname)
+    output.dbg(cmd+" (returns "+str(ret)+")", classname)
     return ret
 
 def run_cmd_screen(name, cmd, classname):
