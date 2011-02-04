@@ -23,12 +23,14 @@ def usage():
     print "-f/--force-json\n\tForced binding for JSON UNIX socket"
     print "-s/--sock\n\tSocket to communicate to (default: "+coin.SOCK_NAME+")"
     print "-v/--verbose\n\tVerbose output"
+    print "--very-verbose\n\tVery verbose output"
     print "-d/--daemon\n\tRun as daemon"
 
 #Parse options and arguments
 try:
     opts, args = getopt.getopt(sys.argv[1:], "hvdfs:",
                                ["help","verbose","daemon", 
+                                "very-verbose",
                                 "force-json","sock="])
 except getopt.GetoptError:
     print "Option error!"
@@ -37,7 +39,7 @@ except getopt.GetoptError:
 
 #Parse options
 ##Verbose debug output or not
-debug = False
+debug = "INFO"
 ##Run as daemon
 daemon = False
 ##Force JSON connection or not
@@ -49,7 +51,9 @@ for opt,arg in opts:
         usage()
         sys.exit(0)
     elif (opt in ("-v","--verbose")):
-        debug=True
+        debug="DBG"
+    elif (opt in ("--very-verbose")):
+        debug="VDBG"
     elif (opt in ("-d","--daemon")):
         daemon=True
     elif (opt in ("-s","--sock")):
@@ -61,10 +65,7 @@ for opt,arg in opts:
         sys.exit(2)
 
 #Set output mode
-if (debug):
-    output.set_mode("DBG")
-else:
-    output.set_mode("INFO")
+output.set_mode(debug)
 
 #Create yapc base
 server = core.server()

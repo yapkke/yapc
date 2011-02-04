@@ -15,6 +15,7 @@ MODE["ERR"] = 0
 MODE["WARN"] = 1
 MODE["INFO"] = 2
 MODE["DBG"] = 3
+MODE["VDBG"] = 4
 
 #Global mode
 global output_mode
@@ -28,6 +29,7 @@ def set_mode(msg_mode, who=None):
     if (output_mode == None):
         output_mode = {}
         output_mode["global"] = MODE["WARN"]
+        output_mode["VDBG"] = []
         output_mode["DBG"] = []
         output_mode["INFO"] = []
         output_mode["WARN"] = []
@@ -40,7 +42,7 @@ def set_mode(msg_mode, who=None):
     #Individual mode
     if (msg_mode == "ERR"):
         return
-    for mode in ["WARN","INFO","DBG"]:
+    for mode in ["WARN","INFO","DBG","VDBG"]:
         if (not (who in mode[mode])):
             mode[mode].append(who)
         if (msg_mode == mode):
@@ -84,3 +86,8 @@ def dbg(msg, who=None):
     """Print debug messages
     """
     output("DBG", msg, who)
+
+def vdbg(msg, who=None):
+    """Print verbose debug messages
+    """
+    output("VDBG", msg, who)

@@ -92,8 +92,8 @@ class connection:
             remain = header.unpack(msg)
             header.length = len(msg)
             self.sock.send(header.pack()+remain)
-            output.dbg("Send message "+header.show().strip().replace("\n",";"),
-                       self.__class__.__name__)
+            output.vdbg("Send message "+header.show().strip().replace("\n",";"),
+                        self.__class__.__name__)
             
 class connections:
     """Class to manage OpenFlow connections
@@ -143,7 +143,7 @@ class ofsockmanager(comm.sockmanager):
         
         (Dummy function that print packet verbatim)
         """
-        output.dbg("Receive OpenFlow packet of "+self.__header.show().strip().replace("\n",";"),
+        output.vdbg("Receive OpenFlow packet of "+self.__header.show().strip().replace("\n",";"),
                    self.__class__.__name__)
         msg = message(self.sock, packet)
         self.scheduler.postevent(msg)
@@ -160,8 +160,8 @@ class ofserver(yapc.cleanup):
         #Create server connection
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind((host, port))
-        output.dbg("Binding OpenFlow to "+str(host)+":"+str(port),
-                   self.__class__.__name__)
+        output.info("Binding OpenFlow to "+str(host)+":"+str(port),
+                    self.__class__.__name__)
         self.server.listen(backlog)
         #Create server manager
         self.ofservermgr = ofservermgr 

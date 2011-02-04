@@ -58,15 +58,15 @@ class eventdispatcher:
         @param event event to post
         """
         self.__events.append(event)
-        output.dbg("Post "+str(event),
+        output.vdbg("Post "+str(event),
                    self.__class__.__name__)
         
     def dispatchnextevent(self):
         """Dispatch next event
         """
         if (len(self.__events) != 0):
-            output.dbg("Dispatch next event",
-                       self.__class__.__name__)
+            output.vdbg("Dispatch next event",
+                        self.__class__.__name__)
             event = self.__events.pop(0)
             try:
                 for handler in self.__processors[event.name]:
@@ -74,8 +74,8 @@ class eventdispatcher:
                         break;
             except KeyError:
                 #No handler, so pass
-                output.dbg("Event "+str(event.name)+" does not have handler",
-                           self.__class__.__name__)
+                output.warn("Event "+str(event.name)+" does not have handler",
+                            self.__class__.__name__)
                 
 
 class server:
