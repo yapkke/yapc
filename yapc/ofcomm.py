@@ -91,10 +91,13 @@ class connection:
         else:
             remain = header.unpack(msg)
             header.length = len(msg)
-            self.sock.send(header.pack()+remain)
             output.vdbg("Send message "+header.show().strip().replace("\n",";"),
                         self.__class__.__name__)
-            
+            try:
+                self.sock.send(header.pack()+remain)
+            except socket.error:
+                output.warn("Broken pipe, message not sent")
+
 class connections:
     """Class to manage OpenFlow connections
 
