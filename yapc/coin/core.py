@@ -32,10 +32,10 @@ class interfacemgr:
         return netifaces.interfaces()
 
     def ifaddresses(self, intf=None):
-        """Return IPv4 addresses for specified interface or all interfaces
+        """Return addresses for specified interface or all interfaces
         
         @param intf interface
-        @return IP addresses
+        @return addresses or dictionary of addresses
         """
         if (intf == None):
             result = {}
@@ -44,6 +44,38 @@ class interfacemgr:
             return result
         else:
             return netifaces.ifaddresses(intf)
+
+    def ethernet_ipv4_addresses(self, intf=None):
+        """Return Ethernet + IPv4 addresses for specified interface or all interfaces
+        
+        @param intf interface
+        @return Ethernet and IPv4  addresses
+        """
+        ifaddr = self.ifaddresses(intf)
+        if (intf == None):
+            result = {}
+            for i,addr in ifaddr.items():
+                if (netifaces.AF_PACKET in addr):
+                    result[i] = self.__get_ethernet_ipv4_addr(addr)
+        else:
+            return self.__get_ethernet_ipv4_addr(ifaddr)
+        return result
+    
+    def __get_ethernet_ipv4_addr(self, addr):
+        """Extract Ethernet and IPv4 addresses
+        
+        @param addr addresses of a single interface
+        @return dictionary of Ethernet and IPv4 addresses, None otherwise
+        """
+        result = {}
+        if (netifaces.AF_PACKET in addr):
+            result[netifaces.AF_PACKET] = addr[netifaces.AF_PACKET]
+            if (netifaces.AF_INET in addr):
+                result[netifaces.AF_INET] = addr[netifaces.AF_INET]
+            return result
+        else:
+            return None
+    
 
 class server(yapc.component):
     """Class to handle connections and configuration for COIN
@@ -164,7 +196,7 @@ class server(yapc.component):
             reply["mode"] = str(self.get_config("mode"))
         elif (event.message["command"] == "get_interfaces"):
             reply["subtype"] = "interfaces"
-            reply["interfaces"] = self.ifmgr.ifaddresses()
+            reply["interfaces"] = self.ifmgr.ethernet_ipv4_addresses()
         else:
             output.dbg("Receive message "+str(event.message),
                        self.__class__.__name__)
