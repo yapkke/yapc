@@ -81,7 +81,7 @@ server.scheduler.registereventhandler(jsoncomm.message.name,
                                       coinserver)
 
 #Network status
-sw = switches.datapaths()
+sw = switches.dp_features()
 server.scheduler.registereventhandler(ofcomm.message.name, sw)
 
 #OVS fabric manager

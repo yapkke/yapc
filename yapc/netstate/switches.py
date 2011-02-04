@@ -10,7 +10,7 @@ import yapc.ofcomm as ofcomm
 import yapc.output as output
 import yapc.pyopenflow as pyof
 
-class datapaths(yapc.component):
+class dp_features(yapc.component):
     """Class to maintain datapath state passively
 
     Listen passively to FEATURES_REPLY and PORT_STATUS
@@ -31,6 +31,7 @@ class datapaths(yapc.component):
         @return True
         """
         if isinstance(event, ofcomm.message):
+            #Feature replies
             if (event.header.type == pyof.OFPT_FEATURES_REPLY):
                 f = pyof.ofp_switch_features()
                 r = f.unpack(event.message)
@@ -47,5 +48,23 @@ class datapaths(yapc.component):
                            self.__class__.__name__)
                 self.switches[event.sock] = f
 
+            #Port status
+            elif (event.header.type == pyof.OFPT_PORT_STATUS):
+                s = pyof.ofp_port_status()
+                s.unpack(event.message)
+                output.dbg("Received port status:\n"+\
+                               s.show("\t"),
+                           self.__class__.__name__)
+                if (s.reason == pyof.OFPPR_DELETE or 
+                    s.reason == pyof.OFPPR_MODIFY):
+                    for p in self.switches[event.sock].ports:
+                        if (p.port_no == s.desc.port_no):
+                            self.switches[event.sock].ports.remove(p)
+                if (s.reason == pyof.OFPPR_ADD or 
+                    s.reason == pyof.OFPPR_MODIFY):
+                    self.switches[event.sock].ports.append(s.desc)
+                output.dbg("Updated switch features:\n"+\
+                               self.switches[event.sock].show("\t"),
+                           self.__class__.__name__)
+
         return True
-    
