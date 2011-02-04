@@ -39,7 +39,7 @@ class eventdispatcher:
         
         @param shutdown cleanup function to register
         """
-        self.cleanups.append(shutdown)
+        self.cleanups.insert(0,shutdown)
 
     def registereventhandler(self, eventname, handler):
         """Register handler for event
@@ -162,7 +162,7 @@ class server:
     def signalhandler(self, signal, frame):
         """Handle signal
         """
-        output.info("Exiting yapc...", self.__class__.__name__)
         for shutdown in self.scheduler.cleanups:
             shutdown.cleanup()
+        output.info("Exiting yapc...", self.__class__.__name__)
         sys.exit(0)
