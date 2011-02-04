@@ -23,6 +23,8 @@ def usage():
     print  "Commands:"
     print "get_mode\n\tGet current mode of COIN"
     print "get_interfaces\n\tGet current interfaces of device"
+    print "add_dp [name]\n\tAdd datapath with name"
+    print "del_dp [name]\n\tDelete datapath with name"
 
 #Parse options and arguments
 try:
@@ -55,6 +57,12 @@ if not (len(args) >= 1):
     usage()
     sys.exit(2)
 
+if (args[0] == "add_dp" or args[0] == "del_dp"):
+    if not (len(args) >= 2):
+        print "Missing name for datapath"
+        usage()
+        sys.exit(2)
+
 #Set output mode
 if (debug):
     output.set_mode("DBG")
@@ -64,8 +72,12 @@ else:
 #Construct
 msg = {}
 msg["type"] = "coin"
-msg["subtype"] = "global"
 msg["command"] = args[0]
+if (args[0] == "add_dp" or args[0] == "del_dp"):
+    msg["subtype"] = "ovs"
+    msg["name"] = args[1]
+else:
+    msg["subtype"] = "global"
 
 sock = jsoncomm.client(sock)
 output.dbg("Sending "+simplejson.dumps(msg),"coin-client")

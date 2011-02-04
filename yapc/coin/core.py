@@ -12,6 +12,7 @@ import yapc.output as output
 import yapc.pyopenflow as pyopenflow
 import yapc.commands as cmd
 import netifaces
+import simplejson
 
 SOCK_NAME = "/etc/coin.sock"
 IFCONFIG = "ifconfig"

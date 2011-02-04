@@ -71,7 +71,7 @@ server = core.server()
 ofcomm.ofserver().bind(server)
 jsoncomm.jsonserver(file=sock, forcebind=forcejson).bind(server)
 
-#COIN main server
+#COIN main server, maintaining connections
 coinserver = coin.server()
 server.scheduler.registereventhandler(ofcomm.message.name,
                                       coinserver)
@@ -81,6 +81,8 @@ server.scheduler.registereventhandler(jsoncomm.message.name,
 #OVS fabric manager
 ovs = coinovs.switch(coinserver)
 server.scheduler.registereventhandler(jsoncomm.message.name, ovs)
+server.scheduler.registereventhandler(ofcomm.message.name, ovs)
+server.scheduler.registercleanup(ovs)
 
 #Start
 if (daemon):
