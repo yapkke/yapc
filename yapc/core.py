@@ -34,6 +34,12 @@ class eventdispatcher:
         """
         return len(self.__events)
 
+    def cleanup(self):
+        """Clean up run
+        """
+        for shutdown in self.cleanups:
+            shutdown.cleanup()
+
     def registercleanup(self, shutdown):
         """Register shutdown
         
@@ -70,8 +76,12 @@ class eventdispatcher:
             event = self.__events.pop(0)
             try:
                 for handler in self.__processors[event.name]:
-                    if (not handler.processevent(event)):
-                        break;
+                    try:
+                        if (not handler.processevent(event)):
+                            break;
+                    except:
+                        self.cleanup()
+                        raise
             except KeyError:
                 #No handler, so pass
                 output.warn("Event "+str(event.name)+" does not have handler",
@@ -162,7 +172,6 @@ class server:
     def signalhandler(self, signal, frame):
         """Handle signal
         """
-        for shutdown in self.scheduler.cleanups:
-            shutdown.cleanup()
+        self.scheduler.cleanup()
         output.info("Exiting yapc...", self.__class__.__name__)
         sys.exit(0)
