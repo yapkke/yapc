@@ -9,6 +9,7 @@ import yapc.jsoncomm as jsoncomm
 import yapc.output as output
 import yapc.coin.core as coin
 import yapc.coin.ovs as coinovs
+import yapc.netstate.switches as switches
 import sys
 import getopt
 
@@ -78,6 +79,10 @@ server.scheduler.registereventhandler(ofcomm.message.name,
                                       coinserver)
 server.scheduler.registereventhandler(jsoncomm.message.name,
                                       coinserver)
+
+#Network status
+sw = switches.datapaths()
+server.scheduler.registereventhandler(ofcomm.message.name, sw)
 
 #OVS fabric manager
 ovs = coinovs.switch(coinserver)
