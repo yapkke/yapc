@@ -10,9 +10,11 @@ import yapc.ofcomm as ofcomm
 import yapc.jsoncomm as jsoncomm
 import yapc.output as output
 import yapc.pyopenflow as pyopenflow
+import yapc.commands as cmd
 import netifaces
 
 SOCK_NAME = "/etc/coin.sock"
+IFCONFIG = "ifconfig"
 
 class interfacemgr:
     """Interface manager class to manage interfaces
@@ -75,7 +77,18 @@ class interfacemgr:
             return result
         else:
             return None
-    
+
+    def set_ipv4_addr(self, intf, addr, netmask=None):
+        """Set IPv4 address
+        
+        @param intf interface name
+        @param addr IPv4 address string
+        @param netmask network mask string
+        """
+        c = IFCONFIG+" "+intf+" "+addr
+        if (netmask != None):
+            c += " netmask "+netmask
+        cmd.run_cmd(c, self.__class__.__name__)
 
 class server(yapc.component):
     """Class to handle connections and configuration for COIN
