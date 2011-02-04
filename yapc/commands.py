@@ -25,4 +25,4 @@ def run_cmd_screen(name, cmd, classname):
     @param cmd command
     @param classname name of class calling command
     """
-    return self.__run_cmd("screen -dm -S "+name+" -e ^Oo "+cmd, classname)
+    return run_cmd("screen -dm -S "+name+" -e ^Oo "+cmd, classname)
