@@ -29,8 +29,15 @@ class eventdispatcher:
         ##List of shutdown components
         self.cleanups = []
 
+    def len(self):
+        """Return length of current event queue
+        """
+        return len(self.__events)
+
     def registercleanup(self, shutdown):
         """Register shutdown
+        
+        @param shutdown cleanup function to register
         """
         self.cleanups.append(shutdown)
 
@@ -38,6 +45,8 @@ class eventdispatcher:
         """Register handler for event
         
         Event should be registered in order of calling
+        @param eventname name of event
+        @param handler handler function
         """
         if (eventname not in self.__processors):
             self.__processors[eventname] = []
@@ -45,6 +54,8 @@ class eventdispatcher:
 
     def postevent(self, event):
         """Post event
+
+        @param event event to post
         """
         self.__events.append(event)
         output.dbg("Post "+str(event),
@@ -54,6 +65,8 @@ class eventdispatcher:
         """Dispatch next event
         """
         if (len(self.__events) != 0):
+            output.dbg("Dispatch next event",
+                       self.__class__.__name__)
             event = self.__events.pop(0)
             try:
                 for handler in self.__processors[event.name]:
@@ -63,6 +76,7 @@ class eventdispatcher:
                 #No handler, so pass
                 output.dbg("Event "+str(event.name)+" does not have handler",
                            self.__class__.__name__)
+                
 
 class server:
     """Daemon for COIN core
@@ -116,7 +130,8 @@ class server:
             if pid > 0:
                 sys.exit(0)
         except OSError, e:
-            sys.stderr.write("fork #2 failed with error %d (%s)\n" % (e.errno, e.strerror))
+            sys.stderr.write("fork #2 failed with error %d (%s)\n"\
+                                 % (e.errno, e.strerror))
             sys.exit(1)
 
         #redirect file descriptors
@@ -136,13 +151,13 @@ class server:
         """Main loop to run
         """
         while self.running:
+            self.__starttime = time.clock()
             self.scheduler.dispatchnextevent()
-            
+
             #Sleep if looping too fast
             sleeptime = self.sleep-(time.clock()-self.__starttime)
             if (sleeptime > 0):
                 time.sleep(sleeptime)
-            self.__starttime == time.clock()
 
     def signalhandler(self, signal, frame):
         """Handle signal
