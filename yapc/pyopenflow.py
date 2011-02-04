@@ -4,8 +4,8 @@ import struct
 class ofp_phy_port:
     """Automatically generated Python class for ofp_phy_port
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -55,10 +55,19 @@ class ofp_phy_port:
         """
         if (len(binaryString) < 48):
             return binaryString
-        (self.port_no,) = struct.unpack_from("!H", binaryString, 0)
-        (self.hw_addr[0], self.hw_addr[1], self.hw_addr[2], self.hw_addr[3], self.hw_addr[4], self.hw_addr[5]) = struct.unpack_from("!BBBBBB", binaryString, 2)
+        fmt = '!H'
+        start = 0
+        end = start + struct.calcsize(fmt)
+        (self.port_no,) = struct.unpack(fmt, binaryString[start:end])
+        fmt = '!BBBBBB'
+        start = 2
+        end = start + struct.calcsize(fmt)
+        (self.hw_addr[0], self.hw_addr[1], self.hw_addr[2], self.hw_addr[3], self.hw_addr[4], self.hw_addr[5]) = struct.unpack(fmt, binaryString[start:end])
         self.name = binaryString[8:24].replace("\0","")
-        (self.config, self.state, self.curr, self.advertised, self.supported, self.peer) = struct.unpack_from("!LLLLLL", binaryString, 24)
+        fmt = '!LLLLLL'
+        start = 24
+        end = start + struct.calcsize(fmt)
+        (self.config, self.state, self.curr, self.advertised, self.supported, self.peer) = struct.unpack(fmt,  binaryString[start:end])
         return binaryString[48:]
 
     def __len__(self):
@@ -103,8 +112,8 @@ class ofp_phy_port:
 class ofp_aggregate_stats_reply:
     """Automatically generated Python class for ofp_aggregate_stats_reply
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -143,8 +152,14 @@ class ofp_aggregate_stats_reply:
         """
         if (len(binaryString) < 24):
             return binaryString
-        (self.packet_count, self.byte_count, self.flow_count) = struct.unpack_from("!QQL", binaryString, 0)
-        (self.pad[0], self.pad[1], self.pad[2], self.pad[3]) = struct.unpack_from("!BBBB", binaryString, 20)
+        fmt = '!QQL'
+        start = 0
+        end = start + struct.calcsize(fmt)
+        (self.packet_count, self.byte_count, self.flow_count) = struct.unpack(fmt,  binaryString[start:end])
+        fmt = '!BBBB'
+        start = 20
+        end = start + struct.calcsize(fmt)
+        (self.pad[0], self.pad[1], self.pad[2], self.pad[3]) = struct.unpack(fmt, binaryString[start:end])
         return binaryString[24:]
 
     def __len__(self):
@@ -178,8 +193,8 @@ class ofp_aggregate_stats_reply:
 class ofp_table_stats:
     """Automatically generated Python class for ofp_table_stats
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -228,10 +243,19 @@ class ofp_table_stats:
         """
         if (len(binaryString) < 64):
             return binaryString
-        (self.table_id,) = struct.unpack_from("!B", binaryString, 0)
-        (self.pad[0], self.pad[1], self.pad[2]) = struct.unpack_from("!BBB", binaryString, 1)
+        fmt = '!B'
+        start = 0
+        end = start + struct.calcsize(fmt)
+        (self.table_id,) = struct.unpack(fmt, binaryString[start:end])
+        fmt = '!BBB'
+        start = 1
+        end = start + struct.calcsize(fmt)
+        (self.pad[0], self.pad[1], self.pad[2]) = struct.unpack(fmt, binaryString[start:end])
         self.name = binaryString[4:36].replace("\0","")
-        (self.wildcards, self.max_entries, self.active_count, self.lookup_count, self.matched_count) = struct.unpack_from("!LLLQQ", binaryString, 36)
+        fmt = '!LLLQQ'
+        start = 36
+        end = start + struct.calcsize(fmt)
+        (self.wildcards, self.max_entries, self.active_count, self.lookup_count, self.matched_count) = struct.unpack(fmt,  binaryString[start:end])
         return binaryString[64:]
 
     def __len__(self):
@@ -273,8 +297,8 @@ class ofp_table_stats:
 class ofp_flow_removed:
     """Automatically generated Python class for ofp_flow_removed
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -286,7 +310,7 @@ class ofp_flow_removed:
         self.cookie = 0
         self.priority = 0
         self.reason = 0
-        self.pad= [0]
+        self.pad = 0
         self.duration_sec = 0
         self.duration_nsec = 0
         self.idle_timeout = 0
@@ -301,10 +325,6 @@ class ofp_flow_removed:
             return (False, "self.header is not class ofp_header as expected.")
         if(not isinstance(self.match, ofp_match)):
             return (False, "self.match is not class ofp_match as expected.")
-        if(not isinstance(self.pad, list)):
-            return (False, "self.pad is not list as expected.")
-        if(len(self.pad) != 1):
-            return (False, "self.pad is not of size 1 as expected.")
         if(not isinstance(self.pad2, list)):
             return (False, "self.pad2 is not list as expected.")
         if(len(self.pad2) != 2):
@@ -321,9 +341,7 @@ class ofp_flow_removed:
         packed = ""
         packed += self.header.pack()
         packed += self.match.pack()
-        packed += struct.pack("!QHB", self.cookie, self.priority, self.reason)
-        packed += struct.pack("!B", self.pad[0])
-        packed += struct.pack("!LLH", self.duration_sec, self.duration_nsec, self.idle_timeout)
+        packed += struct.pack("!QHBBLLH", self.cookie, self.priority, self.reason, self.pad, self.duration_sec, self.duration_nsec, self.idle_timeout)
         packed += struct.pack("!BB", self.pad2[0], self.pad2[1])
         packed += struct.pack("!QQ", self.packet_count, self.byte_count)
         return packed
@@ -337,11 +355,18 @@ class ofp_flow_removed:
             return binaryString
         self.header.unpack(binaryString[0:])
         self.match.unpack(binaryString[8:])
-        (self.cookie, self.priority, self.reason) = struct.unpack_from("!QHB", binaryString, 48)
-        (self.pad[0]) = struct.unpack_from("!B", binaryString, 59)
-        (self.duration_sec, self.duration_nsec, self.idle_timeout) = struct.unpack_from("!LLH", binaryString, 60)
-        (self.pad2[0], self.pad2[1]) = struct.unpack_from("!BB", binaryString, 70)
-        (self.packet_count, self.byte_count) = struct.unpack_from("!QQ", binaryString, 72)
+        fmt = '!QHBBLLH'
+        start = 48
+        end = start + struct.calcsize(fmt)
+        (self.cookie, self.priority, self.reason, self.pad, self.duration_sec, self.duration_nsec, self.idle_timeout) = struct.unpack(fmt,  binaryString[start:end])
+        fmt = '!BB'
+        start = 70
+        end = start + struct.calcsize(fmt)
+        (self.pad2[0], self.pad2[1]) = struct.unpack(fmt, binaryString[start:end])
+        fmt = '!QQ'
+        start = 72
+        end = start + struct.calcsize(fmt)
+        (self.packet_count, self.byte_count) = struct.unpack(fmt,  binaryString[start:end])
         return binaryString[88:]
 
     def __len__(self):
@@ -375,9 +400,9 @@ class ofp_flow_removed:
         """
         outstr = ''
         outstr += prefix + 'header: \n' 
-        self.header.show(prefix + '  ')
+        outstr += self.header.show(prefix + '  ')
         outstr += prefix + 'match: \n' 
-        self.match.show(prefix + '  ')
+        outstr += self.match.show(prefix + '  ')
         outstr += prefix + 'cookie: ' + str(self.cookie) + '\n'
         outstr += prefix + 'priority: ' + str(self.priority) + '\n'
         outstr += prefix + 'reason: ' + str(self.reason) + '\n'
@@ -392,8 +417,8 @@ class ofp_flow_removed:
 class ofp_port_stats:
     """Automatically generated Python class for ofp_port_stats
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -443,9 +468,18 @@ class ofp_port_stats:
         """
         if (len(binaryString) < 104):
             return binaryString
-        (self.port_no,) = struct.unpack_from("!H", binaryString, 0)
-        (self.pad[0], self.pad[1], self.pad[2], self.pad[3], self.pad[4], self.pad[5]) = struct.unpack_from("!BBBBBB", binaryString, 2)
-        (self.rx_packets, self.tx_packets, self.rx_bytes, self.tx_bytes, self.rx_dropped, self.tx_dropped, self.rx_errors, self.tx_errors, self.rx_frame_err, self.rx_over_err, self.rx_crc_err, self.collisions) = struct.unpack_from("!QQQQQQQQQQQQ", binaryString, 8)
+        fmt = '!H'
+        start = 0
+        end = start + struct.calcsize(fmt)
+        (self.port_no,) = struct.unpack(fmt, binaryString[start:end])
+        fmt = '!BBBBBB'
+        start = 2
+        end = start + struct.calcsize(fmt)
+        (self.pad[0], self.pad[1], self.pad[2], self.pad[3], self.pad[4], self.pad[5]) = struct.unpack(fmt, binaryString[start:end])
+        fmt = '!QQQQQQQQQQQQ'
+        start = 8
+        end = start + struct.calcsize(fmt)
+        (self.rx_packets, self.tx_packets, self.rx_bytes, self.tx_bytes, self.rx_dropped, self.tx_dropped, self.rx_errors, self.tx_errors, self.rx_frame_err, self.rx_over_err, self.rx_crc_err, self.collisions) = struct.unpack(fmt,  binaryString[start:end])
         return binaryString[104:]
 
     def __len__(self):
@@ -499,8 +533,8 @@ class ofp_port_stats:
 class ofp_queue_stats:
     """Automatically generated Python class for ofp_queue_stats
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -542,9 +576,18 @@ class ofp_queue_stats:
         """
         if (len(binaryString) < 32):
             return binaryString
-        (self.port_no,) = struct.unpack_from("!H", binaryString, 0)
-        (self.pad[0], self.pad[1]) = struct.unpack_from("!BB", binaryString, 2)
-        (self.queue_id, self.tx_bytes, self.tx_packets, self.tx_errors) = struct.unpack_from("!LQQQ", binaryString, 4)
+        fmt = '!H'
+        start = 0
+        end = start + struct.calcsize(fmt)
+        (self.port_no,) = struct.unpack(fmt, binaryString[start:end])
+        fmt = '!BB'
+        start = 2
+        end = start + struct.calcsize(fmt)
+        (self.pad[0], self.pad[1]) = struct.unpack(fmt, binaryString[start:end])
+        fmt = '!LQQQ'
+        start = 4
+        end = start + struct.calcsize(fmt)
+        (self.queue_id, self.tx_bytes, self.tx_packets, self.tx_errors) = struct.unpack(fmt,  binaryString[start:end])
         return binaryString[32:]
 
     def __len__(self):
@@ -582,8 +625,8 @@ class ofp_queue_stats:
 class ofp_action_tp_port:
     """Automatically generated Python class for ofp_action_tp_port
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -622,8 +665,14 @@ class ofp_action_tp_port:
         """
         if (len(binaryString) < 8):
             return binaryString
-        (self.type, self.len, self.tp_port) = struct.unpack_from("!HHH", binaryString, 0)
-        (self.pad[0], self.pad[1]) = struct.unpack_from("!BB", binaryString, 6)
+        fmt = '!HHH'
+        start = 0
+        end = start + struct.calcsize(fmt)
+        (self.type, self.len, self.tp_port) = struct.unpack(fmt,  binaryString[start:end])
+        fmt = '!BB'
+        start = 6
+        end = start + struct.calcsize(fmt)
+        (self.pad[0], self.pad[1]) = struct.unpack(fmt, binaryString[start:end])
         return binaryString[8:]
 
     def __len__(self):
@@ -657,8 +706,8 @@ class ofp_action_tp_port:
 class ofp_port_stats_request:
     """Automatically generated Python class for ofp_port_stats_request
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -695,8 +744,14 @@ class ofp_port_stats_request:
         """
         if (len(binaryString) < 8):
             return binaryString
-        (self.port_no,) = struct.unpack_from("!H", binaryString, 0)
-        (self.pad[0], self.pad[1], self.pad[2], self.pad[3], self.pad[4], self.pad[5]) = struct.unpack_from("!BBBBBB", binaryString, 2)
+        fmt = '!H'
+        start = 0
+        end = start + struct.calcsize(fmt)
+        (self.port_no,) = struct.unpack(fmt, binaryString[start:end])
+        fmt = '!BBBBBB'
+        start = 2
+        end = start + struct.calcsize(fmt)
+        (self.pad[0], self.pad[1], self.pad[2], self.pad[3], self.pad[4], self.pad[5]) = struct.unpack(fmt, binaryString[start:end])
         return binaryString[8:]
 
     def __len__(self):
@@ -726,8 +781,8 @@ class ofp_port_stats_request:
 class ofp_stats_request:
     """Automatically generated Python class for ofp_stats_request
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -768,7 +823,10 @@ class ofp_stats_request:
         if (len(binaryString) < 12):
             return binaryString
         self.header.unpack(binaryString[0:])
-        (self.type, self.flags) = struct.unpack_from("!HH", binaryString, 8)
+        fmt = '!HH'
+        start = 8
+        end = start + struct.calcsize(fmt)
+        (self.type, self.flags) = struct.unpack(fmt,  binaryString[start:end])
         return binaryString[12:]
 
     def __len__(self):
@@ -795,7 +853,7 @@ class ofp_stats_request:
         """
         outstr = ''
         outstr += prefix + 'header: \n' 
-        self.header.show(prefix + '  ')
+        outstr += self.header.show(prefix + '  ')
         outstr += prefix + 'type: ' + str(self.type) + '\n'
         outstr += prefix + 'flags: ' + str(self.flags) + '\n'
         outstr += prefix + 'body: ' + str(self.body) + '\n'
@@ -805,8 +863,8 @@ class ofp_stats_request:
 class ofp_hello:
     """Automatically generated Python class for ofp_hello
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -863,15 +921,15 @@ class ofp_hello:
         """
         outstr = ''
         outstr += prefix + 'header: \n' 
-        self.header.show(prefix + '  ')
+        outstr += self.header.show(prefix + '  ')
         return outstr
 
 
 class ofp_aggregate_stats_request:
     """Automatically generated Python class for ofp_aggregate_stats_request
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -909,7 +967,10 @@ class ofp_aggregate_stats_request:
         if (len(binaryString) < 44):
             return binaryString
         self.match.unpack(binaryString[0:])
-        (self.table_id, self.pad, self.out_port) = struct.unpack_from("!BBH", binaryString, 40)
+        fmt = '!BBH'
+        start = 40
+        end = start + struct.calcsize(fmt)
+        (self.table_id, self.pad, self.out_port) = struct.unpack(fmt,  binaryString[start:end])
         return binaryString[44:]
 
     def __len__(self):
@@ -935,7 +996,7 @@ class ofp_aggregate_stats_request:
         """
         outstr = ''
         outstr += prefix + 'match: \n' 
-        self.match.show(prefix + '  ')
+        outstr += self.match.show(prefix + '  ')
         outstr += prefix + 'table_id: ' + str(self.table_id) + '\n'
         outstr += prefix + 'out_port: ' + str(self.out_port) + '\n'
         return outstr
@@ -944,8 +1005,8 @@ class ofp_aggregate_stats_request:
 class ofp_port_status:
     """Automatically generated Python class for ofp_port_status
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -992,8 +1053,14 @@ class ofp_port_status:
         if (len(binaryString) < 64):
             return binaryString
         self.header.unpack(binaryString[0:])
-        (self.reason,) = struct.unpack_from("!B", binaryString, 8)
-        (self.pad[0], self.pad[1], self.pad[2], self.pad[3], self.pad[4], self.pad[5], self.pad[6]) = struct.unpack_from("!BBBBBBB", binaryString, 9)
+        fmt = '!B'
+        start = 8
+        end = start + struct.calcsize(fmt)
+        (self.reason,) = struct.unpack(fmt, binaryString[start:end])
+        fmt = '!BBBBBBB'
+        start = 9
+        end = start + struct.calcsize(fmt)
+        (self.pad[0], self.pad[1], self.pad[2], self.pad[3], self.pad[4], self.pad[5], self.pad[6]) = struct.unpack(fmt, binaryString[start:end])
         self.desc.unpack(binaryString[16:])
         return binaryString[64:]
 
@@ -1020,18 +1087,18 @@ class ofp_port_status:
         """
         outstr = ''
         outstr += prefix + 'header: \n' 
-        self.header.show(prefix + '  ')
+        outstr += self.header.show(prefix + '  ')
         outstr += prefix + 'reason: ' + str(self.reason) + '\n'
         outstr += prefix + 'desc: \n' 
-        self.desc.show(prefix + '  ')
+        outstr += self.desc.show(prefix + '  ')
         return outstr
 
 
 class ofp_action_header:
     """Automatically generated Python class for ofp_action_header
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -1069,8 +1136,14 @@ class ofp_action_header:
         """
         if (len(binaryString) < 8):
             return binaryString
-        (self.type, self.len) = struct.unpack_from("!HH", binaryString, 0)
-        (self.pad[0], self.pad[1], self.pad[2], self.pad[3]) = struct.unpack_from("!BBBB", binaryString, 4)
+        fmt = '!HH'
+        start = 0
+        end = start + struct.calcsize(fmt)
+        (self.type, self.len) = struct.unpack(fmt,  binaryString[start:end])
+        fmt = '!BBBB'
+        start = 4
+        end = start + struct.calcsize(fmt)
+        (self.pad[0], self.pad[1], self.pad[2], self.pad[3]) = struct.unpack(fmt, binaryString[start:end])
         return binaryString[8:]
 
     def __len__(self):
@@ -1102,8 +1175,8 @@ class ofp_action_header:
 class ofp_port_mod:
     """Automatically generated Python class for ofp_port_mod
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -1156,10 +1229,22 @@ class ofp_port_mod:
         if (len(binaryString) < 32):
             return binaryString
         self.header.unpack(binaryString[0:])
-        (self.port_no,) = struct.unpack_from("!H", binaryString, 8)
-        (self.hw_addr[0], self.hw_addr[1], self.hw_addr[2], self.hw_addr[3], self.hw_addr[4], self.hw_addr[5]) = struct.unpack_from("!BBBBBB", binaryString, 10)
-        (self.config, self.mask, self.advertise) = struct.unpack_from("!LLL", binaryString, 16)
-        (self.pad[0], self.pad[1], self.pad[2], self.pad[3]) = struct.unpack_from("!BBBB", binaryString, 28)
+        fmt = '!H'
+        start = 8
+        end = start + struct.calcsize(fmt)
+        (self.port_no,) = struct.unpack(fmt, binaryString[start:end])
+        fmt = '!BBBBBB'
+        start = 10
+        end = start + struct.calcsize(fmt)
+        (self.hw_addr[0], self.hw_addr[1], self.hw_addr[2], self.hw_addr[3], self.hw_addr[4], self.hw_addr[5]) = struct.unpack(fmt, binaryString[start:end])
+        fmt = '!LLL'
+        start = 16
+        end = start + struct.calcsize(fmt)
+        (self.config, self.mask, self.advertise) = struct.unpack(fmt,  binaryString[start:end])
+        fmt = '!BBBB'
+        start = 28
+        end = start + struct.calcsize(fmt)
+        (self.pad[0], self.pad[1], self.pad[2], self.pad[3]) = struct.unpack(fmt, binaryString[start:end])
         return binaryString[32:]
 
     def __len__(self):
@@ -1188,7 +1273,7 @@ class ofp_port_mod:
         """
         outstr = ''
         outstr += prefix + 'header: \n' 
-        self.header.show(prefix + '  ')
+        outstr += self.header.show(prefix + '  ')
         outstr += prefix + 'port_no: ' + str(self.port_no) + '\n'
         outstr += prefix + 'hw_addr: ' + str(self.hw_addr) + '\n'
         outstr += prefix + 'config: ' + str(self.config) + '\n'
@@ -1200,8 +1285,8 @@ class ofp_port_mod:
 class ofp_action_vlan_vid:
     """Automatically generated Python class for ofp_action_vlan_vid
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -1240,8 +1325,14 @@ class ofp_action_vlan_vid:
         """
         if (len(binaryString) < 8):
             return binaryString
-        (self.type, self.len, self.vlan_vid) = struct.unpack_from("!HHH", binaryString, 0)
-        (self.pad[0], self.pad[1]) = struct.unpack_from("!BB", binaryString, 6)
+        fmt = '!HHH'
+        start = 0
+        end = start + struct.calcsize(fmt)
+        (self.type, self.len, self.vlan_vid) = struct.unpack(fmt,  binaryString[start:end])
+        fmt = '!BB'
+        start = 6
+        end = start + struct.calcsize(fmt)
+        (self.pad[0], self.pad[1]) = struct.unpack(fmt, binaryString[start:end])
         return binaryString[8:]
 
     def __len__(self):
@@ -1275,8 +1366,8 @@ class ofp_action_vlan_vid:
 class ofp_action_output:
     """Automatically generated Python class for ofp_action_output
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -1310,7 +1401,10 @@ class ofp_action_output:
         """
         if (len(binaryString) < 8):
             return binaryString
-        (self.type, self.len, self.port, self.max_len) = struct.unpack_from("!HHHH", binaryString, 0)
+        fmt = '!HHHH'
+        start = 0
+        end = start + struct.calcsize(fmt)
+        (self.type, self.len, self.port, self.max_len) = struct.unpack(fmt,  binaryString[start:end])
         return binaryString[8:]
 
     def __len__(self):
@@ -1345,8 +1439,8 @@ class ofp_action_output:
 class ofp_switch_config:
     """Automatically generated Python class for ofp_switch_config
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -1383,7 +1477,10 @@ class ofp_switch_config:
         if (len(binaryString) < 12):
             return binaryString
         self.header.unpack(binaryString[0:])
-        (self.flags, self.miss_send_len) = struct.unpack_from("!HH", binaryString, 8)
+        fmt = '!HH'
+        start = 8
+        end = start + struct.calcsize(fmt)
+        (self.flags, self.miss_send_len) = struct.unpack(fmt,  binaryString[start:end])
         return binaryString[12:]
 
     def __len__(self):
@@ -1408,7 +1505,7 @@ class ofp_switch_config:
         """
         outstr = ''
         outstr += prefix + 'header: \n' 
-        self.header.show(prefix + '  ')
+        outstr += self.header.show(prefix + '  ')
         outstr += prefix + 'flags: ' + str(self.flags) + '\n'
         outstr += prefix + 'miss_send_len: ' + str(self.miss_send_len) + '\n'
         return outstr
@@ -1417,8 +1514,8 @@ class ofp_switch_config:
 class ofp_action_nw_tos:
     """Automatically generated Python class for ofp_action_nw_tos
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -1457,8 +1554,14 @@ class ofp_action_nw_tos:
         """
         if (len(binaryString) < 8):
             return binaryString
-        (self.type, self.len, self.nw_tos) = struct.unpack_from("!HHB", binaryString, 0)
-        (self.pad[0], self.pad[1], self.pad[2]) = struct.unpack_from("!BBB", binaryString, 5)
+        fmt = '!HHB'
+        start = 0
+        end = start + struct.calcsize(fmt)
+        (self.type, self.len, self.nw_tos) = struct.unpack(fmt,  binaryString[start:end])
+        fmt = '!BBB'
+        start = 5
+        end = start + struct.calcsize(fmt)
+        (self.pad[0], self.pad[1], self.pad[2]) = struct.unpack(fmt, binaryString[start:end])
         return binaryString[8:]
 
     def __len__(self):
@@ -1492,8 +1595,8 @@ class ofp_action_nw_tos:
 class ofp_queue_get_config_reply:
     """Automatically generated Python class for ofp_queue_get_config_reply
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -1538,8 +1641,14 @@ class ofp_queue_get_config_reply:
         if (len(binaryString) < 16):
             return binaryString
         self.header.unpack(binaryString[0:])
-        (self.port,) = struct.unpack_from("!H", binaryString, 8)
-        (self.pad[0], self.pad[1], self.pad[2], self.pad[3], self.pad[4], self.pad[5]) = struct.unpack_from("!BBBBBB", binaryString, 10)
+        fmt = '!H'
+        start = 8
+        end = start + struct.calcsize(fmt)
+        (self.port,) = struct.unpack(fmt, binaryString[start:end])
+        fmt = '!BBBBBB'
+        start = 10
+        end = start + struct.calcsize(fmt)
+        (self.pad[0], self.pad[1], self.pad[2], self.pad[3], self.pad[4], self.pad[5]) = struct.unpack(fmt, binaryString[start:end])
         return binaryString[16:]
 
     def __len__(self):
@@ -1567,7 +1676,7 @@ class ofp_queue_get_config_reply:
         """
         outstr = ''
         outstr += prefix + 'header: \n' 
-        self.header.show(prefix + '  ')
+        outstr += self.header.show(prefix + '  ')
         outstr += prefix + 'port: ' + str(self.port) + '\n'
         outstr += prefix + 'queues: \n' 
         for obj in self.queues:
@@ -1578,8 +1687,8 @@ class ofp_queue_get_config_reply:
 class ofp_packet_in:
     """Automatically generated Python class for ofp_packet_in
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -1623,7 +1732,10 @@ class ofp_packet_in:
         if (len(binaryString) < 18):
             return binaryString
         self.header.unpack(binaryString[0:])
-        (self.buffer_id, self.total_len, self.in_port, self.reason, self.pad) = struct.unpack_from("!LHHBB", binaryString, 8)
+        fmt = '!LHHBB'
+        start = 8
+        end = start + struct.calcsize(fmt)
+        (self.buffer_id, self.total_len, self.in_port, self.reason, self.pad) = struct.unpack(fmt,  binaryString[start:end])
         return binaryString[18:]
 
     def __len__(self):
@@ -1653,7 +1765,7 @@ class ofp_packet_in:
         """
         outstr = ''
         outstr += prefix + 'header: \n' 
-        self.header.show(prefix + '  ')
+        outstr += self.header.show(prefix + '  ')
         outstr += prefix + 'buffer_id: ' + str(self.buffer_id) + '\n'
         outstr += prefix + 'total_len: ' + str(self.total_len) + '\n'
         outstr += prefix + 'in_port: ' + str(self.in_port) + '\n'
@@ -1665,8 +1777,8 @@ class ofp_packet_in:
 class ofp_flow_stats:
     """Automatically generated Python class for ofp_flow_stats
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -1722,11 +1834,23 @@ class ofp_flow_stats:
         """
         if (len(binaryString) < 88):
             return binaryString
-        (self.length, self.table_id, self.pad) = struct.unpack_from("!HBB", binaryString, 0)
+        fmt = '!HBB'
+        start = 0
+        end = start + struct.calcsize(fmt)
+        (self.length, self.table_id, self.pad) = struct.unpack(fmt,  binaryString[start:end])
         self.match.unpack(binaryString[4:])
-        (self.duration_sec, self.duration_nsec, self.priority, self.idle_timeout, self.hard_timeout) = struct.unpack_from("!LLHHH", binaryString, 44)
-        (self.pad2[0], self.pad2[1], self.pad2[2], self.pad2[3], self.pad2[4], self.pad2[5]) = struct.unpack_from("!BBBBBB", binaryString, 58)
-        (self.cookie, self.packet_count, self.byte_count) = struct.unpack_from("!QQQ", binaryString, 64)
+        fmt = '!LLHHH'
+        start = 44
+        end = start + struct.calcsize(fmt)
+        (self.duration_sec, self.duration_nsec, self.priority, self.idle_timeout, self.hard_timeout) = struct.unpack(fmt,  binaryString[start:end])
+        fmt = '!BBBBBB'
+        start = 58
+        end = start + struct.calcsize(fmt)
+        (self.pad2[0], self.pad2[1], self.pad2[2], self.pad2[3], self.pad2[4], self.pad2[5]) = struct.unpack(fmt, binaryString[start:end])
+        fmt = '!QQQ'
+        start = 64
+        end = start + struct.calcsize(fmt)
+        (self.cookie, self.packet_count, self.byte_count) = struct.unpack(fmt,  binaryString[start:end])
         return binaryString[88:]
 
     def __len__(self):
@@ -1766,7 +1890,7 @@ class ofp_flow_stats:
         outstr += prefix + 'length: ' + str(self.length) + '\n'
         outstr += prefix + 'table_id: ' + str(self.table_id) + '\n'
         outstr += prefix + 'match: \n' 
-        self.match.show(prefix + '  ')
+        outstr += self.match.show(prefix + '  ')
         outstr += prefix + 'duration_sec: ' + str(self.duration_sec) + '\n'
         outstr += prefix + 'duration_nsec: ' + str(self.duration_nsec) + '\n'
         outstr += prefix + 'priority: ' + str(self.priority) + '\n'
@@ -1784,8 +1908,8 @@ class ofp_flow_stats:
 class ofp_flow_stats_request:
     """Automatically generated Python class for ofp_flow_stats_request
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -1823,7 +1947,10 @@ class ofp_flow_stats_request:
         if (len(binaryString) < 44):
             return binaryString
         self.match.unpack(binaryString[0:])
-        (self.table_id, self.pad, self.out_port) = struct.unpack_from("!BBH", binaryString, 40)
+        fmt = '!BBH'
+        start = 40
+        end = start + struct.calcsize(fmt)
+        (self.table_id, self.pad, self.out_port) = struct.unpack(fmt,  binaryString[start:end])
         return binaryString[44:]
 
     def __len__(self):
@@ -1849,7 +1976,7 @@ class ofp_flow_stats_request:
         """
         outstr = ''
         outstr += prefix + 'match: \n' 
-        self.match.show(prefix + '  ')
+        outstr += self.match.show(prefix + '  ')
         outstr += prefix + 'table_id: ' + str(self.table_id) + '\n'
         outstr += prefix + 'out_port: ' + str(self.out_port) + '\n'
         return outstr
@@ -1858,8 +1985,8 @@ class ofp_flow_stats_request:
 class ofp_action_vendor_header:
     """Automatically generated Python class for ofp_action_vendor_header
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -1892,7 +2019,10 @@ class ofp_action_vendor_header:
         """
         if (len(binaryString) < 8):
             return binaryString
-        (self.type, self.len, self.vendor) = struct.unpack_from("!HHL", binaryString, 0)
+        fmt = '!HHL'
+        start = 0
+        end = start + struct.calcsize(fmt)
+        (self.type, self.len, self.vendor) = struct.unpack(fmt,  binaryString[start:end])
         return binaryString[8:]
 
     def __len__(self):
@@ -1925,8 +2055,8 @@ class ofp_action_vendor_header:
 class ofp_stats_reply:
     """Automatically generated Python class for ofp_stats_reply
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -1967,7 +2097,10 @@ class ofp_stats_reply:
         if (len(binaryString) < 12):
             return binaryString
         self.header.unpack(binaryString[0:])
-        (self.type, self.flags) = struct.unpack_from("!HH", binaryString, 8)
+        fmt = '!HH'
+        start = 8
+        end = start + struct.calcsize(fmt)
+        (self.type, self.flags) = struct.unpack(fmt,  binaryString[start:end])
         return binaryString[12:]
 
     def __len__(self):
@@ -1994,7 +2127,7 @@ class ofp_stats_reply:
         """
         outstr = ''
         outstr += prefix + 'header: \n' 
-        self.header.show(prefix + '  ')
+        outstr += self.header.show(prefix + '  ')
         outstr += prefix + 'type: ' + str(self.type) + '\n'
         outstr += prefix + 'flags: ' + str(self.flags) + '\n'
         outstr += prefix + 'body: ' + str(self.body) + '\n'
@@ -2004,8 +2137,8 @@ class ofp_stats_reply:
 class ofp_queue_stats_request:
     """Automatically generated Python class for ofp_queue_stats_request
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -2044,9 +2177,18 @@ class ofp_queue_stats_request:
         """
         if (len(binaryString) < 8):
             return binaryString
-        (self.port_no,) = struct.unpack_from("!H", binaryString, 0)
-        (self.pad[0], self.pad[1]) = struct.unpack_from("!BB", binaryString, 2)
-        (self.queue_id,) = struct.unpack_from("!L", binaryString, 4)
+        fmt = '!H'
+        start = 0
+        end = start + struct.calcsize(fmt)
+        (self.port_no,) = struct.unpack(fmt, binaryString[start:end])
+        fmt = '!BB'
+        start = 2
+        end = start + struct.calcsize(fmt)
+        (self.pad[0], self.pad[1]) = struct.unpack(fmt, binaryString[start:end])
+        fmt = '!L'
+        start = 4
+        end = start + struct.calcsize(fmt)
+        (self.queue_id,) = struct.unpack(fmt, binaryString[start:end])
         return binaryString[8:]
 
     def __len__(self):
@@ -2078,8 +2220,8 @@ class ofp_queue_stats_request:
 class ofp_desc_stats:
     """Automatically generated Python class for ofp_desc_stats
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -2179,8 +2321,8 @@ class ofp_desc_stats:
 class ofp_queue_get_config_request:
     """Automatically generated Python class for ofp_queue_get_config_request
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -2222,8 +2364,14 @@ class ofp_queue_get_config_request:
         if (len(binaryString) < 12):
             return binaryString
         self.header.unpack(binaryString[0:])
-        (self.port,) = struct.unpack_from("!H", binaryString, 8)
-        (self.pad[0], self.pad[1]) = struct.unpack_from("!BB", binaryString, 10)
+        fmt = '!H'
+        start = 8
+        end = start + struct.calcsize(fmt)
+        (self.port,) = struct.unpack(fmt, binaryString[start:end])
+        fmt = '!BB'
+        start = 10
+        end = start + struct.calcsize(fmt)
+        (self.pad[0], self.pad[1]) = struct.unpack(fmt, binaryString[start:end])
         return binaryString[12:]
 
     def __len__(self):
@@ -2248,7 +2396,7 @@ class ofp_queue_get_config_request:
         """
         outstr = ''
         outstr += prefix + 'header: \n' 
-        self.header.show(prefix + '  ')
+        outstr += self.header.show(prefix + '  ')
         outstr += prefix + 'port: ' + str(self.port) + '\n'
         return outstr
 
@@ -2256,8 +2404,8 @@ class ofp_queue_get_config_request:
 class ofp_packet_queue:
     """Automatically generated Python class for ofp_packet_queue
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -2298,8 +2446,14 @@ class ofp_packet_queue:
         """
         if (len(binaryString) < 8):
             return binaryString
-        (self.queue_id, self.len) = struct.unpack_from("!LH", binaryString, 0)
-        (self.pad[0], self.pad[1]) = struct.unpack_from("!BB", binaryString, 6)
+        fmt = '!LH'
+        start = 0
+        end = start + struct.calcsize(fmt)
+        (self.queue_id, self.len) = struct.unpack(fmt,  binaryString[start:end])
+        fmt = '!BB'
+        start = 6
+        end = start + struct.calcsize(fmt)
+        (self.pad[0], self.pad[1]) = struct.unpack(fmt, binaryString[start:end])
         return binaryString[8:]
 
     def __len__(self):
@@ -2337,8 +2491,8 @@ class ofp_packet_queue:
 class ofp_action_dl_addr:
     """Automatically generated Python class for ofp_action_dl_addr
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -2382,9 +2536,18 @@ class ofp_action_dl_addr:
         """
         if (len(binaryString) < 16):
             return binaryString
-        (self.type, self.len) = struct.unpack_from("!HH", binaryString, 0)
-        (self.dl_addr[0], self.dl_addr[1], self.dl_addr[2], self.dl_addr[3], self.dl_addr[4], self.dl_addr[5]) = struct.unpack_from("!BBBBBB", binaryString, 4)
-        (self.pad[0], self.pad[1], self.pad[2], self.pad[3], self.pad[4], self.pad[5]) = struct.unpack_from("!BBBBBB", binaryString, 10)
+        fmt = '!HH'
+        start = 0
+        end = start + struct.calcsize(fmt)
+        (self.type, self.len) = struct.unpack(fmt,  binaryString[start:end])
+        fmt = '!BBBBBB'
+        start = 4
+        end = start + struct.calcsize(fmt)
+        (self.dl_addr[0], self.dl_addr[1], self.dl_addr[2], self.dl_addr[3], self.dl_addr[4], self.dl_addr[5]) = struct.unpack(fmt, binaryString[start:end])
+        fmt = '!BBBBBB'
+        start = 10
+        end = start + struct.calcsize(fmt)
+        (self.pad[0], self.pad[1], self.pad[2], self.pad[3], self.pad[4], self.pad[5]) = struct.unpack(fmt, binaryString[start:end])
         return binaryString[16:]
 
     def __len__(self):
@@ -2418,8 +2581,8 @@ class ofp_action_dl_addr:
 class ofp_queue_prop_header:
     """Automatically generated Python class for ofp_queue_prop_header
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -2457,8 +2620,14 @@ class ofp_queue_prop_header:
         """
         if (len(binaryString) < 8):
             return binaryString
-        (self.property, self.len) = struct.unpack_from("!HH", binaryString, 0)
-        (self.pad[0], self.pad[1], self.pad[2], self.pad[3]) = struct.unpack_from("!BBBB", binaryString, 4)
+        fmt = '!HH'
+        start = 0
+        end = start + struct.calcsize(fmt)
+        (self.property, self.len) = struct.unpack(fmt,  binaryString[start:end])
+        fmt = '!BBBB'
+        start = 4
+        end = start + struct.calcsize(fmt)
+        (self.pad[0], self.pad[1], self.pad[2], self.pad[3]) = struct.unpack(fmt, binaryString[start:end])
         return binaryString[8:]
 
     def __len__(self):
@@ -2490,8 +2659,8 @@ class ofp_queue_prop_header:
 class ofp_queue_prop_min_rate:
     """Automatically generated Python class for ofp_queue_prop_min_rate
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -2533,8 +2702,14 @@ class ofp_queue_prop_min_rate:
         if (len(binaryString) < 16):
             return binaryString
         self.prop_header.unpack(binaryString[0:])
-        (self.rate,) = struct.unpack_from("!H", binaryString, 8)
-        (self.pad[0], self.pad[1], self.pad[2], self.pad[3], self.pad[4], self.pad[5]) = struct.unpack_from("!BBBBBB", binaryString, 10)
+        fmt = '!H'
+        start = 8
+        end = start + struct.calcsize(fmt)
+        (self.rate,) = struct.unpack(fmt, binaryString[start:end])
+        fmt = '!BBBBBB'
+        start = 10
+        end = start + struct.calcsize(fmt)
+        (self.pad[0], self.pad[1], self.pad[2], self.pad[3], self.pad[4], self.pad[5]) = struct.unpack(fmt, binaryString[start:end])
         return binaryString[16:]
 
     def __len__(self):
@@ -2559,7 +2734,7 @@ class ofp_queue_prop_min_rate:
         """
         outstr = ''
         outstr += prefix + 'prop_header: \n' 
-        self.prop_header.show(prefix + '  ')
+        outstr += self.prop_header.show(prefix + '  ')
         outstr += prefix + 'rate: ' + str(self.rate) + '\n'
         return outstr
 
@@ -2567,8 +2742,8 @@ class ofp_queue_prop_min_rate:
 class ofp_action_enqueue:
     """Automatically generated Python class for ofp_action_enqueue
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -2609,9 +2784,18 @@ class ofp_action_enqueue:
         """
         if (len(binaryString) < 16):
             return binaryString
-        (self.type, self.len, self.port) = struct.unpack_from("!HHH", binaryString, 0)
-        (self.pad[0], self.pad[1], self.pad[2], self.pad[3], self.pad[4], self.pad[5]) = struct.unpack_from("!BBBBBB", binaryString, 6)
-        (self.queue_id,) = struct.unpack_from("!L", binaryString, 12)
+        fmt = '!HHH'
+        start = 0
+        end = start + struct.calcsize(fmt)
+        (self.type, self.len, self.port) = struct.unpack(fmt,  binaryString[start:end])
+        fmt = '!BBBBBB'
+        start = 6
+        end = start + struct.calcsize(fmt)
+        (self.pad[0], self.pad[1], self.pad[2], self.pad[3], self.pad[4], self.pad[5]) = struct.unpack(fmt, binaryString[start:end])
+        fmt = '!L'
+        start = 12
+        end = start + struct.calcsize(fmt)
+        (self.queue_id,) = struct.unpack(fmt, binaryString[start:end])
         return binaryString[16:]
 
     def __len__(self):
@@ -2647,8 +2831,8 @@ class ofp_action_enqueue:
 class ofp_switch_features:
     """Automatically generated Python class for ofp_switch_features
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -2699,9 +2883,18 @@ class ofp_switch_features:
         if (len(binaryString) < 32):
             return binaryString
         self.header.unpack(binaryString[0:])
-        (self.datapath_id, self.n_buffers, self.n_tables) = struct.unpack_from("!QLB", binaryString, 8)
-        (self.pad[0], self.pad[1], self.pad[2]) = struct.unpack_from("!BBB", binaryString, 21)
-        (self.capabilities, self.actions) = struct.unpack_from("!LL", binaryString, 24)
+        fmt = '!QLB'
+        start = 8
+        end = start + struct.calcsize(fmt)
+        (self.datapath_id, self.n_buffers, self.n_tables) = struct.unpack(fmt,  binaryString[start:end])
+        fmt = '!BBB'
+        start = 21
+        end = start + struct.calcsize(fmt)
+        (self.pad[0], self.pad[1], self.pad[2]) = struct.unpack(fmt, binaryString[start:end])
+        fmt = '!LL'
+        start = 24
+        end = start + struct.calcsize(fmt)
+        (self.capabilities, self.actions) = struct.unpack(fmt,  binaryString[start:end])
         return binaryString[32:]
 
     def __len__(self):
@@ -2733,7 +2926,7 @@ class ofp_switch_features:
         """
         outstr = ''
         outstr += prefix + 'header: \n' 
-        self.header.show(prefix + '  ')
+        outstr += self.header.show(prefix + '  ')
         outstr += prefix + 'datapath_id: ' + str(self.datapath_id) + '\n'
         outstr += prefix + 'n_buffers: ' + str(self.n_buffers) + '\n'
         outstr += prefix + 'n_tables: ' + str(self.n_tables) + '\n'
@@ -2748,8 +2941,8 @@ class ofp_switch_features:
 class ofp_match:
     """Automatically generated Python class for ofp_match
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -2761,7 +2954,7 @@ class ofp_match:
         self.dl_dst= [0,0,0,0,0,0]
         self.dl_vlan = 0
         self.dl_vlan_pcp = 0
-        self.pad1= [0]
+        self.pad1 = 0
         self.dl_type = 0
         self.nw_tos = 0
         self.nw_proto = 0
@@ -2782,10 +2975,6 @@ class ofp_match:
             return (False, "self.dl_dst is not list as expected.")
         if(len(self.dl_dst) != 6):
             return (False, "self.dl_dst is not of size 6 as expected.")
-        if(not isinstance(self.pad1, list)):
-            return (False, "self.pad1 is not list as expected.")
-        if(len(self.pad1) != 1):
-            return (False, "self.pad1 is not of size 1 as expected.")
         if(not isinstance(self.pad2, list)):
             return (False, "self.pad2 is not list as expected.")
         if(len(self.pad2) != 2):
@@ -2803,9 +2992,7 @@ class ofp_match:
         packed += struct.pack("!LH", self.wildcards, self.in_port)
         packed += struct.pack("!BBBBBB", self.dl_src[0], self.dl_src[1], self.dl_src[2], self.dl_src[3], self.dl_src[4], self.dl_src[5])
         packed += struct.pack("!BBBBBB", self.dl_dst[0], self.dl_dst[1], self.dl_dst[2], self.dl_dst[3], self.dl_dst[4], self.dl_dst[5])
-        packed += struct.pack("!HB", self.dl_vlan, self.dl_vlan_pcp)
-        packed += struct.pack("!B", self.pad1[0])
-        packed += struct.pack("!HBB", self.dl_type, self.nw_tos, self.nw_proto)
+        packed += struct.pack("!HBBHBB", self.dl_vlan, self.dl_vlan_pcp, self.pad1, self.dl_type, self.nw_tos, self.nw_proto)
         packed += struct.pack("!BB", self.pad2[0], self.pad2[1])
         packed += struct.pack("!LLHH", self.nw_src, self.nw_dst, self.tp_src, self.tp_dst)
         return packed
@@ -2817,14 +3004,30 @@ class ofp_match:
         """
         if (len(binaryString) < 40):
             return binaryString
-        (self.wildcards, self.in_port) = struct.unpack_from("!LH", binaryString, 0)
-        (self.dl_src[0], self.dl_src[1], self.dl_src[2], self.dl_src[3], self.dl_src[4], self.dl_src[5]) = struct.unpack_from("!BBBBBB", binaryString, 6)
-        (self.dl_dst[0], self.dl_dst[1], self.dl_dst[2], self.dl_dst[3], self.dl_dst[4], self.dl_dst[5]) = struct.unpack_from("!BBBBBB", binaryString, 12)
-        (self.dl_vlan, self.dl_vlan_pcp) = struct.unpack_from("!HB", binaryString, 18)
-        (self.pad1[0]) = struct.unpack_from("!B", binaryString, 21)
-        (self.dl_type, self.nw_tos, self.nw_proto) = struct.unpack_from("!HBB", binaryString, 22)
-        (self.pad2[0], self.pad2[1]) = struct.unpack_from("!BB", binaryString, 26)
-        (self.nw_src, self.nw_dst, self.tp_src, self.tp_dst) = struct.unpack_from("!LLHH", binaryString, 28)
+        fmt = '!LH'
+        start = 0
+        end = start + struct.calcsize(fmt)
+        (self.wildcards, self.in_port) = struct.unpack(fmt,  binaryString[start:end])
+        fmt = '!BBBBBB'
+        start = 6
+        end = start + struct.calcsize(fmt)
+        (self.dl_src[0], self.dl_src[1], self.dl_src[2], self.dl_src[3], self.dl_src[4], self.dl_src[5]) = struct.unpack(fmt, binaryString[start:end])
+        fmt = '!BBBBBB'
+        start = 12
+        end = start + struct.calcsize(fmt)
+        (self.dl_dst[0], self.dl_dst[1], self.dl_dst[2], self.dl_dst[3], self.dl_dst[4], self.dl_dst[5]) = struct.unpack(fmt, binaryString[start:end])
+        fmt = '!HBBHBB'
+        start = 18
+        end = start + struct.calcsize(fmt)
+        (self.dl_vlan, self.dl_vlan_pcp, self.pad1, self.dl_type, self.nw_tos, self.nw_proto) = struct.unpack(fmt,  binaryString[start:end])
+        fmt = '!BB'
+        start = 26
+        end = start + struct.calcsize(fmt)
+        (self.pad2[0], self.pad2[1]) = struct.unpack(fmt, binaryString[start:end])
+        fmt = '!LLHH'
+        start = 28
+        end = start + struct.calcsize(fmt)
+        (self.nw_src, self.nw_dst, self.tp_src, self.tp_dst) = struct.unpack(fmt,  binaryString[start:end])
         return binaryString[40:]
 
     def __len__(self):
@@ -2879,8 +3082,8 @@ class ofp_match:
 class ofp_header:
     """Automatically generated Python class for ofp_header
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -2916,7 +3119,10 @@ class ofp_header:
         """
         if (len(binaryString) < 8):
             return binaryString
-        (self.version, self.type, self.length, self.xid) = struct.unpack_from("!BBHL", binaryString, 0)
+        fmt = '!BBHL'
+        start = 0
+        end = start + struct.calcsize(fmt)
+        (self.version, self.type, self.length, self.xid) = struct.unpack(fmt,  binaryString[start:end])
         return binaryString[8:]
 
     def __len__(self):
@@ -2951,8 +3157,8 @@ class ofp_header:
 class ofp_vendor_header:
     """Automatically generated Python class for ofp_vendor_header
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -2989,7 +3195,10 @@ class ofp_vendor_header:
         if (len(binaryString) < 12):
             return binaryString
         self.header.unpack(binaryString[0:])
-        (self.vendor,) = struct.unpack_from("!L", binaryString, 8)
+        fmt = '!L'
+        start = 8
+        end = start + struct.calcsize(fmt)
+        (self.vendor,) = struct.unpack(fmt, binaryString[start:end])
         return binaryString[12:]
 
     def __len__(self):
@@ -3013,7 +3222,7 @@ class ofp_vendor_header:
         """
         outstr = ''
         outstr += prefix + 'header: \n' 
-        self.header.show(prefix + '  ')
+        outstr += self.header.show(prefix + '  ')
         outstr += prefix + 'vendor: ' + str(self.vendor) + '\n'
         return outstr
 
@@ -3021,8 +3230,8 @@ class ofp_vendor_header:
 class ofp_packet_out:
     """Automatically generated Python class for ofp_packet_out
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -3064,7 +3273,10 @@ class ofp_packet_out:
         if (len(binaryString) < 16):
             return binaryString
         self.header.unpack(binaryString[0:])
-        (self.buffer_id, self.in_port, self.actions_len) = struct.unpack_from("!LHH", binaryString, 8)
+        fmt = '!LHH'
+        start = 8
+        end = start + struct.calcsize(fmt)
+        (self.buffer_id, self.in_port, self.actions_len) = struct.unpack(fmt,  binaryString[start:end])
         return binaryString[16:]
 
     def __len__(self):
@@ -3093,7 +3305,7 @@ class ofp_packet_out:
         """
         outstr = ''
         outstr += prefix + 'header: \n' 
-        self.header.show(prefix + '  ')
+        outstr += self.header.show(prefix + '  ')
         outstr += prefix + 'buffer_id: ' + str(self.buffer_id) + '\n'
         outstr += prefix + 'in_port: ' + str(self.in_port) + '\n'
         outstr += prefix + 'actions_len: ' + str(self.actions_len) + '\n'
@@ -3106,8 +3318,8 @@ class ofp_packet_out:
 class ofp_action_nw_addr:
     """Automatically generated Python class for ofp_action_nw_addr
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -3140,7 +3352,10 @@ class ofp_action_nw_addr:
         """
         if (len(binaryString) < 8):
             return binaryString
-        (self.type, self.len, self.nw_addr) = struct.unpack_from("!HHL", binaryString, 0)
+        fmt = '!HHL'
+        start = 0
+        end = start + struct.calcsize(fmt)
+        (self.type, self.len, self.nw_addr) = struct.unpack(fmt,  binaryString[start:end])
         return binaryString[8:]
 
     def __len__(self):
@@ -3173,8 +3388,8 @@ class ofp_action_nw_addr:
 class ofp_action_vlan_pcp:
     """Automatically generated Python class for ofp_action_vlan_pcp
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -3213,8 +3428,14 @@ class ofp_action_vlan_pcp:
         """
         if (len(binaryString) < 8):
             return binaryString
-        (self.type, self.len, self.vlan_pcp) = struct.unpack_from("!HHB", binaryString, 0)
-        (self.pad[0], self.pad[1], self.pad[2]) = struct.unpack_from("!BBB", binaryString, 5)
+        fmt = '!HHB'
+        start = 0
+        end = start + struct.calcsize(fmt)
+        (self.type, self.len, self.vlan_pcp) = struct.unpack(fmt,  binaryString[start:end])
+        fmt = '!BBB'
+        start = 5
+        end = start + struct.calcsize(fmt)
+        (self.pad[0], self.pad[1], self.pad[2]) = struct.unpack(fmt, binaryString[start:end])
         return binaryString[8:]
 
     def __len__(self):
@@ -3248,8 +3469,8 @@ class ofp_action_vlan_pcp:
 class ofp_flow_mod:
     """Automatically generated Python class for ofp_flow_mod
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -3301,7 +3522,10 @@ class ofp_flow_mod:
             return binaryString
         self.header.unpack(binaryString[0:])
         self.match.unpack(binaryString[8:])
-        (self.cookie, self.command, self.idle_timeout, self.hard_timeout, self.priority, self.buffer_id, self.out_port, self.flags) = struct.unpack_from("!QHHHHLHH", binaryString, 48)
+        fmt = '!QHHHHLHH'
+        start = 48
+        end = start + struct.calcsize(fmt)
+        (self.cookie, self.command, self.idle_timeout, self.hard_timeout, self.priority, self.buffer_id, self.out_port, self.flags) = struct.unpack(fmt,  binaryString[start:end])
         return binaryString[72:]
 
     def __len__(self):
@@ -3336,9 +3560,9 @@ class ofp_flow_mod:
         """
         outstr = ''
         outstr += prefix + 'header: \n' 
-        self.header.show(prefix + '  ')
+        outstr += self.header.show(prefix + '  ')
         outstr += prefix + 'match: \n' 
-        self.match.show(prefix + '  ')
+        outstr += self.match.show(prefix + '  ')
         outstr += prefix + 'cookie: ' + str(self.cookie) + '\n'
         outstr += prefix + 'command: ' + str(self.command) + '\n'
         outstr += prefix + 'idle_timeout: ' + str(self.idle_timeout) + '\n'
@@ -3356,8 +3580,8 @@ class ofp_flow_mod:
 class ofp_error_msg:
     """Automatically generated Python class for ofp_error_msg
 
-    Date 2010-08-09
-    Created by of.pythonize.pythonizer
+    Date 2011-02-04
+    Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
         """Initialize
@@ -3398,7 +3622,10 @@ class ofp_error_msg:
         if (len(binaryString) < 12):
             return binaryString
         self.header.unpack(binaryString[0:])
-        (self.type, self.code) = struct.unpack_from("!HH", binaryString, 8)
+        fmt = '!HH'
+        start = 8
+        end = start + struct.calcsize(fmt)
+        (self.type, self.code) = struct.unpack(fmt,  binaryString[start:end])
         return binaryString[12:]
 
     def __len__(self):
@@ -3425,7 +3652,7 @@ class ofp_error_msg:
         """
         outstr = ''
         outstr += prefix + 'header: \n' 
-        self.header.show(prefix + '  ')
+        outstr += self.header.show(prefix + '  ')
         outstr += prefix + 'type: ' + str(self.type) + '\n'
         outstr += prefix + 'code: ' + str(self.code) + '\n'
         outstr += prefix + 'data: ' + str(self.data) + '\n'
