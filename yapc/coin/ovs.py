@@ -20,15 +20,19 @@ class switch(yapc.component, ovs.switch):
     @author ykk
     @date Feb 2011
     """
-    def __init__(self, conn):
+    def __init__(self, conn, host='127.0.0.1', port=6633):
         """Initialize switch fabric
 
         @param conn reference to connections
+        @param host host to connect to
+        @param port port number to connect to
         """
         ovs.switch.__init__(self)
-        self.add_dp(COIN_DP_NAME)
         ##Reference to connections
         self.conn = conn
+        #Add datapath and connect
+        self.add_dp(COIN_DP_NAME)
+        self.datapaths[COIN_DP_NAME].connect(host,port)
 
     def processevent(self, event):
         """Process messages

@@ -120,7 +120,8 @@ class datapath:
         """
         self.connected = True
         return cmd.run_cmd_screen("coin-ovs-"+self.name, 
-                                  CONNECT+" tcp:"+controller+":"+port,
+                                  CONNECT+" "+self.name+\
+                                      " tcp:"+controller+":"+str(port),
                                   self.__class__.__name__)
 
     def disconnect(self):
@@ -128,5 +129,5 @@ class datapath:
         """
         self.connected = False
         return cmd.run_cmd("screen -d -r coin-ovs-"+self.name+\
-                               " -X quit")
-    
+                               " -X quit",
+                           self.__class__.__name__)
