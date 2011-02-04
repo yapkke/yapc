@@ -23,8 +23,8 @@ def usage():
     print  "Commands:"
     print "get_mode\n\tGet current mode of COIN"
     print "get_interfaces\n\tGet current interfaces of device"
-    print "add_dp [name]\n\tAdd datapath with name"
-    print "del_dp [name]\n\tDelete datapath with name"
+    print "add_if [name]\n\tAdd interface to COIN"
+    print "del_if [name]\n\tDelete interface from COIN"
 
 #Parse options and arguments
 try:
@@ -57,9 +57,9 @@ if not (len(args) >= 1):
     usage()
     sys.exit(2)
 
-if (args[0] == "add_dp" or args[0] == "del_dp"):
+if (args[0] == "add_if" or args[0] == "del_if"):
     if not (len(args) >= 2):
-        print "Missing name for datapath"
+        print "Missing name for interface"
         usage()
         sys.exit(2)
 
@@ -73,7 +73,7 @@ else:
 msg = {}
 msg["type"] = "coin"
 msg["command"] = args[0]
-if (args[0] == "add_dp" or args[0] == "del_dp"):
+if (args[0] == "add_if" or args[0] == "del_if"):
     msg["subtype"] = "ovs"
     msg["name"] = args[1]
 else:

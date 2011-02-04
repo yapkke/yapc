@@ -99,7 +99,7 @@ class datapath:
         @return command's exit status
         """
         self.interfaces.append(intf)
-        return cmd.run_cmd(DPCTL+" add-if "+self.name+" "+name,
+        return cmd.run_cmd(DPCTL+" add-if "+self.name+" "+intf,
                            self.__class__.__name__)
 
     def del_if(self, intf):
@@ -109,7 +109,7 @@ class datapath:
         @return command's exit status
         """
         self.interfaces.remove(intf)
-        return cmd.run_cmd(DPCTL+" del-if "+self.name+" "+name,
+        return cmd.run_cmd(DPCTL+" del-if "+self.name+" "+intf,
                            self.__class__.__name__)
 
     def connect(self, controller, port=6633):

@@ -12,6 +12,8 @@ import yapc.ofcomm as ofcomm
 import yapc.output as output
 import simplejson
 
+COIN_DP_NAME = "dp0"
+
 class switch(yapc.component, ovs.switch):
     """Class to implement switch fabric using OVS
 
@@ -24,6 +26,7 @@ class switch(yapc.component, ovs.switch):
         @param conn reference to connections
         """
         ovs.switch.__init__(self)
+        self.add_dp(COIN_DP_NAME)
         ##Reference to connections
         self.conn = conn
 
@@ -65,11 +68,11 @@ class switch(yapc.component, ovs.switch):
         reply["type"] = "coin"
         reply["subtype"] = "ovs"
 
-        if (event.message["command"] == "add_dp"):
-            self.add_dp(event.message["name"])
+        if (event.message["command"] == "add_if"):
+            self.datapaths[COIN_DP_NAME].add_if(event.message["name"])
             reply["executed"] = True
-        elif (event.message["command"] == "del_dp"):
-            self.del_dp(event.message["name"])
+        elif (event.message["command"] == "del_if"):
+            self.datapaths[COIN_DP_NAME].del_if(event.message["name"])
             reply["executed"] = True
         else:
             reply["error"] = "Unknown command"
