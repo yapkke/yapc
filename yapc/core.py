@@ -79,7 +79,7 @@ class eventdispatcher:
                 
 
 class server:
-    """Daemon for COIN core
+    """Daemon for yapc core
 
     Referred to Sander Marechal's simple unix/linux daemon in Python.
 
@@ -162,7 +162,7 @@ class server:
     def signalhandler(self, signal, frame):
         """Handle signal
         """
-        output.info("Exiting COIN server...", self.__class__.__name__)
+        output.info("Exiting yapc...", self.__class__.__name__)
         for shutdown in self.scheduler.cleanups:
             shutdown.cleanup()
         sys.exit(0)
