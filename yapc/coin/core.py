@@ -102,7 +102,7 @@ class server(yapc.component):
             output.warn("Error of type "+str(oem.type)+" code "+str(oem.code),
                         self.__class__.__name__)
         else:
-            output.dbg("Receive message "+event.header.show().strip().replace("\n",";"),
+            output.vdbg("Receive message "+event.header.show().strip().replace("\n",";"),
                        self.__class__.__name__)
 
     def __processjson(self, event):
