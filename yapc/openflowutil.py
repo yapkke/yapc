@@ -82,9 +82,23 @@ def __get_ip_ofp_match(ofm, ippkt):
         __get_tcp_ofp_match(ofm, ippkt.data)
     elif (isinstance(ippkt.data, dpkt.udp.UDP)):
         __get_udp_ofp_match(ofm, ippkt.data)
+    elif (isinstance(ippkt.data, dpkt.icmp.ICMP)):
+        __get_icmp_ofp_match(ofm, ippkt.data)
 
     return ofm
     
+def __get_icmp_ofp_match(ofm, icmppkt):
+    """Get ofp_match for ICMP
+
+    @param ofm ofp_match to populate
+    @param icmppkt dpkt's ICMP packet
+    @return ofp match
+    """
+    #Get ICMP
+    ofm.tp_src = icmppkt.code
+    ofm.tp_dst = icmppkt.code
+    return ofm
+
 def __get_tcp_ofp_match(ofm, tcppkt):
     """Get ofp_match for TCP
 
