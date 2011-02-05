@@ -10,6 +10,7 @@ import yapc.output as output
 import yapc.coin.core as coin
 import yapc.coin.ovs as coinovs
 import yapc.netstate.switches as switches
+import yapc.forwarding.default as default
 import sys
 import getopt
 
@@ -89,6 +90,10 @@ ovs = coinovs.switch(coinserver)
 server.scheduler.registereventhandler(jsoncomm.message.name, ovs)
 server.scheduler.registereventhandler(ofcomm.message.name, ovs)
 server.scheduler.registercleanup(ovs)
+
+#Drop unhandled flows
+df = default.dropflow(coinserver)
+server.scheduler.registereventhandler(ofcomm.message.name, df)
 
 #Start
 if (daemon):
