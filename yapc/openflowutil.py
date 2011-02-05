@@ -11,6 +11,16 @@ import socket
 import yapc.pyopenflow as pyof
 import yapc.output as output
 
+##Next transaction id to use
+last_xid = 0
+
+def get_xid():
+    """Retrieve XID to use
+    """
+    global last_xid
+    last_xid += 1
+    return last_xid
+
 def get_ofp_match(in_port, packet):
     """Generate ofp_match from raw packet
 
