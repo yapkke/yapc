@@ -66,7 +66,9 @@ for opt,arg in opts:
         print "Unhandled option :"+opt
         sys.exit(2)
 
-#Set output mode
+#Configure logging
+if (daemon):
+    output.set_daemon_log()
 output.set_mode(debug)
 
 #Create yapc base

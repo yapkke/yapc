@@ -8,7 +8,7 @@
 # @author ykk
 # @date Aug 2009
 #
-import logging
+import logging, logging.handlers
 
 ##Level of messages
 global LEVELS 
@@ -32,8 +32,15 @@ toconsole = True
 #Stream handler
 global console
 console = logging.StreamHandler()
-console.setFormatter(logging.Formatter("%(asctime)s - %(name)s - "\
-                                           "%(levelname)s -  %(message)s"))
+format = logging.Formatter("%(asctime)s - %(name)s - "\
+                               "%(levelname)s -  %(message)s")
+console.setFormatter(format)
+
+def set_daemon_log():
+    """Set logging for daemon
+    """
+    global toconsole
+    toconsole = False
 
 def __create_logger(who, level):
     """Create logger for who
