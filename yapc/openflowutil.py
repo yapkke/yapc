@@ -44,10 +44,25 @@ def get_ofp_match(in_port, packet):
     #Get IP if any
     if (isinstance(pkt.data, dpkt.ip.IP)):
         __get_ip_ofp_match(ofm, pkt.data)
+    elif (isinstance(pkt.data, dpkt.arp.ARP)):
+        __get_arp_ofp_match(ofm, pkt.data)
 
-    #fixme (parse ARP)
+    return (ofm, pkt)
+
+def __get_arp_ofp_match(ofm, arppkt):
+    """Get ofp_match for ARP
+
+    @param ofm ofp_match to populate
+    @param arppkt dpkt's ARP packet
+    @return ofp match
+    """
+    #Get ARP
+    ofm.nw_src = struct.unpack("!L",arppkt.spa)[0]
+    ofm.nw_dst = struct.unpack("!L",arppkt.tpa)[0]   
+    ofm.nw_proto = arppkt.op
 
     return ofm
+
 
 def __get_ip_ofp_match(ofm, ippkt):
     """Get ofp_match for IP
