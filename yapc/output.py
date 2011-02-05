@@ -8,65 +8,88 @@
 # @author ykk
 # @date Aug 2009
 #
+import logging
 
-##Various output modes
-MODE = {}
-MODE["ERR"] = 0
-MODE["WARN"] = 1
-MODE["INFO"] = 2
-MODE["DBG"] = 3
-MODE["VDBG"] = 4
+##Level of messages
+global LEVELS 
+LEVELS = {"ERR": 40,
+          "WARN": 30,
+          "INFO": 20,
+          "DBG": 10,
+          "VDBG": 1}
+
+##Dictionary of loggers
+loggers = {}
 
 #Global mode
 global output_mode
 output_mode = None
+
+#Indicate if log to console
+global toconsole
+toconsole = True
+
+#Stream handler
+global console
+console = logging.StreamHandler()
+console.setFormatter(logging.Formatter("%(asctime)s - %(name)s - "\
+                                           "%(levelname)s -  %(message)s"))
+
+def __create_logger(who, level):
+    """Create logger for who
+
+    @param who module name for logging
+    @param level level to log
+    """
+    global loggers
+    global toconsole
+    global LEVELS
+    loggers[who] = logging.getLogger(who)
+    loggers[who].setLevel(level)
+    if (toconsole):
+        loggers[who].addHandler(console)
+    loggers["generic"].log(LEVELS["VDBG"],
+                           "Add logger for "+who+" at level "+str(level))
 
 def set_mode(msg_mode, who=None):
     """Set the message mode for who
     If who is None, set global mode
     """
     global output_mode
-    if (output_mode == None):
-        output_mode = {}
-        output_mode["global"] = MODE["WARN"]
-        output_mode["VDBG"] = []
-        output_mode["DBG"] = []
-        output_mode["INFO"] = []
-        output_mode["WARN"] = []
+    global LEVELS
+    global loggers
 
-    #Set global mode
+    #Global mode
+    if (output_mode == None):
+        output_mode = "WARN"
     if (who == None):
-        output_mode["global"] = MODE[msg_mode]
-        return
-    
+        output_mode = msg_mode
+        __create_logger("generic", LEVELS[output_mode])
+
     #Individual mode
-    if (msg_mode == "ERR"):
-        return
-    for mode in ["WARN","INFO","DBG","VDBG"]:
-        if (not (who in mode[mode])):
-            mode[mode].append(who)
-        if (msg_mode == mode):
-            return
+    if (who != None and who not in loggers):
+        __create_logger(who, LEVELS[msg_mode])
     
 def output(msg_mode, msg, who=None):
     """Print message
     """
     global output_mode
+    global LEVELS
+    global loggers
     if (output_mode == None):
         raise RuntimeException("Output mode is not set")
 
     #Indicate who string
     if (who == None):
-        whostr = ""
-    else:
-        whostr = who+":"
-
-    #Print output 
-    if (MODE[msg_mode] <= output_mode["global"]):
-        print msg_mode.ljust(4, ' ')+"|"+whostr+msg
-    elif (who in output_mode[msg_mode]):
-        print msg_mode.ljust(4, ' ')+"|"+whostr+msg
+        who = "generic"
+    
+    #Ensure logger exists
+    if (who not in loggers):
+        __create_logger(who, LEVELS[output_mode])
         
+    #Log message
+    loggers[who].log(LEVELS[msg_mode], msg)
+         
 def err(msg, who=None):
     """Print error messages
     """
