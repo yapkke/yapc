@@ -198,6 +198,7 @@ class ofserversocket(comm.sockmanager):
         """Receive new connection
         """
         client, address = sock.accept()
-        client.setblocking(0)
+        if (not comm.BLOCKING):
+            client.setblocking(0)
         recvthread.addconnection(client, ofsockmanager(client, self.scheduler))
         output.dbg("Connection to "+str(address)+" added", self.__class__.__name__)

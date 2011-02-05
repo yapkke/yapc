@@ -9,6 +9,8 @@ import threading
 import time
 import yapc.output as output
 
+BLOCKING = False
+
 class sockmanager:
     """Class for managing sockets
 
