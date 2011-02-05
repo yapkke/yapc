@@ -30,6 +30,7 @@ You need Python the dependencies listed below.  That's it.
 Dependencies:
 * simplejson: for JSON message parsing
 * netifaces: for network interfaces
+* dpkt: for parsing packets
 
 YAPC also depends on other external packages to generate some of the
 libraries used.  They are listed as follows, though you dun really
