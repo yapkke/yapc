@@ -53,8 +53,10 @@ for opt,arg in opts:
         print "Unhandled option :"+opt
         sys.exit(2)
 
-if not (len(args) >= 1):
-    print "Missing command!"
+if (len(args) < 1 or
+    args[0] not in ["add_if","del_if","get_interfaces",
+                    "get_eth_interfaces", "get_mode"]):
+    print "Missing or unknown command!"
     usage()
     sys.exit(2)
 
