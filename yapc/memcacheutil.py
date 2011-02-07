@@ -12,18 +12,24 @@ import yapc.output as output
 global memcache_client
 memcache_client = None
 
-##Server address
-MEMCACHE_SERVER = ['127.0.0.1:11211']
+##Servers address
+global memcache_servers
+memcache_servers = ['127.0.0.1:11211']
 
-def get_client(servers=MEMCACHE_SERVER, debug=1):
+##Memcache debug
+DEBUG = 0
+
+def get_client():
     """Get client for memcache
 
     @param servers list of servers
     @param debug debug mode
     """
     global memcache_client
+    global memcache_servers
     if (memcache_client== None):
-        memcache_client = memcache.Client(servers, debug)
+        memcache_client = memcache.Client(memcache_servers,
+                                          DEBUG)
     return memcache_client
 
 def set(name, value):
