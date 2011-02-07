@@ -8,7 +8,6 @@
 import yapc.local.ovs as ovs
 import yapc.interface as yapc
 import yapc.jsoncomm as jsoncomm
-import yapc.ofcomm as ofcomm
 import yapc.output as output
 import simplejson
 
@@ -36,7 +35,6 @@ class switch(yapc.component, ovs.switch):
         self.datapaths[COIN_DP_NAME].connect(host,port)
 
         server.scheduler.registereventhandler(jsoncomm.message.name, self)
-        server.scheduler.registereventhandler(ofcomm.message.name, self)
         server.scheduler.registercleanup(self)
 
     def processevent(self, event):
@@ -46,8 +44,6 @@ class switch(yapc.component, ovs.switch):
         """
         if isinstance(event, jsoncomm.message):
             self.__process_json(event)
-        elif isinstance(event, ofcomm.message):
-            pass
         
         return True
 
