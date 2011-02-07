@@ -11,7 +11,6 @@ import yapc.jsoncomm as jsoncomm
 import yapc.output as output
 import yapc.netstate.switches as swstate
 import yapc.memcacheutil as mc
-import yapc.parseutil as pu
 import simplejson
 import string
 
@@ -97,9 +96,7 @@ class switch(yapc.component, ovs.switch):
                                f.show("\t"),
                            self.__class__.__name__)
                 for p in f.ports:
-                    output.dbg(pu.get_null_terminated_str(p.name),
-                               self.__class__.__name__)
-                    reply["interfaces"].append(pu.get_null_terminated_str(p.name))
+                    reply["interfaces"].append(p.name)
             else:
                 output.warn("No datapaths connected to COIN",
                             self.__class__.__name__)
