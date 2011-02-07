@@ -29,11 +29,17 @@ class dp_features(yapc.component):
     DP_LIST = "dp_features_list"
     ##Key prefix in memcache for features (with socket appended to the end)
     DP_FEATURES_KEY_PREFIX = "dp_features_"
-    def __init__(self):
+    def __init__(self, server):
         """Initialize
+
+        @param server yapc core
         """
         #Start memcache
         mc.get_client()
+
+        server.scheduler.registereventhandler(ofcomm.message.name, self)
+        server.scheduler.registereventhandler(comm.event.name, self)
+
 
     def get_key(sock):
         """Get key to retrieve key for datapath features

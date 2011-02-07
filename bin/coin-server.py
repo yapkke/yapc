@@ -4,7 +4,6 @@
 # @date Oct 2010
 #
 import yapc.core as core
-import yapc.comm as comm
 import yapc.ofcomm as ofcomm
 import yapc.jsoncomm as jsoncomm
 import yapc.output as output
@@ -78,26 +77,14 @@ ofcomm.ofserver().bind(server)
 jsoncomm.jsonserver(file=sock, forcebind=forcejson).bind(server)
 
 #COIN main server, maintaining connections
-coinserver = coin.server()
-server.scheduler.registereventhandler(ofcomm.message.name,
-                                      coinserver)
-server.scheduler.registereventhandler(jsoncomm.message.name,
-                                      coinserver)
-
+coinserver = coin.server(server)
 #Network status
-sw = switches.dp_features()
-server.scheduler.registereventhandler(ofcomm.message.name, sw)
-server.scheduler.registereventhandler(comm.event.name, sw)
-
+sw = switches.dp_features(server)
 #OVS fabric manager
-ovs = coinovs.switch(coinserver)
-server.scheduler.registereventhandler(jsoncomm.message.name, ovs)
-server.scheduler.registereventhandler(ofcomm.message.name, ovs)
-server.scheduler.registercleanup(ovs)
+ovs = coinovs.switch(server, coinserver)
 
 #Drop unhandled flows
-df = default.dropflow(coinserver)
-server.scheduler.registereventhandler(ofcomm.message.name, df)
+df = default.dropflow(server, coinserver)
 
 #Start
 if (daemon):

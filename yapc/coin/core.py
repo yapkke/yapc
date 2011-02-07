@@ -22,8 +22,10 @@ class server(yapc.component):
     @author ykk
     @date Oct 2010
     """
-    def __init__(self):
+    def __init__(self, server):
         """Initialize
+
+        @param server yapc core server/scheduler
         """
         ##OpenFlow connections
         self.connections = ofcomm.connections()
@@ -34,7 +36,12 @@ class server(yapc.component):
         self.config["mode"] = None
         ##Interface Manager
         self.ifmgr = loifaces.interfacemgr()
-        
+
+        server.scheduler.registereventhandler(ofcomm.message.name,
+                                              self)
+        server.scheduler.registereventhandler(jsoncomm.message.name,
+                                              self)
+
     def set_config(self, name, val):
         """Set config
 

@@ -18,11 +18,16 @@ class dropflow(yapc.component):
     @author ykk
     @date Feb 2011
     """
-    def __init__(self, conn):
+    def __init__(self, server, conn):
         """Initialize
+
+        @param server yapc core
+        @param conn reference to connections
         """
         ##Reference to connections
         self.conn = conn
+
+        server.scheduler.registereventhandler(ofcomm.message.name, self)
 
     def processevent(self, event):
         """Event handler
