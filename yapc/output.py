@@ -21,6 +21,9 @@ LEVELS = {"ERR": 40,
 ##Dictionary of loggers
 loggers = {}
 
+##Generic log name
+GENERIC_LOG_NAME = "generic"
+
 #Global mode
 global output_mode
 output_mode = None
@@ -68,7 +71,7 @@ def __create_logger(who, level):
                                                            backupCount=10)
             logfile.setFormatter(format)
         loggers[who].addHandler(logfile)
-    loggers["generic"].log(LEVELS["VDBG"],
+    loggers[GENERIC_LOG_NAME].log(LEVELS["VDBG"],
                            "Add logger for "+who+" at level "+str(level))
 
 def set_mode(msg_mode, who=None):
@@ -84,7 +87,7 @@ def set_mode(msg_mode, who=None):
         output_mode = "WARN"
     if (who == None):
         output_mode = msg_mode
-        __create_logger("generic", LEVELS[output_mode])
+        __create_logger(GENERIC_LOG_NAME, LEVELS[output_mode])
 
     #Individual mode
     if (who != None and who not in loggers):
@@ -101,7 +104,7 @@ def output(msg_mode, msg, who=None):
 
     #Indicate who string
     if (who == None):
-        who = "generic"
+        who = GENERIC_LOG_NAME
     
     #Ensure logger exists
     if (who not in loggers):
