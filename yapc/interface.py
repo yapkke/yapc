@@ -42,3 +42,11 @@ class cleanup:
         """Dummy function to cleanup
         """
         return
+
+class static_callable:
+    """Class to allow static function in Python
+    """
+    def __init__(self, function):
+        """Initialize
+        """
+        self.__call__ = function
