@@ -80,6 +80,9 @@ class eventdispatcher:
                         if (not handler.processevent(event)):
                             break;
                     except:
+                        output.output("CRITICAL",
+                                      "Error occurs here... going to clean up",
+                                      self.__class__.__name__)
                         self.cleanup()
                         raise
             except KeyError:

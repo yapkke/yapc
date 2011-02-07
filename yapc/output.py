@@ -12,7 +12,8 @@ import logging, logging.handlers
 
 ##Level of messages
 global LEVELS 
-LEVELS = {"ERR": 40,
+LEVELS = {"CRITICAL":50,
+          "ERR": 40,
           "WARN": 30,
           "INFO": 20,
           "DBG": 10,
