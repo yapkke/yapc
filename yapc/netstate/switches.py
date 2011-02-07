@@ -7,6 +7,7 @@
 #
 import yapc.interface as yapc
 import yapc.ofcomm as ofcomm
+import yapc.comm as comm
 import yapc.output as output
 import yapc.pyopenflow as pyof
 import yapc.memcacheutil as mc
@@ -14,7 +15,8 @@ import yapc.memcacheutil as mc
 class dp_features(yapc.component):
     """Class to maintain datapath state passively
 
-    Listen passively to FEATURES_REPLY and PORT_STATUS
+    Listen passively to FEATURES_REPLY and PORT_STATUS and
+    comm.event for socket close
 
     Maintain two memcache items
     * list of datapathid
@@ -38,16 +40,8 @@ class dp_features(yapc.component):
 
         @param sock socket
         """
-        return dp_features.DP_FEATURES_KEY_PREFIX+str(`sock`).replace(" ","").strip()
+        return dp_features.DP_FEATURES_KEY_PREFIX+mc.socket_str(sock)
     get_key = yapc.static_callable(get_key)
-
-    def get_sock_key(socket):
-        """Get key to retrieve key for datapath features
-
-        @param datapathid datapathid
-        """
-        return dp_features.DP_FEATURES_KEY_PREFIX+("%x" % datapathid)
-    get_sock_key = yapc.static_callable(get_sock_key)
             
     def processevent(self, event):
         """Process OpenFlow message for switch status
@@ -91,8 +85,8 @@ class dp_features(yapc.component):
                 key = self.get_key(event.sock)
                 sw = mc.get(key)
                 if (sw == None):
-                    output.err("Port status from unknown datapath",
-                               self.__class__.__name__)
+                    output.warn("Port status from unknown datapath",
+                                self.__class__.__name__)
                 else:
                     output.dbg("Received port status:\n"+\
                                    s.show("\t"),
@@ -110,6 +104,22 @@ class dp_features(yapc.component):
                                self.__class__.__name__)
                     mc.set(key, sw)
 
-            #fixme (listen to datapath leave???)
+        elif isinstance(event, comm.event):
+            #Socket close
+            if (event.event == comm.event.SOCK_CLOSE):
+                key = self.get_key(event.sock)
+                sw = mc.get(key)
+                if (sw != None):
+                    output.info("Datapath %x leaves" % sw.datapath_id,
+                                self.__class__.__name__)
+                    #Maintain list of datapath ids
+                    dpidl = mc.get(dp_features.DP_LIST)
+                    if (dpidl != None):
+                        if (sw.datapath_id in dpidl):
+                            dpidl.remove(sw.datapath_id)
+                        mc.set(dp_features.DP_LIST, dpidl)
+
+                    #Remove features
+                    mc.delete(key)
 
         return True

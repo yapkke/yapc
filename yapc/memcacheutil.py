@@ -50,3 +50,15 @@ def get(name):
     @return value
     """
     return memcache_client.get(name)
+
+def delete(name):
+    """Delete key-value
+
+    @param name key name
+    """
+    return memcache_client.delete(name)
+
+def socket_str(sock):
+    """Get string for socket
+    """
+    return str(`sock`).replace(" ","").strip()

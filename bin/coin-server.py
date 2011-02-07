@@ -4,6 +4,7 @@
 # @date Oct 2010
 #
 import yapc.core as core
+import yapc.comm as comm
 import yapc.ofcomm as ofcomm
 import yapc.jsoncomm as jsoncomm
 import yapc.output as output
@@ -86,6 +87,7 @@ server.scheduler.registereventhandler(jsoncomm.message.name,
 #Network status
 sw = switches.dp_features()
 server.scheduler.registereventhandler(ofcomm.message.name, sw)
+server.scheduler.registereventhandler(comm.event.name, sw)
 
 #OVS fabric manager
 ovs = coinovs.switch(coinserver)
