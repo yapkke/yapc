@@ -100,7 +100,7 @@ class dp_features(yapc.component):
                                self.__class__.__name__)
                     if (s.reason == pyof.OFPPR_DELETE or 
                         s.reason == pyof.OFPPR_MODIFY):
-                        for p in self.switches[event.sock].ports:
+                        for p in sw.ports:
                             if (p.port_no == s.desc.port_no):
                                 sw.ports.remove(p)
                     if (s.reason == pyof.OFPPR_ADD or 
