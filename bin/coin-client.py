@@ -22,7 +22,8 @@ def usage():
     print "-s/--sock\n\tSocket to communicate to (default: "+coin.SOCK_NAME+")"
     print  "Commands:"
     print "get_mode\n\tGet current mode of COIN"
-    print "get_interfaces\n\tGet current interfaces of device"
+    print "get_interfaces\n\tGet current interfaces in datapath/controlled by COIN"
+    print "get_eth_interfaces\n\tGet current Ethernet interfaces of device"
     print "add_if [name]\n\tAdd interface to COIN"
     print "del_if [name]\n\tDelete interface from COIN"
 
@@ -73,11 +74,14 @@ else:
 msg = {}
 msg["type"] = "coin"
 msg["command"] = args[0]
-if (args[0] == "add_if" or args[0] == "del_if"):
+if (args[0] == "add_if" or args[0] == "del_if" or
+    args[0] == "get_interfaces"):
     msg["subtype"] = "ovs"
-    msg["name"] = args[1]
 else:
     msg["subtype"] = "global"
+
+if (args[0] == "add_if" or args[0] == "del_if"):
+    msg["name"] = args[1]
 
 sock = jsoncomm.client(sock)
 output.dbg("Sending "+simplejson.dumps(msg),"coin-client")

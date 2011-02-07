@@ -140,7 +140,7 @@ class server(yapc.component):
         if (event.message["command"] == "get_mode"):
             reply["subtype"] = "mode"
             reply["mode"] = str(self.get_config("mode"))
-        elif (event.message["command"] == "get_interfaces"):
+        elif (event.message["command"] == "get_eth_interfaces"):
             reply["subtype"] = "interfaces"
             reply["interfaces"] = self.ifmgr.ethernet_ipv4_addresses()
         else:

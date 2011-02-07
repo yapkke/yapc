@@ -19,14 +19,14 @@ class dp_features(yapc.component):
     comm.event for socket close
 
     Maintain two memcache items
-    * list of datapathid
-    * set of datapath features keyed by keys from get_key
+    * list of keys from get_key/socket name
+    * set of datapath features keyed by (keys from get_key/socket name)
     
     @author ykk
     @date Feb 2011
     """
     #Key for list of datapath ids
-    DP_LIST = "dp_features_list"
+    DP_SOCK_LIST = "dp_features_sock_list"
     ##Key prefix in memcache for features (with socket appended to the end)
     DP_FEATURES_KEY_PREFIX = "dp_features_"
     def __init__(self, server):
@@ -72,16 +72,17 @@ class dp_features(yapc.component):
                                f.show("\t"),
                            self.__class__.__name__)
 
-                #Maintain list of datapath ids
-                dpidl = mc.get(dp_features.DP_LIST)
-                if (dpidl == None):
-                    dpidl = []
-                if (f.datapath_id not in dpidl):
-                    dpidl.append(f.datapath_id)
-                mc.set(dp_features.DP_LIST, dpidl)
+                #Maintain list of datapath socket
+                key = self.get_key(event.sock)
+                dpidsl = mc.get(dp_features.DP_SOCK_LIST)
+                if (dpidsl == None):
+                    dpidsl = []
+                if (key not in dpidsl):
+                    dpidsl.append(key)
+                mc.set(dp_features.DP_SOCK_LIST, dpidsl)
 
                 #Maintain dp features in memcache
-                mc.set(self.get_key(event.sock), f)
+                mc.set(key, f)
 
             #Port status
             elif (event.header.type == pyof.OFPT_PORT_STATUS):
@@ -118,12 +119,12 @@ class dp_features(yapc.component):
                 if (sw != None):
                     output.info("Datapath %x leaves" % sw.datapath_id,
                                 self.__class__.__name__)
-                    #Maintain list of datapath ids
-                    dpidl = mc.get(dp_features.DP_LIST)
-                    if (dpidl != None):
-                        if (sw.datapath_id in dpidl):
-                            dpidl.remove(sw.datapath_id)
-                        mc.set(dp_features.DP_LIST, dpidl)
+                    #Maintain list of datapath socket
+                    dpidsl = mc.get(dp_features.DP_SOCK_LIST)
+                    if (dpidsl != None):
+                        if (key in dpidsl):
+                            dpidl.remove(key)
+                        mc.set(dp_features.DP_SOCK_LIST, dpidl)
 
                     #Remove features
                     mc.delete(key)

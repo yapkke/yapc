@@ -17,7 +17,7 @@ global memcache_servers
 memcache_servers = ['127.0.0.1:11211']
 
 ##Memcache debug
-DEBUG = 0
+DEBUG = 1
 
 def get_client():
     """Get client for memcache
@@ -30,6 +30,7 @@ def get_client():
     if (memcache_client== None):
         memcache_client = memcache.Client(memcache_servers,
                                           DEBUG)
+        memcache_client.flush_all()
     return memcache_client
 
 def set(name, value):
