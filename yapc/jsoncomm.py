@@ -104,11 +104,7 @@ class jsonsockmanager(comm.sockmanager):
     def __init__(self, sock, scheduler):
         """Initialize
         """
-        comm.sockmanager.__init__(self)
-        ##Reference to sock
-        self.sock = sock
-        ##Reference to scheduler
-        self.scheduler = scheduler
+        comm.sockmanager.__init__(self, sock, scheduler)
 
     def parsepacket(self):
         """Parse and process packets
@@ -199,4 +195,6 @@ class jsonserversocket(comm.sockmanager):
         if (not comm.BLOCKING):
             client.setblocking(0)
         recvthread.addconnection(client, jsonsockmanager(client, self.scheduler))
+        self.scheduler.postevent(comm.event(client,
+                                            comm.event.SOCK_OPEN))
         output.dbg("Connection to "+str(address)+" added", self.__class__.__name__)

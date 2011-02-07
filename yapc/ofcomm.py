@@ -124,14 +124,10 @@ class ofsockmanager(comm.sockmanager):
     def __init__(self, sock, scheduler):
         """Initialize
         """
-        comm.sockmanager.__init__(self)
+        comm.sockmanager.__init__(self, sock, scheduler)
         ##Header object
         self.__header = pyopenflow.ofp_header()
-        ##Reference to sock
-        self.sock = sock
-        ##Reference to scheduler
-        self.scheduler = scheduler
-
+       
     def parsepacket(self):
         """Parse and process packets
         """
@@ -146,7 +142,8 @@ class ofsockmanager(comm.sockmanager):
         
         (Dummy function that print packet verbatim)
         """
-        output.vdbg("Receive OpenFlow packet of "+self.__header.show().strip().replace("\n",";"),
+        output.vdbg("Receive OpenFlow packet of "+\
+                        self.__header.show().strip().replace("\n",";"),
                    self.__class__.__name__)
         msg = message(self.sock, packet)
         self.scheduler.postevent(msg)
@@ -201,4 +198,6 @@ class ofserversocket(comm.sockmanager):
         if (not comm.BLOCKING):
             client.setblocking(0)
         recvthread.addconnection(client, ofsockmanager(client, self.scheduler))
+        self.scheduler.postevent(comm.event(client,
+                                            comm.event.SOCK_OPEN))
         output.dbg("Connection to "+str(address)+" added", self.__class__.__name__)

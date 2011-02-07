@@ -7,9 +7,30 @@ import select
 import socket
 import threading
 import time
+import yapc.interface as yapc
 import yapc.output as output
 
 BLOCKING = False
+
+class event(yapc.event):
+    """Communication event
+
+    @author ykk
+    @date Feb 2011
+    """
+    name = "Communication Event"
+    SOCK_OPEN = 1
+    SOCK_CLOSE = 1
+    def __init__(self, sock, event):
+        """Initialize communicatin event
+
+        @param sock socket event pertain to
+        @param event type of event
+        """
+        ##Type of event
+        self.event = event
+        ##Socket this event is related to
+        self.sock = sock
 
 class sockmanager:
     """Class for managing sockets
@@ -19,7 +40,7 @@ class sockmanager:
     @author ykk
     @date Oct 2010
     """
-    def __init__(self, maxlen=1):
+    def __init__(self, sock, scheduler, maxlen=1):
         """Initialize with 
         * maximum length to receive at each time (default =1)
         """
@@ -27,6 +48,10 @@ class sockmanager:
         self.maxlen = maxlen
         ##Buffer for partially received messages
         self.buffer = ""
+        ##Reference to sock
+        self.sock = sock
+        ##Reference to scheduler
+        self.scheduler = scheduler
 
     def parsepacket(self):
         """Parse and process packets
@@ -42,6 +67,8 @@ class sockmanager:
             received = sock.recv(self.maxlen)
             if (len(received) == 0):
                 recvthread.removeconnection(sock)
+                self.scheduler.postevent(event(self.sock,
+                                               event.SOCK_CLOSE))
                 return
             else:
                 self.buffer += received
