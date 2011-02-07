@@ -58,6 +58,15 @@ class eventdispatcher:
             self.__processors[eventname] = []
         self.__processors[eventname].append(handler)
 
+    def print_event_and_handler(self):
+        """Print event and handlers as debug messages
+        """
+        for event,handlers in self.__processors.items():
+            pout = "Event "+event+" is handled in order by \n"
+            for h in handlers:
+                pout += "\t"+h.__class__.__name__+"\n"
+            output.dbg(pout, self.__class__.__name__)
+
     def postevent(self, event):
         """Post event
 
@@ -163,6 +172,9 @@ class server:
     def run(self):
         """Main loop to run
         """
+        #Output events and handlers
+        self.scheduler.print_event_and_handler()
+        #Run
         while self.running:
             self.__starttime = time.clock()
             self.scheduler.dispatchnextevent()
