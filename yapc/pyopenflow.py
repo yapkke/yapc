@@ -4,7 +4,7 @@ import struct
 class ofp_phy_port:
     """Automatically generated Python class for ofp_phy_port
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -63,7 +63,7 @@ class ofp_phy_port:
         start = 2
         end = start + struct.calcsize(fmt)
         (self.hw_addr[0], self.hw_addr[1], self.hw_addr[2], self.hw_addr[3], self.hw_addr[4], self.hw_addr[5]) = struct.unpack(fmt, binaryString[start:end])
-        self.name = binaryString[8:24].replace("\0","")
+        self.name = binaryString[8:24][:binaryString[8:24].find("\0")]
         fmt = '!LLLLLL'
         start = 24
         end = start + struct.calcsize(fmt)
@@ -112,7 +112,7 @@ class ofp_phy_port:
 class ofp_aggregate_stats_reply:
     """Automatically generated Python class for ofp_aggregate_stats_reply
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -193,7 +193,7 @@ class ofp_aggregate_stats_reply:
 class ofp_table_stats:
     """Automatically generated Python class for ofp_table_stats
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -251,7 +251,7 @@ class ofp_table_stats:
         start = 1
         end = start + struct.calcsize(fmt)
         (self.pad[0], self.pad[1], self.pad[2]) = struct.unpack(fmt, binaryString[start:end])
-        self.name = binaryString[4:36].replace("\0","")
+        self.name = binaryString[4:36][:binaryString[4:36].find("\0")]
         fmt = '!LLLQQ'
         start = 36
         end = start + struct.calcsize(fmt)
@@ -297,7 +297,7 @@ class ofp_table_stats:
 class ofp_flow_removed:
     """Automatically generated Python class for ofp_flow_removed
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -417,7 +417,7 @@ class ofp_flow_removed:
 class ofp_port_stats:
     """Automatically generated Python class for ofp_port_stats
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -533,7 +533,7 @@ class ofp_port_stats:
 class ofp_queue_stats:
     """Automatically generated Python class for ofp_queue_stats
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -625,7 +625,7 @@ class ofp_queue_stats:
 class ofp_action_tp_port:
     """Automatically generated Python class for ofp_action_tp_port
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -706,7 +706,7 @@ class ofp_action_tp_port:
 class ofp_port_stats_request:
     """Automatically generated Python class for ofp_port_stats_request
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -781,7 +781,7 @@ class ofp_port_stats_request:
 class ofp_stats_request:
     """Automatically generated Python class for ofp_stats_request
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -863,7 +863,7 @@ class ofp_stats_request:
 class ofp_hello:
     """Automatically generated Python class for ofp_hello
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -928,7 +928,7 @@ class ofp_hello:
 class ofp_aggregate_stats_request:
     """Automatically generated Python class for ofp_aggregate_stats_request
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -1005,7 +1005,7 @@ class ofp_aggregate_stats_request:
 class ofp_port_status:
     """Automatically generated Python class for ofp_port_status
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -1097,7 +1097,7 @@ class ofp_port_status:
 class ofp_action_header:
     """Automatically generated Python class for ofp_action_header
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -1175,7 +1175,7 @@ class ofp_action_header:
 class ofp_port_mod:
     """Automatically generated Python class for ofp_port_mod
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -1285,7 +1285,7 @@ class ofp_port_mod:
 class ofp_action_vlan_vid:
     """Automatically generated Python class for ofp_action_vlan_vid
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -1366,7 +1366,7 @@ class ofp_action_vlan_vid:
 class ofp_action_output:
     """Automatically generated Python class for ofp_action_output
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -1439,7 +1439,7 @@ class ofp_action_output:
 class ofp_switch_config:
     """Automatically generated Python class for ofp_switch_config
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -1514,7 +1514,7 @@ class ofp_switch_config:
 class ofp_action_nw_tos:
     """Automatically generated Python class for ofp_action_nw_tos
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -1595,7 +1595,7 @@ class ofp_action_nw_tos:
 class ofp_queue_get_config_reply:
     """Automatically generated Python class for ofp_queue_get_config_reply
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -1687,7 +1687,7 @@ class ofp_queue_get_config_reply:
 class ofp_packet_in:
     """Automatically generated Python class for ofp_packet_in
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -1777,7 +1777,7 @@ class ofp_packet_in:
 class ofp_flow_stats:
     """Automatically generated Python class for ofp_flow_stats
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -1908,7 +1908,7 @@ class ofp_flow_stats:
 class ofp_flow_stats_request:
     """Automatically generated Python class for ofp_flow_stats_request
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -1985,7 +1985,7 @@ class ofp_flow_stats_request:
 class ofp_action_vendor_header:
     """Automatically generated Python class for ofp_action_vendor_header
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -2055,7 +2055,7 @@ class ofp_action_vendor_header:
 class ofp_stats_reply:
     """Automatically generated Python class for ofp_stats_reply
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -2137,7 +2137,7 @@ class ofp_stats_reply:
 class ofp_queue_stats_request:
     """Automatically generated Python class for ofp_queue_stats_request
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -2220,7 +2220,7 @@ class ofp_queue_stats_request:
 class ofp_desc_stats:
     """Automatically generated Python class for ofp_desc_stats
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -2280,11 +2280,11 @@ class ofp_desc_stats:
         """
         if (len(binaryString) < 1056):
             return binaryString
-        self.mfr_desc = binaryString[0:256].replace("\0","")
-        self.hw_desc = binaryString[256:512].replace("\0","")
-        self.sw_desc = binaryString[512:768].replace("\0","")
-        self.serial_num = binaryString[768:800].replace("\0","")
-        self.dp_desc = binaryString[800:1056].replace("\0","")
+        self.mfr_desc = binaryString[0:256][:binaryString[0:256].find("\0")]
+        self.hw_desc = binaryString[256:512][:binaryString[256:512].find("\0")]
+        self.sw_desc = binaryString[512:768][:binaryString[512:768].find("\0")]
+        self.serial_num = binaryString[768:800][:binaryString[768:800].find("\0")]
+        self.dp_desc = binaryString[800:1056][:binaryString[800:1056].find("\0")]
         return binaryString[1056:]
 
     def __len__(self):
@@ -2321,7 +2321,7 @@ class ofp_desc_stats:
 class ofp_queue_get_config_request:
     """Automatically generated Python class for ofp_queue_get_config_request
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -2404,7 +2404,7 @@ class ofp_queue_get_config_request:
 class ofp_packet_queue:
     """Automatically generated Python class for ofp_packet_queue
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -2491,7 +2491,7 @@ class ofp_packet_queue:
 class ofp_action_dl_addr:
     """Automatically generated Python class for ofp_action_dl_addr
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -2581,7 +2581,7 @@ class ofp_action_dl_addr:
 class ofp_queue_prop_header:
     """Automatically generated Python class for ofp_queue_prop_header
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -2659,7 +2659,7 @@ class ofp_queue_prop_header:
 class ofp_queue_prop_min_rate:
     """Automatically generated Python class for ofp_queue_prop_min_rate
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -2742,7 +2742,7 @@ class ofp_queue_prop_min_rate:
 class ofp_action_enqueue:
     """Automatically generated Python class for ofp_action_enqueue
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -2831,7 +2831,7 @@ class ofp_action_enqueue:
 class ofp_switch_features:
     """Automatically generated Python class for ofp_switch_features
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -2941,7 +2941,7 @@ class ofp_switch_features:
 class ofp_match:
     """Automatically generated Python class for ofp_match
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -3082,7 +3082,7 @@ class ofp_match:
 class ofp_header:
     """Automatically generated Python class for ofp_header
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -3157,7 +3157,7 @@ class ofp_header:
 class ofp_vendor_header:
     """Automatically generated Python class for ofp_vendor_header
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -3230,7 +3230,7 @@ class ofp_vendor_header:
 class ofp_packet_out:
     """Automatically generated Python class for ofp_packet_out
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -3318,7 +3318,7 @@ class ofp_packet_out:
 class ofp_action_nw_addr:
     """Automatically generated Python class for ofp_action_nw_addr
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -3388,7 +3388,7 @@ class ofp_action_nw_addr:
 class ofp_action_vlan_pcp:
     """Automatically generated Python class for ofp_action_vlan_pcp
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -3469,7 +3469,7 @@ class ofp_action_vlan_pcp:
 class ofp_flow_mod:
     """Automatically generated Python class for ofp_flow_mod
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
@@ -3580,7 +3580,7 @@ class ofp_flow_mod:
 class ofp_error_msg:
     """Automatically generated Python class for ofp_error_msg
 
-    Date 2011-02-04
+    Date 2011-02-07
     Created by pylibopenflow.of.pythonize.pythonizer
     """
     def __init__(self):
