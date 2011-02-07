@@ -31,14 +31,9 @@ toconsole = True
 
 #Stream handler
 global console
-console = logging.StreamHandler()
-logfile = logging.handlers.RotatingFileHandler('/var/log/yapc.log',
-                                               maxBytes=10485760,
-                                               backupCount=10)
-format = logging.Formatter("%(asctime)s - %(name)s - "\
-                               "%(levelname)s -  %(message)s")
-console.setFormatter(format)
-logfile.setFormatter(format)
+console = None
+global logfile
+logfile = None
 
 def set_daemon_log():
     """Set logging for daemon
@@ -55,11 +50,23 @@ def __create_logger(who, level):
     global loggers
     global toconsole
     global LEVELS
+    global console
+    global logfile
     loggers[who] = logging.getLogger(who)
     loggers[who].setLevel(level)
+    format = logging.Formatter("%(asctime)s - %(name)s - "\
+                                   "%(levelname)s -  %(message)s")
     if (toconsole):
+        if (console == None):
+            console = logging.StreamHandler()
+            console.setFormatter(format)
         loggers[who].addHandler(console)
     else:
+        if (logfile == None):
+            logfile = logging.handlers.RotatingFileHandler('/var/log/yapc.log',
+                                                           maxBytes=10485760,
+                                                           backupCount=10)
+            logfile.setFormatter(format)
         loggers[who].addHandler(logfile)
     loggers["generic"].log(LEVELS["VDBG"],
                            "Add logger for "+who+" at level "+str(level))
