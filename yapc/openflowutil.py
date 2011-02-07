@@ -14,6 +14,11 @@ import yapc.output as output
 ##Next transaction id to use
 last_xid = 0
 
+##VLAN Tag parsing
+VLAN_PRIORITY_MASK = 0xe000
+VLAN_PRIORITY_SHIFT = 13
+VLAN_ID_MASK = 0x0fff
+
 def get_xid():
     """Retrieve XID to use
     """
@@ -23,6 +28,9 @@ def get_xid():
 
 def get_ofp_match(in_port, packet):
     """Generate ofp_match from raw packet
+
+    Note that OpenFlow uses outermost Ethertype, while dokt provides
+    the innermost one.  And VLAN tag parsing is manually done.
 
     @param in_port input port of packet
     @param packet raw packet
@@ -37,9 +45,12 @@ def get_ofp_match(in_port, packet):
     #Get Ethernet
     ofm.dl_src = byte_str2array(pkt.src)
     ofm.dl_dst = byte_str2array(pkt.dst)
-    ofm.dl_type = pkt.type
+    ofm.dl_type = struct.unpack('>H',packet[12:14])[0]
 
-    #fixme (Do VLAN parsing)
+    #802.1Q VLAN
+    if (ofm.dl_type == dpkt.ethernet.ETH_TYPE_8021Q):
+        ofm.dl_vlan = pkt.tag & VLAN_ID_MASK
+        ofm.dl_vlan_pcp = (pkt.tag & VLAN_PRIORITY_MASK) >> VLAN_PRIORITY_SHIFT
 
     #Get IP if any
     if (isinstance(pkt.data, dpkt.ip.IP)):
@@ -95,7 +106,7 @@ def __get_icmp_ofp_match(ofm, icmppkt):
     @return ofp match
     """
     #Get ICMP
-    ofm.tp_src = icmppkt.code
+    ofm.tp_src = icmppkt.type
     ofm.tp_dst = icmppkt.code
     return ofm
 
