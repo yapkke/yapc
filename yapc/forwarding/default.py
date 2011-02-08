@@ -67,3 +67,6 @@ class dropflow(yapc.component):
         fm.idle_timeout = 5
         fm.buffer_id = pktin.buffer_id
         self.conn.connections.db[event.sock].send(fm.pack())
+
+        #Do not need to check for buffer_id == -1, since we are
+        #dropping packets
