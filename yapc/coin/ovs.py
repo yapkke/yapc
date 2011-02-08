@@ -12,7 +12,6 @@ import yapc.output as output
 import yapc.netstate.switches as swstate
 import yapc.memcacheutil as mc
 import simplejson
-import string
 
 COIN_DP_NAME = "dp0"
 
