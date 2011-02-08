@@ -45,6 +45,12 @@ def set_daemon_log():
     global toconsole
     toconsole = False
 
+def set_logfile(filename, maxBytes=10485760,backupCount=10):
+    global logfile
+    logfile = logging.handlers.RotatingFileHandler(filename,
+                                                   maxBytes=maxBytes,
+                                                   backupCount=backupCount)
+
 def __create_logger(who, level):
     """Create logger for who
 
@@ -70,7 +76,7 @@ def __create_logger(who, level):
             logfile = logging.handlers.RotatingFileHandler('/var/log/yapc.log',
                                                            maxBytes=10485760,
                                                            backupCount=10)
-            logfile.setFormatter(format)
+        logfile.setFormatter(format)
         loggers[who].addHandler(logfile)
     loggers[GENERIC_LOG_NAME].log(LEVELS["VDBG"],
                            "Add logger for "+who+" at level "+str(level))

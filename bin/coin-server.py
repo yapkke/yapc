@@ -98,4 +98,6 @@ for opt,arg in opts:
         print "Unhandled option :"+opt
         sys.exit(2)
 
+if (coins.daemon):
+    output.set_logfile('/var/log/coin.log')
 coins.start()
