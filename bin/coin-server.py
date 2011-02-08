@@ -4,6 +4,7 @@
 # @date Oct 2010
 #
 import yapc.core as core
+import yapc.interface as yapc
 import yapc.ofcomm as ofcomm
 import yapc.jsoncomm as jsoncomm
 import yapc.output as output
@@ -14,6 +15,43 @@ import yapc.forwarding.default as default
 import sys
 import getopt
 
+
+class coin_server(yapc.daemon):
+    def __init__(self):
+        yapc.daemon.__init__(self)
+        ##Verbose debug output or not
+        self.debug = "INFO"
+        ##Force JSON connection or not
+        self.forcejson = False
+        ##Socket to talk to
+        self.sock = coin.SOCK_NAME
+
+    def run(self):
+        """Run server
+        """
+        #Configure logging
+        output.set_mode(self.debug)
+
+        #Create yapc base
+        server = core.server()
+        ofcomm.ofserver().bind(server)
+        jsoncomm.jsonserver(file=self.sock, 
+                            forcebind=self.forcejson).bind(server)
+
+        #COIN main server, maintaining connections
+        coinserver = coin.server(server)
+        #Network status
+        sw = switches.dp_features(server)
+        #OVS fabric manager
+        ovs = coinovs.switch(server, coinserver)
+
+        #Drop unhandled flows
+        df = default.dropflow(server, coinserver)
+        
+        server.run()
+        
+        sys.exit(0)
+        
 ##Print usage guide
 def usage():
     """Display usage
@@ -28,6 +66,8 @@ def usage():
     print "--very-verbose\n\tVery verbose output"
     print "-d/--daemon\n\tRun as daemon"
 
+coins = coin_server()
+
 #Parse options and arguments
 try:
     opts, args = getopt.getopt(sys.argv[1:], "hvdfs:",
@@ -40,55 +80,22 @@ except getopt.GetoptError:
     sys.exit(2)
 
 #Parse options
-##Verbose debug output or not
-debug = "INFO"
-##Run as daemon
-daemon = False
-##Force JSON connection or not
-forcejson = False
-##Socket to talk to
-sock = coin.SOCK_NAME
 for opt,arg in opts:
     if (opt in ("-h","--help")):
         usage()
         sys.exit(0)
     elif (opt in ("-v","--verbose")):
-        debug="DBG"
+        coins.debug="DBG"
     elif (opt in ("--very-verbose")):
-        debug="VDBG"
+        coins.debug="VDBG"
     elif (opt in ("-d","--daemon")):
-        daemon=True
+        coins.daemon=True
     elif (opt in ("-s","--sock")):
-        sock = arg
+        coins.sock = arg
     elif (opt in ("-f","--force-json")):
-        forcejson=True
+        coins.forcejson=True
     else:
         print "Unhandled option :"+opt
         sys.exit(2)
 
-#Configure logging
-if (daemon):
-    output.set_daemon_log()
-output.set_mode(debug)
-
-#Create yapc base
-server = core.server()
-ofcomm.ofserver().bind(server)
-jsoncomm.jsonserver(file=sock, forcebind=forcejson).bind(server)
-
-#COIN main server, maintaining connections
-coinserver = coin.server(server)
-#Network status
-sw = switches.dp_features(server)
-#OVS fabric manager
-ovs = coinovs.switch(server, coinserver)
-
-#Drop unhandled flows
-df = default.dropflow(server, coinserver)
-
-#Start
-if (daemon):
-    server.daemonize()
-else:
-    server.run()
-sys.exit(0)
+coins.start()

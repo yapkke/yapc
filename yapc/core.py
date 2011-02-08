@@ -98,23 +98,16 @@ class eventdispatcher:
                 #No handler, so pass
                 output.warn("Event "+str(event.name)+" does not have handler",
                             self.__class__.__name__)
-                
 
 class server:
     """Daemon for yapc core
 
-    Referred to Sander Marechal's simple unix/linux daemon in Python.
-
     @author ykk
     @date Oct 2010
     """
-    def __init__(self, stdin='dev/null', stdout='dev/null',  stderr='dev/null'):
+    def __init__(self):
         """Initialize
         """
-        ##File descriptors for daemon
-        self.stdin = stdin
-        self.stdout = stdout
-        self.stderr = stderr
         #Amount to sleep
         self.sleep = 0.1
         #Last start time
@@ -128,47 +121,8 @@ class server:
         self.recv.start()
         ##Register for signal
         signal.signal(signal.SIGINT, self.signalhandler)
-
-    def daemonize(self):
-        """Daemonize this class and run
-        """
-        #first fork
-        try:
-            pid = os.fork()
-            if pid > 0:
-                sys.exit(0)
-        except OSError, e:
-            sys.stderr.write("fork #1 failed with error %d (%s)\n" % (e.errno, e.strerror))
-            sys.exit(1)
-
-        #decouple from parent environment
-        os.chdir("/")
-        os.setsid()
-        os.umask(0)
-
-        #second fork
-        try:
-            pid = os.fork()
-            if pid > 0:
-                sys.exit(0)
-        except OSError, e:
-            sys.stderr.write("fork #2 failed with error %d (%s)\n"\
-                                 % (e.errno, e.strerror))
-            sys.exit(1)
-
-        #redirect file descriptors
-        sys.stdout.flush()
-        sys.stderr.flush()
-        si = file(self.stdin, 'r')
-        so = file(self.stdout, 'a+')
-        se = file(self.stderr, 'a+', 0)
-        os.dup2(si.fileno(), sys.stdin.fileno())
-        os.dup2(so.fileno(), sys.stdout.fileno())
-        os.dup2(se.fileno(), sys.stderr.fileno())
-
-        #Run actual poll loop
-        self.run()
-        
+        signal.signal(signal.SIGTERM, self.signalhandler)
+       
     def run(self):
         """Main loop to run
         """
