@@ -88,7 +88,7 @@ class switch(yapc.component, ovs.switch):
             dpidsl = mc.get(swstate.dp_features.DP_SOCK_LIST)
             if (dpidsl != None):
                 reply["interfaces"] = []
-                if (len(dpidsl) > 0):
+                if (len(dpidsl) > 1):
                     output.warn(str(len(dpidsl))+" datapaths connected to COIN",
                                 self.__class__.__name__)
                 f = mc.get(dpidsl[0])
