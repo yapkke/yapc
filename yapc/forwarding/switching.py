@@ -7,8 +7,11 @@
 #
 import yapc.interface as yapc
 import yapc.openflowutil as ofutil
+import yapc.parseutil as pu
 import yapc.events.openflow as ofevents
 import yapc.netstate.swhost as swhost
+import yapc.output as output
+import yapc.pyopenflow as pyof
 import yapc.memcacheutil as mc
 
 class learningswitch(yapc.component):
@@ -39,12 +42,17 @@ class learningswitch(yapc.component):
         """
         if (isinstance(event, ofevents.pktin)):
             #Forward packet/flow
+            if (pu.is_multicast_mac(event.match.dl_dst)):
+                return True
+            
             key = swhost.mac2sw_binding.get_key(event.sock,
-                                                event.match.dl_src)
+                                                event.match.dl_dst)
             port = mc.get(key)
             if (port != None):
-                installflow(event, port)
+                self.installflow(event, port)
                 return False
+            else:
+                output.dbg("No binding found for mac %x"  % pu.array2val(event.match.dl_dst))
             
             return True     
 
