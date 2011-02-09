@@ -5,7 +5,7 @@
 #
 import yapc.interface as yapc
 import yapc.memcacheutil as mc
-import yapc.openflowutil as ofutil
+import yapc.parseutil as pu
 import yapc.events.openflow as ofevents
 import yapc.output as output
 import time
@@ -25,11 +25,6 @@ class mac2sw_binding(yapc.component):
 
         @param server yapc core
         """
-        ##Local cache of binding
-        self.__cache = {}
-        ##Timeout for local cache (default TIMEOUT -1)
-        self.timeout = mac2sw_binding.TIMEOUT-1
-
         mc.get_client()
         server.scheduler.registereventhandler(ofevents.pktin.name, self)
 
@@ -38,7 +33,7 @@ class mac2sw_binding(yapc.component):
         """
         return mac2sw_binding.MAC2SW_BINDING_PREFIX +\
             mc.socket_str(sock) +\
-            "%x" % ofutil.array2val(mac)
+            "%x" % pu.array2val(mac)
     get_key = yapc.static_callable(get_key)
 
     def processevent(self, event):
@@ -49,19 +44,11 @@ class mac2sw_binding(yapc.component):
         key = self.get_key(event.sock, event.match.dl_src)
 
         #Broadcast mac
-        if ((event.match.dl_src[0] % 2) == 1):
-            return True
-
-        #Already cached
-        if (key in self.__cache and 
-            time.clock() < self.__cache[key][1] and
-            event.pktin.in_port == self.__cache[key][0]):
+        if (pu.is_multicast_mac(event.match.dl_src)):
             return True
 
         mc.set(key, event.pktin.in_port, mac2sw_binding.TIMEOUT)
-        self.__cache[key] = (event.pktin.in_port, 
-                             time.clock() + self.timeout)
-        output.dbg("Learn that %x " % ofutil.array2val(event.match.dl_src) +\
+        output.vdbg("Learn that %x " % pu.array2val(event.match.dl_src) +\
                        "is connected to port " + \
                        str(event.pktin.in_port)+" of switch with "+\
                        str(event.sock),
