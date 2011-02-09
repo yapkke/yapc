@@ -22,15 +22,15 @@ class server(yapc.component):
     @author ykk
     @date Oct 2010
     """
-    def __init__(self, server):
+    def __init__(self, server, ofconn, jsonconn):
         """Initialize
 
         @param server yapc core server/scheduler
         """
         ##OpenFlow connections
-        self.connections = ofcomm.connections()
+        self.ofconnections = ofconn
         ##JSON connections
-        self.jsonconnections = jsoncomm.connections()
+        self.jsonconnections = jsonconn
         ##Global COIN dictionary
         self.config = {}
         self.config["mode"] = None
@@ -87,22 +87,11 @@ class server(yapc.component):
 
     def __processof(self, event):
         """Process basic OpenFlow messages:
-        1) Handshake for new connections
-        2) Replies for echo request
-        3) Print error messages
+        * Print error messages
         
         @param event yapc.ofcomm.message event
-        """
-        if (event.sock not in self.connections.db):
-            self.connections.add(event.sock)
-            
-        if (not self.connections.db[event.sock].handshake):
-            #Handshake
-            self.connections.db[event.sock].dohandshake(event)
-        elif (event.header.type == pyopenflow.OFPT_ECHO_REQUEST):
-            #Echo replies
-            self.connections.db[event.sock].replyecho(event)
-        elif (event.header.type == pyopenflow.OFPT_ERROR):
+        """            
+        if (event.header.type == pyopenflow.OFPT_ERROR):
             #Error
             oem = pyopenflow.ofp_error_msg()
             oem.unpack(event.message)
@@ -116,10 +105,7 @@ class server(yapc.component):
         """Process basic JSON messages
         
         @param event yapc.jsoncomm.message event
-        """
-        if (event.sock not in self.jsonconnections.db):
-            self.jsonconnections.add(event.sock)
-        
+        """        
         if (event.message["type"] == "coin" and
             event.message["subtype"] == "global"):
             reply = self.__processglobal(event)

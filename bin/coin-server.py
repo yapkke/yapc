@@ -12,6 +12,7 @@ import yapc.output as output
 import yapc.coin.core as coin
 import yapc.coin.ovs as coinovs
 import yapc.netstate.switches as switches
+import yapc.netstate.swhost as switchhost
 import yapc.forwarding.default as default
 import sys
 import getopt
@@ -34,21 +35,23 @@ class coin_server(yapc.daemon):
 
         #Create yapc base
         server = core.server()
-        ofcomm.ofserver().bind(server)
-        jsoncomm.jsonserver(file=self.sock, 
-                            forcebind=self.forcejson).bind(server)
+        ofconn = ofcomm.ofserver(server)
+        jsonconn = jsoncomm.jsonserver(server, file=self.sock, 
+                                       forcebind=self.forcejson)
 
         #OpenFlow Parser
         ofparse = ofevents.parser(server)
         #COIN main server, maintaining connections
-        coinserver = coin.server(server)
+        coinserver = coin.server(server, ofconn.connections,
+                                 jsonconn.connections)
         #Network status
         sw = switches.dp_features(server)
+        swhost = switchhost.mac2sw_binding(server)
         #OVS fabric manager
-        ovs = coinovs.switch(server, coinserver)
-
+        ovs = coinovs.switch(server, 
+                             jsonconn.connections)
         #Drop unhandled flows
-        df = default.dropflow(server, coinserver)
+        df = default.dropflow(server, ofconn.connections)
         
         server.run()
         

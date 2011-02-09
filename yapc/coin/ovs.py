@@ -21,7 +21,8 @@ class switch(yapc.component, ovs.switch):
     @author ykk
     @date Feb 2011
     """
-    def __init__(self, server, conn, host='127.0.0.1', port=6633):
+    def __init__(self, server, jsonconn, 
+                 host='127.0.0.1', port=6633):
         """Initialize switch fabric
 
         @param server yapc core
@@ -30,8 +31,8 @@ class switch(yapc.component, ovs.switch):
         @param port port number to connect to
         """
         ovs.switch.__init__(self)
-        ##Reference to connections
-        self.conn = conn
+        ##Reference to JSON connections
+        self.jsonconn = jsonconn
         #Add datapath and connect
         self.add_dp(COIN_DP_NAME)
         self.datapaths[COIN_DP_NAME].connect(host,port)
@@ -55,15 +56,12 @@ class switch(yapc.component, ovs.switch):
         """Process JSON messages
 
         @param event JSON message event to process
-        """
-        if (event.sock not in self.conn.jsonconnections.db):
-            self.conn.jsonconnections.add(event.sock)
-        
+        """        
         if (event.message["type"] == "coin" and
             event.message["subtype"] == "ovs"):
             reply = self.__process_switch_json(event)
             if (reply != None):
-                self.conn.jsonconnections.db[event.sock].send(reply)
+                self.jsonconn.db[event.sock].send(reply)
         else:
             output.dbg("Receive JSON message "+simplejson.dumps(event.message),
                        self.__class__.__name__)

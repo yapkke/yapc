@@ -129,9 +129,13 @@ class jsonserver(yapc.cleanup):
     @author ykk
     @date Oct 2010
     """
-    def __init__(self, file='json.sock', backlog=10, jsonservermgr=None,
+    def __init__(self, server,
+                 file='json.sock', backlog=10, jsonservermgr=None,
                  forcebind=True):
         """Initialize
+
+        * Install server connection into receive thread
+        * Register scheduler for processing message events
         """
         #Reference to socket file
         self.__file = file
@@ -155,6 +159,26 @@ class jsonserver(yapc.cleanup):
         if (self.jsonservermgr  == None):
             self.jsonservermgr = jsonserversocket()
 
+        #Bind to scheduler
+        self.jsonservermgr.scheduler = server.scheduler
+        server.recv.addconnection(self.server, self.jsonservermgr)
+        server.scheduler.registercleanup(self)
+
+        ##OpenFlow connections
+        self.connections = connections()
+        server.scheduler.registereventhandler(message.name,
+                                              self)
+
+    def processevent(self, event):
+        """Event handler
+
+        @param event event to handle
+        """
+        if (event.sock not in self.connections.db):
+            self.connections.add(event.sock)
+
+        return True
+
     def __del__(self):
         """Destructor, thus cleanup
         """
@@ -165,16 +189,6 @@ class jsonserver(yapc.cleanup):
         """
         self.server.close()
         os.remove(self.__file)
-
-    def bind(self, server):
-        """Bind core scheduler and receive thread
-        
-        * Install server connection into receive thread
-        * Register scheduler for processing message events
-        """
-        self.jsonservermgr.scheduler = server.scheduler
-        server.recv.addconnection(self.server, self.jsonservermgr)
-        server.scheduler.registercleanup(self)
 
 class jsonserversocket(comm.sockmanager):
     """Class to accept JSON connections

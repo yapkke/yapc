@@ -148,14 +148,18 @@ class ofsockmanager(comm.sockmanager):
         msg = message(self.sock, packet)
         self.scheduler.postevent(msg)
 
-class ofserver(yapc.cleanup):
+class ofserver(yapc.component, yapc.cleanup):
     """Class to create OpenFlow server socket
 
     @author ykk
     @date Oct 2010
     """
-    def __init__(self, port=6633, host='', backlog=10, ofservermgr=None):
+    def __init__(self, server,
+                 port=6633, host='', backlog=10, ofservermgr=None):
         """Initialize
+
+        Bind core scheduler and receive thread
+        Install server connection into receive thread
         """
         #Create server connection
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -168,17 +172,42 @@ class ofserver(yapc.cleanup):
         if (self.ofservermgr  == None):
             self.ofservermgr = ofserversocket()
 
+        #Bind
+        self.ofservermgr.scheduler = server.scheduler
+        server.recv.addconnection(self.server, self.ofservermgr)
+
+        ##OpenFlow connections
+        self.connections = connections()
+        server.scheduler.registereventhandler(message.name,
+                                              self)
+
+    def processevent(self, event):
+        """Event handler
+
+        Process basic OpenFlow messages:
+        1) Handshake for new connections
+        2) Replies for echo request
+
+        @param event event to handle
+        """
+        if (event.sock not in self.connections.db):
+            self.connections.add(event.sock)
+
+        if isinstance(event, message):
+            if (not self.connections.db[event.sock].handshake):
+                #Handshake
+                self.connections.db[event.sock].dohandshake(event)
+            elif (event.header.type == pyopenflow.OFPT_ECHO_REQUEST):
+                #Echo replies
+                self.connections.db[event.sock].replyecho(event)
+
+        return True
+
     def cleanup(self):
         """Function to clean up server socket
         """
         self.server.close()
 
-    def bind(self, server):
-        """Bind core scheduler and receive thread
-        * Install server connection into receive thread
-        """
-        self.ofservermgr.scheduler = server.scheduler
-        server.recv.addconnection(self.server, self.ofservermgr)
         
 class ofserversocket(comm.sockmanager):
     """Class to accept OpenFlow connections
