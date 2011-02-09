@@ -7,6 +7,7 @@ import yapc.core as core
 import yapc.interface as yapc
 import yapc.ofcomm as ofcomm
 import yapc.jsoncomm as jsoncomm
+import yapc.events.openflow as ofevents
 import yapc.output as output
 import yapc.coin.core as coin
 import yapc.coin.ovs as coinovs
@@ -14,7 +15,6 @@ import yapc.netstate.switches as switches
 import yapc.forwarding.default as default
 import sys
 import getopt
-
 
 class coin_server(yapc.daemon):
     def __init__(self):
@@ -38,6 +38,8 @@ class coin_server(yapc.daemon):
         jsoncomm.jsonserver(file=self.sock, 
                             forcebind=self.forcejson).bind(server)
 
+        #OpenFlow Parser
+        ofparse = ofevents.parser(server)
         #COIN main server, maintaining connections
         coinserver = coin.server(server)
         #Network status

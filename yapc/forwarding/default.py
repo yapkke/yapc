@@ -7,10 +7,9 @@
 #
 import yapc.interface as yapc
 import yapc.output as output
-import yapc.ofcomm as ofcomm
+import yapc.events.openflow as ofevents
 import yapc.pyopenflow as pyof
 import yapc.openflowutil as ofutil
-import sys
 
 class dropflow(yapc.component):
     """Class that drop flows
@@ -27,7 +26,7 @@ class dropflow(yapc.component):
         ##Reference to connections
         self.conn = conn
 
-        server.scheduler.registereventhandler(ofcomm.message.name, self)
+        server.scheduler.registereventhandler(ofevents.pktin.name, self)
 
     def processevent(self, event):
         """Event handler
@@ -37,8 +36,7 @@ class dropflow(yapc.component):
         if (event.sock not in self.conn.connections.db):
             self.conn.connections.add(event.sock)
 
-        if (isinstance(event, ofcomm.message)):
-            if (event.header.type == pyof.OFPT_PACKET_IN):
+        if (isinstance(event, ofevents.pktin)):
                 self.dropflow(event)
 
         return True
@@ -48,25 +46,17 @@ class dropflow(yapc.component):
 
         @param event packet-in event
         """
-        #Get flow
-        pktin = pyof.ofp_packet_in()
-        pkt = pktin.unpack(event.message)
-        output.vdbg("Packet in\n"+pktin.show("\t"),
-                    self.__class__.__name__)
-        (ofm, dpkt) = ofutil.get_ofp_match(pktin.in_port, pkt)
-        output.vdbg("Packet has match\n"+ofm.show("\t"),
-                    self.__class__.__name__)
-        output.vdbg(str(`dpkt`),
-                    self.__class__.__name__)
-
         #Install dropping flow
         fm = pyof.ofp_flow_mod()
         fm.header.xid = ofutil.get_xid()
-        fm.match = ofm
+        fm.match = event.match
         fm.command = pyof.OFPFC_ADD
         fm.idle_timeout = 5
-        fm.buffer_id = pktin.buffer_id
+        fm.buffer_id = event.pktin.buffer_id
         self.conn.connections.db[event.sock].send(fm.pack())
+
+        output.vdbg("Dropping flow with match "+\
+                        event.match.show().replace('\n',';'))
 
         #Do not need to check for buffer_id == -1, since we are
         #dropping packets
