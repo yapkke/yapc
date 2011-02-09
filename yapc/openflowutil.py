@@ -145,3 +145,15 @@ def byte_str2array(str):
     for i in range(0, len(str)):
         r.append(struct.unpack("B", str[i])[0])
     return r
+
+def array2val(array):
+    """Convert array to value
+
+    @param array
+    @return value
+    """
+    r = 0
+    array.reverse()
+    for i in range(0, len(array)):
+        r += array[i] * pow(2,8*i)
+    return r
