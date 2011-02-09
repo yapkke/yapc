@@ -54,6 +54,11 @@ class eventdispatcher:
         @param eventname name of event
         @param handler handler function
         """
+        if (not isinstance(eventname, str)):
+            output.warn("Event name "+str(eventname)+" is not  a string",
+                        self.__class__.__name__)
+            return
+        #Register handler
         if (eventname not in self.__processors):
             self.__processors[eventname] = []
         self.__processors[eventname].append(handler)
