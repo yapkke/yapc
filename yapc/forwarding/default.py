@@ -38,7 +38,7 @@ class floodpkt(yapc.component):
             oao.port = pyof.OFPP_FLOOD
 
             po = pyof.ofp_packet_out()
-            po.header.xid = fm.header.xid
+            po.header.xid =  ofutil.get_xid()
             po.in_port = event.match.in_port
             po.actions_len = oao.len
             po.actions.append(oao)
