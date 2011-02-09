@@ -10,6 +10,7 @@ import struct
 import socket
 import yapc.pyopenflow as pyof
 import yapc.output as output
+import yapc.parseutil as pu
 
 ##Next transaction id to use
 last_xid = 0
@@ -43,8 +44,8 @@ def get_ofp_match(in_port, packet):
     ofm.in_port = in_port
 
     #Get Ethernet
-    ofm.dl_src = byte_str2array(pkt.src)
-    ofm.dl_dst = byte_str2array(pkt.dst)
+    ofm.dl_src = pu.byte_str2array(pkt.src)
+    ofm.dl_dst = pu.byte_str2array(pkt.dst)
     ofm.dl_type = struct.unpack('>H',packet[12:14])[0]
 
     #802.1Q VLAN
@@ -133,27 +134,3 @@ def __get_udp_ofp_match(ofm, udppkt):
     ofm.tp_src = udppkt.sport
     ofm.tp_dst = udppkt.dport
     return ofm
-
-
-def byte_str2array(str):
-    """Convert binary str to array
-
-    @param str binary string
-    @return array of values
-    """
-    r = []
-    for i in range(0, len(str)):
-        r.append(struct.unpack("B", str[i])[0])
-    return r
-
-def array2val(array):
-    """Convert array to value
-
-    @param array
-    @return value
-    """
-    r = 0
-    array.reverse()
-    for i in range(0, len(array)):
-        r += array[i] * pow(2,8*i)
-    return r

@@ -15,51 +15,31 @@ def get_null_terminated_str(s):
                "parse utility")
     return s[:s.find('\x00')]
 
-class ipv4addr:
-    """Class that parse IPv4 address
+def is_multicast_mac(mac_array):
+    """Determine if mac is multicast
     """
-    def __init__(self, ip):
-        """Initialize
-        with string xxx.xxx.xxx.xxx
-        """
-        self.ipvalues = None
-        if isinstance(ip, str) and (ip.find(".") != 0):
-            iptuple = ip.split(".")
-            self.ipvalues = []
-            for ipval in iptuple:
-                self.ipvalues.append(int(ipval))
+    return ((mac_array[0] % 2) == 1)
 
-        #Checkout validity
-        if not self.__check():
-            self.ipvalues = None
+def byte_str2array(str):
+    """Convert binary str to array
 
-    def value(self):
-        """Return value in integer
-        """
-        if (self.ipvalues == None):
-            return None
-        
-        val = 0
-        i = 0
-        for ipval in self.ipvalues:
-            val += ipval*pow(2,i)
-            i += 8
-        return val
+    @param str binary string
+    @return array of values
+    """
+    r = []
+    for i in range(0, len(str)):
+        r.append(struct.unpack("B", str[i])[0])
+    return r
 
-    def __check(self):
-        """Check validity of IP address
-        """
-        #Check length
-        if (len(self.ipvalues) != 4):
-            return False
-        
-        #Check value
-        for ipval in self.ipvalues:
-            if (ipval < 0) or (ipval > 255):
-                return False
+def array2val(array):
+    """Convert array to value
 
-        #Check first value is non-zero
-        if (self.ipvalues[0] == 0):
-            return False
-        
-        return True
+    @param array
+    @return value
+    """
+    r = 0
+    a = array[:]
+    a.reverse()
+    for i in range(0, len(a)):
+        r += a[i] * pow(2,8*i)
+    return r
