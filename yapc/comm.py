@@ -20,7 +20,7 @@ class event(yapc.event):
     """
     name = "Communication Event"
     SOCK_OPEN = 1
-    SOCK_CLOSE = 1
+    SOCK_CLOSE = 2
     def __init__(self, sock, event):
         """Initialize communicatin event
 
