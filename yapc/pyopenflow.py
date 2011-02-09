@@ -2952,7 +2952,7 @@ class ofp_match:
         self.in_port = 0
         self.dl_src= [0,0,0,0,0,0]
         self.dl_dst= [0,0,0,0,0,0]
-        self.dl_vlan = 0
+        self.dl_vlan = OFP_VLAN_NONE
         self.dl_vlan_pcp = 0
         self.pad1 = 0
         self.dl_type = 0
