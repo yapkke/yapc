@@ -8,6 +8,7 @@ import yapc.comm as comm
 import yapc.pyopenflow as pyopenflow
 import yapc.output as output
 import socket
+import sys
 
 class message(yapc.event):
     """OpenFlow message event
@@ -115,6 +116,15 @@ class connections:
         """
         self.db[sock] = connection(sock)
 
+    def remove(self, sock):
+        """Delete connection
+        """
+        try:
+            self.db.pop(sock)
+        except KeyError:
+            output.warn("Attempt to remove unknown connection"+str(sock),
+                        self.__class__.__name__)
+
 class ofsockmanager(comm.sockmanager):
     """Class to manage OpenFlow 
 
@@ -181,6 +191,8 @@ class ofserver(yapc.component, yapc.cleanup):
         self.connections = connections()
         server.scheduler.registereventhandler(message.name,
                                               self)
+        server.scheduler.registereventhandler(comm.event.name,
+                                              self)
 
     def processevent(self, event):
         """Event handler
@@ -191,17 +203,24 @@ class ofserver(yapc.component, yapc.cleanup):
 
         @param event event to handle
         """
-        if (event.sock not in self.connections.db):
-            self.connections.add(event.sock)
+        if (isinstance(event, comm.event)):
+            #Remove stale connection
+            if (event.event == comm.event.SOCK_CLOSE):
+                self.connections.remove(event.sock)
+                
+        elif (isinstance(event, message)):
+            #OpenFlow connection
+            if (event.sock not in self.connections.db):
+                self.connections.add(event.sock)
 
-        if isinstance(event, message):
-            if (not self.connections.db[event.sock].handshake):
-                #Handshake
-                self.connections.db[event.sock].dohandshake(event)
-            elif (event.header.type == pyopenflow.OFPT_ECHO_REQUEST):
-                #Echo replies
-                self.connections.db[event.sock].replyecho(event)
-
+            if isinstance(event, message):
+                if (not self.connections.db[event.sock].handshake):
+                    #Handshake
+                    self.connections.db[event.sock].dohandshake(event)
+                elif (event.header.type == pyopenflow.OFPT_ECHO_REQUEST):
+                    #Echo replies
+                    self.connections.db[event.sock].replyecho(event)
+                    
         return True
 
     def cleanup(self):

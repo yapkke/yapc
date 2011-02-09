@@ -42,9 +42,8 @@ class client:
     def __del__(self):
         """Destructor
         """
-        #self.sock.close()
-        pass
-
+        self.sock.close()
+        
 class connection:
     """Class to manage JSON connection
 
@@ -94,6 +93,15 @@ class connections:
         """Add connection
         """
         self.db[sock] = connection(sock)
+
+    def remove(self, sock):
+        """Delete connection
+        """
+        try:
+            self.db.pop(sock)
+        except KeyError:
+            output.warn("Attempt to remove unknown connection"+str(sock),
+                        self.__class__.__name__)
 
 class jsonsockmanager(comm.sockmanager):
     """Class to manage JSON connection
@@ -168,14 +176,23 @@ class jsonserver(yapc.cleanup):
         self.connections = connections()
         server.scheduler.registereventhandler(message.name,
                                               self)
+        server.scheduler.registereventhandler(comm.event..name,
+                                              self)
 
     def processevent(self, event):
         """Event handler
 
         @param event event to handle
         """
-        if (event.sock not in self.connections.db):
-            self.connections.add(event.sock)
+        if (isinstance(event, comm.event)):
+            #Remove stale connection
+            if (event.event == comm.event.SOCK_CLOSE):
+                self.connections.remove(event.sock)
+                
+        elif (isinstance(event, message)):
+            #JSON connection
+            if (event.sock not in self.connections.db):
+                self.connections.add(event.sock)
 
         return True
 
