@@ -163,6 +163,7 @@ class ofserver(yapc.component, yapc.cleanup):
         """
         #Create server connection
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server.bind((host, port))
         output.info("Binding OpenFlow to "+str(host)+":"+str(port),
                     self.__class__.__name__)
