@@ -33,16 +33,17 @@ def get_client():
         memcache_client.flush_all()
     return memcache_client
 
-def set(name, value):
+def set(name, value, timeout=0):
     """Set key and value
 
     @param name key name
     @param value value to set key to
+    @param timeout timeout to expire data
     """
     if (name.find(" ") != -1):
         output.warn("Memcache key cannot contain spaces",
                     "memcache util")
-    return memcache_client.set(name, value)
+    return memcache_client.set(name, value, timeout)
 
 def get(name):
     """Get value of key
