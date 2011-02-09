@@ -119,11 +119,10 @@ class connections:
     def remove(self, sock):
         """Delete connection
         """
-        try:
+        if (sock in self.db):
             self.db.pop(sock)
-        except KeyError:
-            output.warn("Attempt to remove unknown connection"+str(sock),
-                        self.__class__.__name__)
+            output.dbg("Remove stale OpenFlow connection "+str(sock),
+                       self.__class__.__name__)
 
 class ofsockmanager(comm.sockmanager):
     """Class to manage OpenFlow 

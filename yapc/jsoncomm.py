@@ -97,11 +97,10 @@ class connections:
     def remove(self, sock):
         """Delete connection
         """
-        try:
+        if (sock in self.db):
             self.db.pop(sock)
-        except KeyError:
-            output.warn("Attempt to remove unknown connection"+str(sock),
-                        self.__class__.__name__)
+            output.dbg("Remove stale JSON connection "+str(sock),
+                       self.__class__.__name__)
 
 class jsonsockmanager(comm.sockmanager):
     """Class to manage JSON connection
@@ -176,7 +175,7 @@ class jsonserver(yapc.cleanup):
         self.connections = connections()
         server.scheduler.registereventhandler(message.name,
                                               self)
-        server.scheduler.registereventhandler(comm.event..name,
+        server.scheduler.registereventhandler(comm.event.name,
                                               self)
 
     def processevent(self, event):
