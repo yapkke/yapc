@@ -29,7 +29,7 @@ class eventdispatcher:
         ##List of shutdown components
         self.cleanups = []
 
-    def len(self):
+    def __len__(self):
         """Return length of current event queue
         """
         return len(self.__events)
@@ -147,9 +147,10 @@ class server:
             self.scheduler.dispatchnextevent()
 
             #Sleep if looping too fast
-            sleeptime = self.sleep-(time.clock()-self.__starttime)
-            if (sleeptime > 0):
-                time.sleep(sleeptime)
+            if (len(self.scheduler) == 0):
+                sleeptime = self.sleep-(time.clock()-self.__starttime)
+                if (sleeptime > 0):
+                    time.sleep(sleeptime)
 
     def signalhandler(self, signal, frame):
         """Handle signal
