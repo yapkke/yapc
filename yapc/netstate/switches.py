@@ -123,8 +123,8 @@ class dp_features(yapc.component):
                     dpidsl = mc.get(dp_features.DP_SOCK_LIST)
                     if (dpidsl != None):
                         if (key in dpidsl):
-                            dpidl.remove(key)
-                        mc.set(dp_features.DP_SOCK_LIST, dpidl)
+                            dpidsl.remove(key)
+                        mc.set(dp_features.DP_SOCK_LIST, dpidsl)
 
                     #Remove features
                     mc.delete(key)
