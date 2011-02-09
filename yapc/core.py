@@ -85,13 +85,21 @@ class eventdispatcher:
         """Dispatch next event
         """
         if (len(self.__events) != 0):
-            output.vdbg("Dispatch next event",
-                        self.__class__.__name__)
             event = self.__events.pop(0)
             try:
                 for handler in self.__processors[event.name]:
+                    output.vdbg("Dispatch "+event.name+\
+                                    " to "+handler.__class__.__name__,
+                                self.__class__.__name__)
                     try:
-                        if (not handler.processevent(event)):
+                        r = handler.processevent(event)
+                        if (r == None):
+                            output.warn(handler.__class__.__name__+"'s "+\
+                                            "processevent method should return"+\
+                                            " True/False (using True by default)",
+                                        self.__class__.__name__)
+                            r = True
+                        if (not r):
                             break;
                     except:
                         output.output("CRITICAL",
