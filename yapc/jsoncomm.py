@@ -10,6 +10,7 @@ import socket
 import simplejson
 import os
 import stat
+import select
 
 class message(yapc.event):
     """JSON message event
@@ -38,7 +39,16 @@ class client:
         ##Reference to socket
         self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.sock.connect(file)
-
+        
+    def recv(self, maxlen=1024, timeout=10):
+        """Receive data
+        """
+        ready = select.select([self.sock], [], [], timeout)
+        if ready[0]:
+            return self.sock.recv(maxlen)
+        else:
+            return "{}"
+        
     def __del__(self):
         """Destructor
         """

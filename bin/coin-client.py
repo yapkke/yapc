@@ -94,6 +94,6 @@ if (args[0] == "add_if" or args[0] == "del_if" or
 sock = jsoncomm.client(sock)
 output.dbg("Sending "+simplejson.dumps(msg),"coin-client")
 sock.sock.send(simplejson.dumps(msg))
-output.info("Received "+simplejson.dumps(simplejson.loads(sock.sock.recv(2048)),
+output.info("Received "+simplejson.dumps(simplejson.loads(sock.recv(2048)),
                                          indent=4))
 sys.exit(0)
