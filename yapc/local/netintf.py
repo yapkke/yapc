@@ -5,20 +5,49 @@
 # @author ykk
 # @date Feb 2011
 #
+import yapc.interface as yapc
+import yapc.output as output
 import netifaces
+import os
 
 IFCONFIG = "ifconfig"
 
-class interfacemgr:
+class interfacemgr(yapc.cleanup):
     """Interface manager class to manage interfaces
 
     @author ykk
     @date Feb 2011
     """
-    def __init__(self):
+    def __init__(self, server):
         """Initialize
+
+        @param server yapc core
         """
-        pass
+        ##List of veth
+        self.veth = []
+
+        server.scheduler.registercleanup(self)
+
+    def cleanup(self):
+        """Clean up interfaces
+        """
+        output.dbg("Cleaning up veth interfaces",
+                   self.__class__.__name__)
+        for v in self.veth:
+            v.__del__()
+
+    def add_veth(self):
+        """Add new veth pair
+        """
+        r = veth_pair()
+        self.veth.append(r)
+        return r
+
+    def del_veth(self, veth):
+        """Del veth pair
+        """
+        self.veth.remove(veth)
+        del veth
 
     def interfaces(self):
         """Return interfaces
@@ -82,3 +111,31 @@ class interfacemgr:
         if (netmask != None):
             c += " netmask "+netmask
         cmd.run_cmd(c, self.__class__.__name__)
+
+class veth_pair:
+    """Class to create, manage and cleanup veth
+    
+    @author ykk
+    @date Feb 2011
+    """
+    def __init__(self):
+        """Initialize
+        """
+        ##Name of interfaces
+        self.names = []
+        oldi = netifaces.interfaces()
+        os.system("ip link add type veth")
+        newi = netifaces.interfaces()
+        for i in newi:
+            if (i not in oldi):
+                self.names.append(i)
+        output.dbg("Created virtual interfaces "+str(self.names),
+                   self.__class__.__name__)
+
+    def __del__(self):
+        """Remove ip link
+        """
+        os.system("ip link del "+str(self.names[0]))
+        output.dbg("Cleaning up "+str(self.names[0]),
+                   self.__class__.__name__)
+
