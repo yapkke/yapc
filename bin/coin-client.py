@@ -26,6 +26,7 @@ def usage():
     print "get_eth_interfaces\n\tGet current Ethernet interfaces of device"
     print "add_if [name]\n\tAdd interface to COIN"
     print "del_if [name]\n\tDelete interface from COIN"
+    print "create_nat [name]\n\tCreate a new NAT interface in COIN"
 
 #Parse options and arguments
 try:
@@ -55,12 +56,14 @@ for opt,arg in opts:
 
 if (len(args) < 1 or
     args[0] not in ["add_if","del_if","get_interfaces",
-                    "get_eth_interfaces", "get_mode"]):
+                    "get_eth_interfaces", "get_mode",
+                    "create_nat"]):
     print "Missing or unknown command!"
     usage()
     sys.exit(2)
 
-if (args[0] == "add_if" or args[0] == "del_if"):
+if (args[0] == "add_if" or args[0] == "del_if" or
+    args[0] == "create_nat"):
     if not (len(args) >= 2):
         print "Missing name for interface"
         usage()
@@ -79,10 +82,13 @@ msg["command"] = args[0]
 if (args[0] == "add_if" or args[0] == "del_if" or
     args[0] == "get_interfaces"):
     msg["subtype"] = "ovs"
+elif (args[0] == "create_nat"):
+    msg["subtype"] = "nat"
 else:
     msg["subtype"] = "global"
 
-if (args[0] == "add_if" or args[0] == "del_if"):
+if (args[0] == "add_if" or args[0] == "del_if" or
+    args[0] == "create_nat"):
     msg["name"] = args[1]
 
 sock = jsoncomm.client(sock)

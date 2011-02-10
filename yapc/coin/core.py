@@ -12,6 +12,7 @@ import yapc.output as output
 import yapc.pyopenflow as pyopenflow
 import yapc.commands as cmd
 import yapc.local.netintf as loifaces
+import yapc.coin.nat as cnat
 import simplejson
 
 SOCK_NAME = "/etc/coin.sock"
@@ -35,7 +36,9 @@ class server(yapc.component):
         self.config = {}
         self.config["mode"] = None
         ##Interface Manager
-        self.ifmgr = loifaces.interfacemgr()
+        self.ifmgr = loifaces.interfacemgr(server)
+        ##NAT Manager
+        self.natmgr = cnat.natmgr(self.ifmgr)
 
         server.scheduler.registereventhandler(ofcomm.message.name,
                                               self)
@@ -111,9 +114,32 @@ class server(yapc.component):
             reply = self.__processglobal(event)
             if (reply != None):
                 self.jsonconnections.db[event.sock].send(reply)
+        elif (event.message["type"] == "coin" and
+            event.message["subtype"] == "nat"):
+            reply = self.__processnat(event)
+            if (reply != None):
+                self.jsonconnections.db[event.sock].send(reply)
         else:
             output.dbg("Receive JSON message "+simplejson.dumps(event.message),
                        self.__class__.__name__)
+
+    def __processnat(self, event):
+        """Process NAT related JSON messages
+        
+        @param event yapc.jsoncomm.message event
+        """
+        reply = {}
+        reply["type"] = "coin"
+        reply["subtype"] = "nat"
+
+        if (event.message["command"] == "create_nat"):
+            self.natmgr.add(event.message["name"])
+        else:
+            output.dbg("Receive message "+str(event.message),
+                       self.__class__.__name__)
+            return None
+
+        return reply
 
     def __processglobal(self, event):
         """Process mode related JSON messages
