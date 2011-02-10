@@ -50,6 +50,7 @@ class coin_server(yapc.daemon):
         #OVS fabric manager
         ovs = coinovs.switch(server, 
                              jsonconn.connections)
+        coinserver.switch = ovs
         #Drop unhandled flows
         df = default.dropflow(server, ofconn.connections)
         

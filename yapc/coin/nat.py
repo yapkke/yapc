@@ -1,7 +1,6 @@
 ##COIN NAT mode
 #
 # Handles interfaces in NAT
-#
 # @author ykk
 # @date Feb 2011
 #
@@ -27,6 +26,7 @@ class natmgr:
         """Add a new NAT
         """       
         self.nats[name] = nat(self.ifmgr.add_veth())        
+        return self.nats[name]
 
 class nat:
     """Class to implement NAT over ports in OVS
@@ -34,22 +34,20 @@ class nat:
     @author ykk
     @date Feb 2011
     """
-    def __init__(self, ifmgr):
+    def __init__(self, veth):
         """Initialize NAT
 
         @param ifmgr reference to interface manager
         """
-        ##Dictionary of interfaces [port no] = (mac addr, ip addr)
-        self.interfaces = {}
-
-class nat_intf:
-    """Class to create and manage a NAT interface
-
-    @author ykk
-    @date Feb 2011
-    """
-    def __init__(self, veth_pair):
-        """Initialize a NAT interface
+        ##Name of client facing interface
+        self.client_intf = veth.names[1]
+        ##Name of switch facing interface
+        self.switch_intf = veth.names[0]
+        ##Name of interfaces in NAT
+        self.interfaces = []
+        
+    def add_if(self, intf):
+        """Add interface to NAT
         """
-        ##Reference to veth pair
-        self.veth_pair = veth_pair
+        self.interfaces.append(intf)
+        

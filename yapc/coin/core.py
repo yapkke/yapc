@@ -13,6 +13,7 @@ import yapc.pyopenflow as pyopenflow
 import yapc.commands as cmd
 import yapc.local.netintf as loifaces
 import yapc.coin.nat as cnat
+import yapc.coin.ovs as ovs
 import simplejson
 
 SOCK_NAME = "/etc/coin.sock"
@@ -39,6 +40,8 @@ class server(yapc.component):
         self.ifmgr = loifaces.interfacemgr(server)
         ##NAT Manager
         self.natmgr = cnat.natmgr(self.ifmgr)
+        ##Reference to switch fabric
+        self.switch = None
 
         server.scheduler.registereventhandler(ofcomm.message.name,
                                               self)
@@ -133,7 +136,8 @@ class server(yapc.component):
         reply["subtype"] = "nat"
 
         if (event.message["command"] == "create_nat"):
-            self.natmgr.add(event.message["name"])
+            nat = self.natmgr.add(event.message["name"])
+            self.switch.datapaths[ovs.COIN_DP_NAME].add_if(nat.client_intf)
         else:
             output.dbg("Receive message "+str(event.message),
                        self.__class__.__name__)
