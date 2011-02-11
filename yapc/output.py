@@ -17,7 +17,8 @@ LEVELS = {"CRITICAL":50,
           "WARN": 30,
           "INFO": 20,
           "DBG": 10,
-          "VDBG": 1}
+          "VDBG": 5,
+          "VVDBG": 1}
 
 ##Dictionary of loggers
 loggers = {}
@@ -144,3 +145,8 @@ def vdbg(msg, who=None):
     """Print verbose debug messages
     """
     output("VDBG", msg, who)
+
+def vvdbg(msg, who=None):
+    """Print verbose debug messages
+    """
+    output("VVDBG", msg, who)

@@ -43,8 +43,8 @@ class eventqueue:
         p = bisect.bisect(self.__time, clock)
         bisect.insort(self.__time, clock)
         self.__events.insert(p, event)
-        output.vdbg(str(event)+" inserted for dispatch at time "+str(clock),
-                    self.__class__.__name__)
+        output.vvdbg(str(event)+" inserted for dispatch at time "+str(clock),
+                     self.__class__.__name__)
 
     def get_events(self):
         """Retrieve clone of event queue
@@ -163,8 +163,8 @@ class eventdispatcher:
 
         if (timedelta == 0):
             self.__events.append(event)
-            output.vdbg("Post "+str(event),
-                        self.__class__.__name__)
+            output.vvdbg("Post "+str(event),
+                         self.__class__.__name__)
         elif (timedelta > 0):
             clock = time.time() + timedelta
             self.__timedevents.add(event, clock)
@@ -218,9 +218,9 @@ class eventdispatcher:
                                 str(tim)+" is running at time "+str(c),
                             self.__class__.__name__)
             else:
-                output.vdbg("Event "+event.name+" scheduled for time "+\
-                               str(tim)+" is running at time "+str(c),
-                           self.__class__.__name__)
+                output.vvdbg("Event "+event.name+" scheduled for time "+\
+                                 str(tim)+" is running at time "+str(c),
+                             self.__class__.__name__)
 
         #If no timed event, get non-timed event
         if (event == None and len(self.__events) != 0):
@@ -235,9 +235,9 @@ class eventdispatcher:
         else:
             try:
                 for handler in self.__processors[event.name]:
-                    output.vdbg("Dispatch "+event.name+\
-                                    " to "+handler.__class__.__name__,
-                                self.__class__.__name__)
+                    output.vvdbg("Dispatch "+event.name+\
+                                     " to "+handler.__class__.__name__,
+                                 self.__class__.__name__)
                     if (not self.__handle_event(handler, event)):
                         break
             except KeyError:
@@ -289,11 +289,11 @@ class server:
             sleeptime = min(maxsleeptime, 
                             self.sleep-(time.time()-self.__starttime))
             if (sleeptime > 0):
-                output.vdbg("Sleeping for "+str(sleeptime)+" seconds"+\
-                                " with "+str(len(self.scheduler))+" timed events"+\
-                                " for running at "+str(self.scheduler.get_next_time())+\
-                                " "+str(time.time()),
-                            self.__class__.__name__)
+                output.vvdbg("Sleeping for "+str(sleeptime)+" seconds"+\
+                                 " with "+str(len(self.scheduler))+" timed events"+\
+                                 " for running at "+str(self.scheduler.get_next_time())+\
+                                 " "+str(time.time()),
+                             self.__class__.__name__)
                 time.sleep(sleeptime)
 
     def signalhandler(self, signal, frame):
