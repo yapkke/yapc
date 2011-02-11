@@ -5,6 +5,7 @@ import yapc.openflowutil as ofutil
 import pcap
 import dpkt
 import sys
+import getopt
 
 ##Print usage guide
 def usage():
