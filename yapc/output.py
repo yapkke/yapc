@@ -80,7 +80,7 @@ def __create_logger(who, level):
         logfile.setFormatter(format)
         loggers[who].addHandler(logfile)
     loggers[GENERIC_LOG_NAME].log(LEVELS["VDBG"],
-                           "Add logger for "+who+" at level "+str(level))
+                                  "Add logger for "+who+" at level "+str(level))
 
 def set_mode(msg_mode, who=None):
     """Set the message mode for who
