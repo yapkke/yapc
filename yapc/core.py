@@ -406,14 +406,19 @@ class core:
         """
         self.__scheduler.print_event_handlers()
 
-    def run(self):
+    def run(self, runbg=False):
         """Run core
+
+        @param runbg runs everything as thread in background
         """
         self.__scheduler.print_event_handlers()
 
         self.recv.start()
         self.__timedscheduler.start()
-        self.__scheduler.run()
+        if (runbg):
+            self.__scheduler.start()
+        else:
+            self.__scheduler.run()
 
     def order_handler(self, eventname, 
                       earlier_handler, later_handler):
