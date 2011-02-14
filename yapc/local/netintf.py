@@ -26,7 +26,7 @@ class interfacemgr(yapc.cleanup):
         ##List of veth
         self.veth = []
 
-        server.scheduler.registercleanup(self)
+        server.register_cleanup(self)
 
     def cleanup(self):
         """Clean up interfaces

@@ -72,7 +72,7 @@ class dropflow(yapc.component):
         ##Reference to OpenFlow connections
         self.conn = ofconn
 
-        server.scheduler.registereventhandler(ofevents.pktin.name, self)
+        server.register_event_handler(ofevents.pktin.name, self)
 
     def processevent(self, event):
         """Event handler

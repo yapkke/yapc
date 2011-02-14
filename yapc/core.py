@@ -260,8 +260,8 @@ class timed_event_dispatcher(dispatcher):
         """
         if (clock > (time.time()+self.sleep)):
             self._events.add(event, clock)
-            output.dbg("Added event "+event.name+" for time "+str(clock),
-                       self.__class__.__name__)
+            output.vvdbg("Added event "+event.name+" for time "+str(clock),
+                         self.__class__.__name__)
             return True
         else:
             output.warn("Cannot add event "+event.name+\
@@ -363,6 +363,8 @@ class server:
     def cleanup(self):
         """Clean up
         """
+        output.dbg("Cleaning up...",
+                   self.__class__.__name__)
         for shutdown in self.cleanups:
             shutdown.cleanup()
 
