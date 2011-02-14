@@ -87,7 +87,7 @@ class datapath:
                    self.__class__.__name__)
         if (self.connected):
             self.disconnect()
-        for i in self.interfaces:
+        for i in self.interfaces[:]:
             self.del_if(i)
         cmd.run_cmd(DPCTL+" del-dp "+self.name,
                     self.__class__.__name__)
