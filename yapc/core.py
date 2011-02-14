@@ -132,6 +132,17 @@ class dispatcher(threading.Thread):
         """
         return len(self._events)
 
+    def print_event_handlers(self):
+        """Output event and handlers for it
+        """
+        for e,handles in self._processors.items():
+            output.dbg("Event "+e+" in order handled by:",
+                       self.__class__.__name__)
+            for h in handles:
+                output.dbg("\t"+h.__class__.__name__,
+                           self.__class__.__name__)
+                
+
     def _dispatch_event(self, event):
         """Dispatch next event
 
@@ -356,6 +367,8 @@ class core:
     def run(self):
         """Run core
         """
+        self.__scheduler.print_event_handlers()
+
         self.recv.start()
         self.__timedscheduler.start()
         self.__scheduler.run()
