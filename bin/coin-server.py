@@ -43,18 +43,22 @@ class coin_server(yapc.daemon):
         #COIN main server, maintaining connections
         coinserver = coin.server(server, ofconn.connections,
                                  jsonconn.connections)
+
+        #Default flows
+        #flood = default.floodall_flow(server, ofconn.connections)
+
         #Network status
         sw = switches.dp_features(server)
         swhost = switchhost.mac2sw_binding(server)
+
         #OVS fabric manager
-        ovs = coinovs.switch(server, 
-                             jsonconn.connections)
+        ovs = coinovs.switch(server, jsonconn.connections)
         coinserver.switch = ovs
-        #Drop unhandled flows
-        df = default.dropflow(server, ofconn.connections)
-        
-        server.run()
-        
+
+        #Default flow droppping
+        flowdrop = default.dropflow(server, ofconn.connections)
+       
+        server.run()       
         sys.exit(0)
         
 ##Print usage guide

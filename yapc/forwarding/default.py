@@ -56,6 +56,40 @@ class floodpkt(yapc.component):
 
         return True
 
+class floodall_flow(yapc.component):
+    """Class that flood all flows using flow entry at lowest priority
+
+    @author ykk
+    @date Feb 2011
+    """
+    def __init__(self, server, ofconn):
+        """Initialize
+        
+        @param server yapc core
+        @param ofconn refrence to connections
+        """
+        ##Reference to OpenFlow connections
+        self.conn = ofconn
+
+        server.register_event_handler(ofevents.features_reply.name, self)
+
+    def processevent(self, event):
+        """Event handler
+
+        @param event event to handle
+        """
+        if (isinstance(event, ofevents.features_reply)):
+            #Install flooding flow
+            fm = pyof.ofp_flow_mod()
+            fm.header.xid = ofutil.get_xid()
+            fm.match.wildcards = pyof.OFPFW_ALL
+            fm.command = pyof.OFPFC_ADD
+            fm.priority = ofutil.PRIORITY['LOWEST']
+            fm.idle_timeout = pyof.OFP_FLOW_PERMANENT
+            fm.hard_timeout = pyof.OFP_FLOW_PERMANENT
+            self.conn.db[event.sock].send(fm.pack())
+
+        return True
 
 class dropflow(yapc.component):
     """Class that drop flows
