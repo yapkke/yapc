@@ -6,7 +6,7 @@
 # @date Feb 2011
 #
 import yapc.interface as yapc
-import yapc.ofcomm as ofcomm
+import yapc.events.openflow as ofevents
 import yapc.comm as comm
 import yapc.output as output
 import yapc.pyopenflow as pyof
@@ -37,7 +37,8 @@ class dp_features(yapc.component):
         #Start memcache
         mc.get_client()
 
-        server.register_event_handler(ofcomm.message.name, self)
+        server.register_event_handler(ofevents.port_status.name, self)
+        server.register_event_handler(ofevents.features_reply.name, self)
         server.register_event_handler(comm.event.name, self)
 
 
@@ -55,40 +56,23 @@ class dp_features(yapc.component):
         @param event OpenFlow message event to process
         @return True
         """
-        if isinstance(event, ofcomm.message):
-            #Feature replies
-            if (event.header.type == pyof.OFPT_FEATURES_REPLY):
-                f = pyof.ofp_switch_features()
-                r = f.unpack(event.message)
-                while (len(r) >= pyof.OFP_PHY_PORT_BYTES):
-                    p = pyof.ofp_phy_port()
-                    r = p.unpack(r)
-                    f.ports.append(p)
-                if (len(r) > 0):
-                    output.warn("Features reply is of irregular length with "+\
-                                    str(len(r))+" bytes remaining.",
-                                self.__class__.__name__)
-                output.dbg("Received switch features:\n"+\
-                               f.show("\t"),
-                           self.__class__.__name__)
+        if isinstance(event, ofevents.features_reply):
+            #Maintain list of datapath socket
+            key = self.get_key(event.sock)
+            dpidsl = mc.get(dp_features.DP_SOCK_LIST)
+            if (dpidsl == None):
+                dpidsl = []
+            if (key not in dpidsl):
+                dpidsl.append(key)
+            mc.set(dp_features.DP_SOCK_LIST, dpidsl)
 
-                #Maintain list of datapath socket
-                key = self.get_key(event.sock)
-                dpidsl = mc.get(dp_features.DP_SOCK_LIST)
-                if (dpidsl == None):
-                    dpidsl = []
-                if (key not in dpidsl):
-                    dpidsl.append(key)
-                mc.set(dp_features.DP_SOCK_LIST, dpidsl)
+            #Maintain dp features in memcache
+            mc.set(key, event.features)
+            
 
-                #Maintain dp features in memcache
-                mc.set(key, f)
-
+        elif isinstance(event, ofevents.port_status):
             #Port status
-            elif (event.header.type == pyof.OFPT_PORT_STATUS):
-                s = pyof.ofp_port_status()
-                s.unpack(event.message)
-                
+            if (event.header.type == pyof.OFPT_PORT_STATUS):
                 key = self.get_key(event.sock)
                 sw = mc.get(key)
                 if (sw == None):
@@ -96,16 +80,16 @@ class dp_features(yapc.component):
                                 self.__class__.__name__)
                 else:
                     output.dbg("Received port status:\n"+\
-                                   s.show("\t"),
+                                   event.port.show("\t"),
                                self.__class__.__name__)
-                    if (s.reason == pyof.OFPPR_DELETE or 
-                        s.reason == pyof.OFPPR_MODIFY):
+                    if (event.port.reason == pyof.OFPPR_DELETE or 
+                        event.port.reason == pyof.OFPPR_MODIFY):
                         for p in sw.ports:
-                            if (p.port_no == s.desc.port_no):
+                            if (p.port_no == event.port.desc.port_no):
                                 sw.ports.remove(p)
-                    if (s.reason == pyof.OFPPR_ADD or 
-                        s.reason == pyof.OFPPR_MODIFY):
-                        sw.ports.append(s.desc)
+                    if (event.port.reason == pyof.OFPPR_ADD or 
+                        event.port.reason == pyof.OFPPR_MODIFY):
+                        sw.ports.append(event.port.desc)
                     output.dbg("Updated switch features:\n"+\
                                    sw.show("\t"),
                                self.__class__.__name__)

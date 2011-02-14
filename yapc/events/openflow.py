@@ -37,8 +37,61 @@ class parser(yapc.component):
                 self.scheduler.post_event(pktin(event.sock,
                                                 event.message))
 
+            elif (event.header.type == pyof.OFPT_FEATURES_REPLY):
+                self.scheduler.post_event(features_reply(event.sock,
+                                                         event.message))
+
+            elif (event.header.type == pyof.OFPT_PORT_STATUS):
+                self.scheduler.post_event(port_status(event.sock,
+                                                      event.message))
+
         return True
 
+
+class port_status(ofcomm.message):
+    """Port status in OpenFlow
+
+    @author ykk
+    @date Feb 2011
+    """
+    name = "OpenFlow Port Status"
+    def __init__(self, sock, msg):
+        ofcomm.message.__init__(self, sock, msg)
+
+        ##Port status
+        self.port = None
+
+        if (self.header.type == pyof.OFPT_PORT_STATUS):
+            self.port = pyof.ofp_port_status()
+            self.port.unpack(msg)
+
+class features_reply(ofcomm.message):
+    """Features reply event in OpenFlow
+
+    @author ykk
+    @date Feb 2011
+    """
+    name = "OpenFlow Features Reply"
+    def __init__(self, sock, msg):
+        ofcomm.message.__init__(self, sock, msg)
+
+        ##Features struct
+        self.features = None
+        
+        if (self.header.type == pyof.OFPT_FEATURES_REPLY):
+            self.features = pyof.ofp_switch_features()
+            r = self.features.unpack(msg)
+            while (len(r) >= pyof.OFP_PHY_PORT_BYTES):
+                p = pyof.ofp_phy_port()
+                r = p.unpack(r)
+                self.features.ports.append(p)
+            if (len(r) > 0):
+                output.warn("Features reply is of irregular length with "+\
+                                str(len(r))+" bytes remaining.",
+                            self.__class__.__name__)
+            output.dbg("Received switch features:\n"+\
+                           self.features.show("\t"),
+                       self.__class__.__name__)
 
 class pktin(ofcomm.message):
     """Packet in event in OpenFlow
