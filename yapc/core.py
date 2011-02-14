@@ -10,6 +10,7 @@ import os
 import sys
 import signal
 import bisect
+import threading
 import yapc.comm as comm
 import yapc.ofcomm as ofcomm
 import yapc.output as output
@@ -48,18 +49,24 @@ class eventqueue:
 
     def get_events(self):
         """Retrieve clone of event queue
+
+        @return list of events
         """
         r = self.__events[:]
         return r
 
     def get_time(self):
         """Retrieve clone of event time
+
+        @return list of time
         """
         r = self.__time[:]
         return r
 
     def get_next_time(self):
         """Retrieve time of next event
+
+        @return next event's time
         """
         if (len(self.__time) == 0):
             return None
@@ -68,6 +75,8 @@ class eventqueue:
 
     def has_event_ready(self):
         """Indicate if there is any event ready to run
+
+        @return if there is event to run
         """
         t = self.get_next_time()
         if (t == None):
@@ -84,109 +93,75 @@ class eventqueue:
         e = self.__events.pop(0)
         return (t,e)
 
-class eventdispatcher:
-    """Core event dispatcher for YAPC
-    
+class dispatcher(threading.Thread):
+    """Dispatcher class to dispacth events
+
     @author ykk
-    @date Oct 2010
+    @date Feb 2011
     """
-    def __init__(self, tolerance=0.01):
+    def __init__(self, cleanup,
+                 processors=None, event_queue=None):
         """Initialize
 
-        @param tolerance time tolerance before printing warnings (default=10 ms)
+        @param cleanup reference to master cleanup
+        @param processors reference to processors if any
+        @param event_queue reference to event queue if any
         """
+        threading.Thread.__init__(self)
+        ##Reference to cleanup component
+        self.cleanup = cleanup
         ##Event queue
-        self.__events = []
-        ##Timed event queue
-        self.__timedevents = eventqueue()
+        if (event_queue == None):
+            self._events = []
+        else:
+            self._events = event_queue
         ##Event processing registration
-        self.__processors = {}
-        ##List of shutdown components
-        self.cleanups = []
-        ##Tolerance for timing
-        self.tolerance = tolerance
+        if (processors == None):
+            self._processors = {}
+        else:
+            self._processors = processors
+        ##Max amount of time to sleep
+        self.sleep = 0.1
+        ##Indicate if runing
+        self.running = True
 
     def __len__(self):
-        """Return length of current non-timed event queue
+        """Return length of current event queue
+
+        @return length of event queue
         """
-        return len(self.__timedevents)
+        return len(self._events)
 
-    def cleanup(self):
-        """Clean up run
+    def _dispatch_event(self, event):
+        """Dispatch next event
+
+        @param event event to dispatch
         """
-        for shutdown in self.cleanups:
-            shutdown.cleanup()
-
-    def registercleanup(self, shutdown):
-        """Register shutdown
-        
-        @param shutdown cleanup function to register
-        """
-        self.cleanups.insert(0,shutdown)
-
-    def registereventhandler(self, eventname, handler):
-        """Register handler for event
-        
-        Event should be registered in order of calling
-        @param eventname name of event
-        @param handler handler function
-        """
-        if (not isinstance(eventname, str)):
-            output.warn("Event name "+str(eventname)+" is not  a string",
-                        self.__class__.__name__)
-            return
-        #Register handler
-        if (eventname not in self.__processors):
-            self.__processors[eventname] = []
-        self.__processors[eventname].append(handler)
-
-    def print_event_and_handler(self):
-        """Print event and handlers as debug messages
-        """
-        for event,handlers in self.__processors.items():
-            pout = "Event "+event+" is handled in order by \n"
-            for h in handlers:
-                pout += "\t"+h.__class__.__name__+"\n"
-            output.dbg(pout, self.__class__.__name__)
-
-    def postevent(self, event, timedelta=0):
-        """Post event
-
-        @param event event to post
-        @param timedelta to wait before posting event
-        """
-        #Check event is an event
-        if (not isinstance(event, yapc.event)):
-            output.warn(str(event)+"is not an event",
-                        self.__class__.__name__)
-            return
-
-        if (timedelta == 0):
-            self.__events.append(event)
-            output.vvdbg("Post "+str(event),
+        #Dispatch event
+        if (isinstance(event, yapc.priv_callback)):
+            self.__handle_event(event.handler, event)
+            output.vvdbg("Event "+event.name+" dispatched to "+
+                         event.handler.__class__.__name__,
                          self.__class__.__name__)
-        elif (timedelta > 0):
-            clock = time.time() + timedelta
-            self.__timedevents.add(event, clock)
         else:
-            output.warn("Cannot schedule event "+str(event)+" to the past")
-
-    def has_event_ready(self):
-        """Indicate if there is any event ready to run
-        """
-        return (len(self.__events) > 0 or
-                self.__timedevents.has_event_ready())
-        
-    def get_next_time(self):
-        """Get next time in timed event queue
-        """
-        return self.__timedevents.get_next_time()
+            try:
+                for handler in self._processors[event.name]:
+                    output.vvdbg("Dispatch "+event.name+\
+                                     " to "+handler.__class__.__name__,
+                                 self.__class__.__name__)
+                    if (not self.__handle_event(handler, event)):
+                        break
+            except KeyError:
+                #No handler, so pass
+                output.warn("Event "+str(event.name)+" does not have handler",
+                            self.__class__.__name__)
 
     def __handle_event(self, handler, event):
         """Handle event
         
         @param handler handler for event
         @param event event
+        @return if to pass on to next handler
         """
         try:
             r = handler.processevent(event)
@@ -200,53 +175,129 @@ class eventdispatcher:
             output.output("CRITICAL",
                           "Error occurs here... going to clean up",
                           self.__class__.__name__)
-            self.cleanup()
+            self.cleanup.cleanup()
             raise
         return r
 
-    def dispatchnextevent(self):
-        """Dispatch next event
+    def registereventhandler(self, eventname, handler):
+        """Register handler for event
+        
+        Event should be registered in order of calling
+        @param eventname name of event
+        @param handler handler function
         """
-        #Get timed event if valid
-        event = None
-        t = self.__timedevents.get_next_time()
-        c = time.time()
-        if (t != None and t <= c):
-            (tim, event) = self.__timedevents.get_next()
-            if ((c-tim) > self.tolerance):
-                output.warn("Event "+event.name+" scheduled for time "+\
-                                str(tim)+" is running at time "+str(c),
-                            self.__class__.__name__)
-            else:
-                output.vvdbg("Event "+event.name+" scheduled for time "+\
-                                 str(tim)+" is running at time "+str(c),
-                             self.__class__.__name__)
-
-        #If no timed event, get non-timed event
-        if (event == None and len(self.__events) != 0):
-            event = self.__events.pop(0)
-
-        if (event == None):
+        if (not isinstance(eventname, str)):
+            output.warn("Event name "+str(eventname)+" is not  a string",
+                        self.__class__.__name__)
             return
+        #Register handler
+        if (eventname not in self._processors):
+            self._processors[eventname] = []
+        self._processors[eventname].append(handler)
 
-        #Dispatch event
-        if (isinstance(event, yapc.priv_event)):
-            self.__handle_event(event.handler, event.event)
+class event_dispatcher(dispatcher):
+    """Class to dispatch non-timed event
+
+    @author ykk
+    @date Feb 2011
+    """
+    def __init__(self, cleanup, processors=None):
+        """Initialize
+
+        @param cleanup master cleanup component
+        @param processors reference to processors/handlers if any
+        """
+        dispatcher.__init__(self, cleanup, processors)
+        ##Just a record of starting time of each loop
+        self.__starttime = time.time()
+
+    def post_event(self, event):
+        """Post event
+
+        @param event event to post
+        @return success status (always True)
+        """
+        self._events.append(event)
+        return True
+
+    def run(self):
+        """Main loop
+        """
+        while self.running:
+            self.__starttime = time.time()
+
+            while (len(self) > 0):
+                self._dispatch_event(self._events.pop(0))
+
+            sleeptime = self.sleep-(time.time()-self.__starttime)
+            if (sleeptime > 0):
+                time.sleep(sleeptime)
+
+class timed_event_dispatcher(dispatcher):
+    """Class to dispatch timed event
+
+    @author ykk
+    @date Feb 2011
+    """
+    def __init__(self, cleanup, processors=None, tolerance=0.1):
+        """Initalize
+
+        @param cleanup master cleanup component
+        @param processors reference to processors/handlers if any
+        @param tolerance tolerance to timing
+        """
+        dispatcher.__init__(self, cleanup, processors,
+                            eventqueue())
+        ##Reference to tolerance
+        self.tolerance = tolerance
+
+    def post_event(self, event, clock):
+        """Post event
+
+        @param event event to post
+        @param clock time to post event
+        @return success status
+        """
+        if (clock > (time.time()+self.sleep)):
+            self._events.add(event, clock)
+            output.dbg("Added event "+event.name+" for time "+str(clock),
+                       self.__class__.__name__)
+            return True
         else:
-            try:
-                for handler in self.__processors[event.name]:
-                    output.vvdbg("Dispatch "+event.name+\
-                                     " to "+handler.__class__.__name__,
-                                 self.__class__.__name__)
-                    if (not self.__handle_event(handler, event)):
-                        break
-            except KeyError:
-                #No handler, so pass
-                output.warn("Event "+str(event.name)+" does not have handler",
-                            self.__class__.__name__)
+            output.warn("Cannot add event "+event.name+\
+                        " shorter than "+str(self.sleep)+\
+                        " before execution time",
+                        self.__class__.__name__)
+            return False
+
+    def run(self):
+        """Main loop
+        """
+        while self.running:
+            if (len(self._events) == 0):
+                #Sleep for some time if nothing to do
+                time.sleep(self.sleep)
+                continue
+            else:
+                while (self._events.has_event_ready()):
+                    (t, event) = self._events.get_next()
+                    if ((t-time.time()) > self.tolerance):
+                        output.warn("Event "+event.name+" scheduled for "+str(t)+\
+                                    " is being run at time "+str(time.time()),
+                                    self.__class__.__name__)
+                    else:
+                        output.vvdbg("Event "+event.name+" scheduled for "+str(t)+\
+                                     " is being run at time "+str(time.time()),
+                                     self.__class__.__name__)
+                    self._dispatch_event(event)
+
+            ntime = self.sleep
+            if (len(self._events) > 0):
+                ntime = self._events.get_next_time() - time.time()
+            time.sleep(min(ntime, self.sleep))
 
 class server:
-    """Daemon for yapc core
+    """yapc core
 
     @author ykk
     @date Oct 2010
@@ -254,51 +305,79 @@ class server:
     def __init__(self):
         """Initialize
         """
-        #Amount to sleep
-        self.sleep = 0.1
-        #Last start time
-        self.__starttime = time.time()
-        ##Indicate if running
-        self.running = True
         ##Event scheduler
-        self.scheduler = eventdispatcher()
+        self.__scheduler = event_dispatcher(self,)
+        ##Timed Event scheduler
+        self.__timedscheduler = timed_event_dispatcher(self,
+                                                       self.__scheduler._processors)
         ##Receive thread
         self.recv = comm.receivethread()
-        self.recv.start()
+        ##List of shutdown components
+        self.cleanups = []
         ##Register for signal
         signal.signal(signal.SIGINT, self.signalhandler)
         signal.signal(signal.SIGTERM, self.signalhandler)
-       
-    def run(self):
-        """Main loop to run
-        """
-        #Output events and handlers
-        self.scheduler.print_event_and_handler()
-        #Run
-        while self.running:
-            self.__starttime = time.time()
-            
-            while (self.scheduler.has_event_ready()):
-                self.scheduler.dispatchnextevent()
 
-            #Sleep if looping too fast
-            nexttimedevent = self.scheduler.get_next_time()
-            maxsleeptime = self.sleep
-            if (nexttimedevent != None):
-                maxsleeptime = nexttimedevent-time.time()
-            sleeptime = min(maxsleeptime, 
-                            self.sleep-(time.time()-self.__starttime))
-            if (sleeptime > 0):
-                output.vvdbg("Sleeping for "+str(sleeptime)+" seconds"+\
-                                 " with "+str(len(self.scheduler))+" timed events"+\
-                                 " for running at "+str(self.scheduler.get_next_time())+\
-                                 " "+str(time.time()),
-                             self.__class__.__name__)
-                time.sleep(sleeptime)
+    def register_event_handler(self, eventname, handler):
+        """Register handler for event
+        
+        Event should be registered in order of calling
+        @param eventname name of event
+        @param handler handler function
+        """
+        self.__scheduler.registereventhandler(eventname,
+                                              handler)
+
+    def post_event(self, event, timedelta = 0):
+        """Post event
+
+        @param event event to post
+        @param timedelta to wait before posting event
+        @return if successful
+        """
+        #Check event is an event
+        if (not isinstance(event, yapc.event)):
+            output.warn(str(event)+"is not an event",
+                        self.__class__.__name__)
+
+        if (timedelta == 0):
+            return self.__scheduler.post_event(event)
+        else:
+            return self.__timedscheduler.post_event(event,
+                                                    timedelta+time.time())
+
+    def register_cleanup(self, shutdown):
+        """Register shutdown
+        
+        @param shutdown cleanup function to register
+        """
+        self.cleanups.insert(0,shutdown)
+
+    def run(self):
+        """Run core
+        """
+        self.recv.start()
+        self.__timedscheduler.start()
+        self.__scheduler.run()
+
+    def cleanup(self):
+        """Clean up
+        """
+        for shutdown in self.cleanups:
+            shutdown.cleanup()
 
     def signalhandler(self, signal, frame):
         """Handle signal
         """
-        self.scheduler.cleanup()
+        ##Set running to false for all
+        self.recv.running = False
+        self.__timedscheduler.running = False
+        self.__scheduler.running = False
+
+        self.cleanup()
+
+        self.__timedscheduler.join(1.0)
+
         output.info("Exiting yapc...", self.__class__.__name__)
         sys.exit(0)
+

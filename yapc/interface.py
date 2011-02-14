@@ -16,23 +16,23 @@ class event:
     ##Name
     name = None
 
-class priv_event(event):
-    """Private event for class
+class priv_callback(event):
+    """Private callback event for class
 
     @author ykk
     @date Oct 2010
     """
-    name = "Private Event"
-    def __init__(self, handler, event):
+    name = "Private Callback"
+    def __init__(self, handler, magic):
         """Initialize
         
         @param handler object to handle event
-        @param event event
+        @param magic object to post this event with (e.g., another event)
         """
         ##Reference to handler
         self.handler = handler
-        ##Reference to event
-        self.event = event
+        ##Reference to magic
+        self.magic = magic
         
 class component:
     """Base component for events
