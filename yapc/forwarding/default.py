@@ -80,6 +80,9 @@ class floodall_flow(yapc.component):
         """
         if (isinstance(event, ofevents.features_reply)):
             #Install flooding flow
+            oao = pyof.ofp_action_output()
+            oao.port = pyof.OFPP_FLOOD
+
             fm = pyof.ofp_flow_mod()
             fm.header.xid = ofutil.get_xid()
             fm.match.wildcards = pyof.OFPFW_ALL
@@ -87,6 +90,7 @@ class floodall_flow(yapc.component):
             fm.priority = ofutil.PRIORITY['LOWEST']
             fm.idle_timeout = pyof.OFP_FLOW_PERMANENT
             fm.hard_timeout = pyof.OFP_FLOW_PERMANENT
+            fm.actions.append(oao)
             self.conn.db[event.sock].send(fm.pack())
 
         return True
