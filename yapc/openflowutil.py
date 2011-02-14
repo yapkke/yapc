@@ -20,6 +20,17 @@ VLAN_PRIORITY_MASK = 0xe000
 VLAN_PRIORITY_SHIFT = 13
 VLAN_ID_MASK = 0x0fff
 
+##FLOW PRIORITY
+PRIORITY = {'HIGHEST':65535,
+            'MUCH HIGHER':57343,
+            'HIGHER':49151,
+            'HIGH':40959,
+            'DEFAULT':pyof.OFP_DEFAULT_PRIORITY,
+            'LOW':24576,
+            'LOWER':16384,
+            'MUCH LOWER':8192,
+            'LOWEST':0}
+
 def get_xid():
     """Retrieve XID to use
     """
