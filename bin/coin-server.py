@@ -35,7 +35,8 @@ class coin_server(yapc.daemon):
         jsonconn = jsoncomm.jsonserver(server, file=self.sock, 
                                        forcebind=self.forcejson)
 
-        ofmsg = ofdbg.of_msg_count(server,1)
+        #Debug/Profiling
+        #ofmsg = ofdbg.of_msg_count(server)
 
         #OpenFlow Parser
         ofparse = ofevents.parser(server)
