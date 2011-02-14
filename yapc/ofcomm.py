@@ -130,10 +130,10 @@ class ofsockmanager(comm.sockmanager):
     @author ykk
     @date Oct 2010
     """
-    def __init__(self, sock, scheduler):
+    def __init__(self, sock, server):
         """Initialize
         """
-        comm.sockmanager.__init__(self, sock, scheduler)
+        comm.sockmanager.__init__(self, sock, server)
         ##Header object
         self.__header = pyopenflow.ofp_header()
        
@@ -155,7 +155,7 @@ class ofsockmanager(comm.sockmanager):
                         self.__header.show().strip().replace("\n",";"),
                    self.__class__.__name__)
         msg = message(self.sock, packet)
-        self.scheduler.postevent(msg)
+        self.scheduler.post_event(msg)
 
 class ofserver(yapc.component, yapc.cleanup):
     """Class to create OpenFlow server socket
@@ -183,16 +183,16 @@ class ofserver(yapc.component, yapc.cleanup):
             self.ofservermgr = ofserversocket()
 
         #Bind
-        self.ofservermgr.scheduler = server.scheduler
+        self.ofservermgr.scheduler = server
         server.recv.addconnection(self.server, self.ofservermgr)
 
         ##OpenFlow connections
         self.connections = connections()
-        server.scheduler.registereventhandler(message.name,
-                                              self)
-        server.scheduler.registereventhandler(comm.event.name,
-                                              self)
-
+        server.register_event_handler(message.name,
+                                      self)
+        server.register_event_handler(comm.event.name,
+                                      self)
+        
     def processevent(self, event):
         """Event handler
 
@@ -246,6 +246,6 @@ class ofserversocket(comm.sockmanager):
         if (not comm.BLOCKING):
             client.setblocking(0)
         recvthread.addconnection(client, ofsockmanager(client, self.scheduler))
-        self.scheduler.postevent(comm.event(client,
-                                            comm.event.SOCK_OPEN))
+        self.scheduler.post_event(comm.event(client,
+                                             comm.event.SOCK_OPEN))
         output.dbg("Connection to "+str(address)+" added", self.__class__.__name__)

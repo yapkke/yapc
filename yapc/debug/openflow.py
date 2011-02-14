@@ -21,25 +21,25 @@ class of_msg_count(yapc.component):
         """
         ##Reference to scheduler for timed events
         self.server = server
-        server.scheduler.registereventhandler(ofcomm.message.name,
-                                              self)
+        server.register_event_handler(ofcomm.message.name,
+                                      self)
         ##Count for number of messages
         self.count = 0
         ##How often to count
         self.period = period
-        self.server.scheduler.postevent(yapc.priv_event(self, None),
-                                        self.period)
+        self.server.post_event(yapc.priv_callback(self, None),
+                               self.period)
     
     def processevent(self, event):
         """Handle event
         """
-        if (event == None):
+        if (isinstance(event, yapc.priv_callback)):
             #Timer up
-            self.server.scheduler.postevent(yapc.priv_event(self, None),
-                                            self.period)
+            self.server.post_event(yapc.priv_callback(self, None),
+                                   self.period)
 
-            output.dbg("yapc sees "+str(self.count)+" OpenFlow messages in the last "+\
-                           str(self.period)+" seconds",
+            output.info("yapc sees "+str(self.count)+" OpenFlow messages in the last "+\
+                        str(self.period)+" seconds",
                        self.__class__.__name__)
             self.count = 0
         elif (isinstance(event, ofcomm.message)):

@@ -21,8 +21,8 @@ class tutorial(yapc.component):
         @param ofconn reference to ofconnections to send message later
         """
         self.conn = ofconn
-        server.scheduler.registereventhandler(ofevents.pktin.name,
-                                              self)
+        server.register_event_handler(ofevents.pktin.name,
+                                      self)
 
     def processevent(self, event):
         """Process all the events registered for

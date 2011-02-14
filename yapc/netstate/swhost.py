@@ -26,7 +26,7 @@ class mac2sw_binding(yapc.component):
         @param server yapc core
         """
         mc.get_client()
-        server.scheduler.registereventhandler(ofevents.pktin.name, self)
+        server.register_event_handler(ofevents.pktin.name, self)
 
     def get_key(sock, mac):
         """Get key to retrieve binding between switch and mac

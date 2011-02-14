@@ -32,7 +32,7 @@ class learningswitch(yapc.component):
         self.conn = ofconn
 
         mc.get_client()
-        server.scheduler.registereventhandler(ofevents.pktin.name, self)
+        server.register_event_handler(ofevents.pktin.name, self)
 
     def processevent(self, event):
         """Event handler

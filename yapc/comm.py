@@ -67,8 +67,8 @@ class sockmanager:
             received = sock.recv(self.maxlen)
             if (len(received) == 0):
                 recvthread.removeconnection(sock)
-                self.scheduler.postevent(event(self.sock,
-                                               event.SOCK_CLOSE))
+                self.scheduler.post_event(event(self.sock,
+                                                event.SOCK_CLOSE))
                 return
             else:
                 self.buffer += received

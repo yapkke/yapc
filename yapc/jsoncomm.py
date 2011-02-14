@@ -138,7 +138,7 @@ class jsonsockmanager(comm.sockmanager):
         """
         output.dbg("Receive JSON packet of "+packet, self.__class__.__name__)
         msg = message(self.sock, packet)
-        self.scheduler.postevent(msg)
+        self.scheduler.post_event(msg)
 
 class jsonserver(yapc.cleanup):
     """Class to create JSON server socket
@@ -177,16 +177,16 @@ class jsonserver(yapc.cleanup):
             self.jsonservermgr = jsonserversocket()
 
         #Bind to scheduler
-        self.jsonservermgr.scheduler = server.scheduler
+        self.jsonservermgr.scheduler = server
         server.recv.addconnection(self.server, self.jsonservermgr)
-        server.scheduler.registercleanup(self)
+        server.register_cleanup(self)
 
         ##OpenFlow connections
         self.connections = connections()
-        server.scheduler.registereventhandler(message.name,
-                                              self)
-        server.scheduler.registereventhandler(comm.event.name,
-                                              self)
+        server.register_event_handler(message.name,
+                                      self)
+        server.register_event_handler(comm.event.name,
+                                      self)
 
     def processevent(self, event):
         """Event handler
@@ -235,6 +235,6 @@ class jsonserversocket(comm.sockmanager):
         if (not comm.BLOCKING):
             client.setblocking(0)
         recvthread.addconnection(client, jsonsockmanager(client, self.scheduler))
-        self.scheduler.postevent(comm.event(client,
+        self.scheduler.post_event(comm.event(client,
                                             comm.event.SOCK_OPEN))
         output.dbg("Connection to "+str(address)+" added", self.__class__.__name__)

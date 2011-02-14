@@ -39,8 +39,8 @@ class switch(yapc.component, ovs.switch):
 
         mc.get_client()
 
-        server.scheduler.registereventhandler(jsoncomm.message.name, self)
-        server.scheduler.registercleanup(self)
+        server.register_event_handler(jsoncomm.message.name, self)
+        server.register_cleanup(self)
 
     def processevent(self, event):
         """Process messages

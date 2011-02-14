@@ -37,8 +37,8 @@ class dp_features(yapc.component):
         #Start memcache
         mc.get_client()
 
-        server.scheduler.registereventhandler(ofcomm.message.name, self)
-        server.scheduler.registereventhandler(comm.event.name, self)
+        server.register_event_handler(ofcomm.message.name, self)
+        server.register_event_handler(comm.event.name, self)
 
 
     def get_key(sock):

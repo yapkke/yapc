@@ -23,9 +23,9 @@ class parser(yapc.component):
         @param server yapc core
         """
         ##Reference to scheduler
-        self.scheduler = server.scheduler
+        self.scheduler = server
 
-        server.scheduler.registereventhandler(ofcomm.message.name, self)
+        server.register_event_handler(ofcomm.message.name, self)
 
     def processevent(self, event):
         """Event handler
@@ -34,8 +34,8 @@ class parser(yapc.component):
         """
         if (isinstance(event, ofcomm.message)):
             if (event.header.type == pyof.OFPT_PACKET_IN):
-                self.scheduler.postevent(pktin(event.sock,
-                                               event.message))
+                self.scheduler.post_event(pktin(event.sock,
+                                                event.message))
 
         return True
 

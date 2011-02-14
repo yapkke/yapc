@@ -11,6 +11,7 @@ import yapc.events.openflow as ofevents
 import yapc.netstate.swhost as switchhost
 import yapc.forwarding.switching as fswitch
 import yapc.forwarding.default as default
+import yapc.debug.openflow as ofdbg
 import sys
 import getopt
 
@@ -31,6 +32,9 @@ class flow_switch(yapc.daemon):
         #Create yapc base
         server = core.server()
         ofconn = ofcomm.ofserver(server, self.port)
+
+        #Debugger/Profiler
+        #ofcount = ofdbg.of_msg_count(server)
 
         #OpenFlow Parser
         ofparse = ofevents.parser(server)

@@ -43,10 +43,10 @@ class server(yapc.component):
         ##Reference to switch fabric
         self.switch = None
 
-        server.scheduler.registereventhandler(ofcomm.message.name,
-                                              self)
-        server.scheduler.registereventhandler(jsoncomm.message.name,
-                                              self)
+        server.register_event_handler(ofcomm.message.name,
+                                      self)
+        server.register_event_handler(jsoncomm.message.name,
+                                      self)
 
     def set_config(self, name, val):
         """Set config
