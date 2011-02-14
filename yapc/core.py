@@ -296,7 +296,7 @@ class timed_event_dispatcher(dispatcher):
                 ntime = self._events.get_next_time() - time.time()
             time.sleep(min(ntime, self.sleep))
 
-class server:
+class core:
     """yapc core
 
     @author ykk

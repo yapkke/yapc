@@ -30,7 +30,7 @@ class coin_server(yapc.daemon):
         """Run server
         """
         #Create yapc base
-        server = core.server()
+        server = core.core()
         ofconn = ofcomm.ofserver(server)
         jsonconn = jsoncomm.jsonserver(server, file=self.sock, 
                                        forcebind=self.forcejson)

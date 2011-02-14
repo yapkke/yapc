@@ -65,7 +65,7 @@ class tutorial(yapc.component):
 ##Set the output mode to debugging
 output.set_mode("DBG")
 ##Create yapc's core
-server = core.server()
+server = core.core()
 ##Create ofserver to handle and maintain OpenFlow connections
 ofconn = ofcomm.ofserver(server)
 ##Parser to generate OpenFlow based event beyond ofcomm.message

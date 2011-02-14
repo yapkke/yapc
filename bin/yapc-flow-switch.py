@@ -30,7 +30,7 @@ class flow_switch(yapc.daemon):
         output.set_mode(self.debug)
 
         #Create yapc base
-        server = core.server()
+        server = core.core()
         ofconn = ofcomm.ofserver(server, self.port)
 
         #Debugger/Profiler
