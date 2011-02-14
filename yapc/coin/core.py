@@ -6,10 +6,9 @@
 # @date Oct 2010
 #
 import yapc.interface as yapc
-import yapc.ofcomm as ofcomm
+import yapc.events.openflow as ofevents
 import yapc.jsoncomm as jsoncomm
 import yapc.output as output
-import yapc.pyopenflow as pyopenflow
 import yapc.commands as cmd
 import yapc.local.netintf as loifaces
 import yapc.coin.nat as cnat
@@ -43,7 +42,7 @@ class server(yapc.component):
         ##Reference to switch fabric
         self.switch = None
 
-        server.register_event_handler(ofcomm.message.name,
+        server.register_event_handler(ofevents.error.name,
                                       self)
         server.register_event_handler(jsoncomm.message.name,
                                       self)
@@ -82,30 +81,16 @@ class server(yapc.component):
         @param event event to handle
         @return True
         """
-        if isinstance(event, ofcomm.message):
-            #OpenFlow messages
-            self.__processof(event)
+        if isinstance(event, ofevents.error):
+            #OpenFlow error
+            output.warn("Error of type "+str(event.error.type)+\
+                            " code "+str(event.error.code),
+                        self.__class__.__name__)
         elif isinstance(event, jsoncomm.message):
             #JSON messages
             self.__processjson(event)
             
         return True
-
-    def __processof(self, event):
-        """Process basic OpenFlow messages:
-        * Print error messages
-        
-        @param event yapc.ofcomm.message event
-        """            
-        if (event.header.type == pyopenflow.OFPT_ERROR):
-            #Error
-            oem = pyopenflow.ofp_error_msg()
-            oem.unpack(event.message)
-            output.warn("Error of type "+str(oem.type)+" code "+str(oem.code),
-                        self.__class__.__name__)
-        else:
-            output.vdbg("Receive message "+event.header.show().strip().replace("\n",";"),
-                       self.__class__.__name__)
 
     def __processjson(self, event):
         """Process basic JSON messages

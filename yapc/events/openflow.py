@@ -37,6 +37,10 @@ class parser(yapc.component):
                 self.scheduler.post_event(pktin(event.sock,
                                                 event.message))
 
+            elif (event.header.type == pyof.OFPT_ERROR):
+                self.scheduler.post_event(error(event.sock,
+                                                event.message))
+
             elif (event.header.type == pyof.OFPT_FEATURES_REPLY):
                 self.scheduler.post_event(features_reply(event.sock,
                                                          event.message))
@@ -48,6 +52,28 @@ class parser(yapc.component):
         return True
 
 
+class error(ofcomm.message):
+    """Error in OpenFlow
+
+    @author ykk
+    @date Feb 2011
+    """
+    name = "OpenFlow Port Status"
+    def __init__(self, sock, msg):
+        """Initialize
+
+        @param sock reference to socket
+        @param msg message
+        """
+        ofcomm.message.__init__(self, sock, msg)
+
+        ##Error
+        self.error = None
+
+        if (self.header.type == pyof.OFPT_ERROR):
+            self.error = pyof.ofp_error_msg()
+            self.error.unpack(msg)
+
 class port_status(ofcomm.message):
     """Port status in OpenFlow
 
@@ -56,6 +82,11 @@ class port_status(ofcomm.message):
     """
     name = "OpenFlow Port Status"
     def __init__(self, sock, msg):
+        """Initialize
+
+        @param sock reference to socket
+        @param msg message
+        """
         ofcomm.message.__init__(self, sock, msg)
 
         ##Port status
@@ -73,6 +104,11 @@ class features_reply(ofcomm.message):
     """
     name = "OpenFlow Features Reply"
     def __init__(self, sock, msg):
+        """Initialize
+
+        @param sock reference to socket
+        @param msg message
+        """
         ofcomm.message.__init__(self, sock, msg)
 
         ##Features struct
