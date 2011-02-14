@@ -142,6 +142,43 @@ class dispatcher(threading.Thread):
                 output.dbg("\t"+h.__class__.__name__,
                            self.__class__.__name__)
                 
+    def order_handler(self, eventname, 
+                      earlier_handler, later_handler):
+        """Order handler for given event
+
+        Do so by moving earlier handler to be just before the later handler
+
+        @param eventname name of event
+        @param earlier_handler handler that should process event earlier
+        @param later_handler handler that should process event later
+        """
+        #Get event handlers
+        if (eventname not in self._processors):
+            output.warn("Shuffle handlers of unknown event "+eventname,
+                        self.__class__.__name__)
+        h = self._processors[eventname]
+
+        eindex = -1
+        if (earlier_handler in h):
+            eindex = h.index(earlier_handler)
+        else:
+            output.warn(earlier_handler.__class__.__name__+\
+                        "is not a handler of event "+eventname,
+                        self.__class__.__name__)
+            return
+
+        lindex = -1
+        if (later_handler in h):
+            lindex = h.index(later_handler)
+        else:
+            output.warn(later_handler.__class__.__name__+\
+                        "is not a handler of event "+eventname,
+                        self.__class__.__name__)
+            return
+
+        #Reorder
+        if (lindex < eindex):
+            h.insert(lindex, h.pop(eindex))
 
     def _dispatch_event(self, event):
         """Dispatch next event
@@ -364,6 +401,11 @@ class core:
         """
         self.cleanups.insert(0,shutdown)
 
+    def print_event_handlers(self):
+        """Print the current event and handlers
+        """
+        self.__scheduler.print_event_handlers()
+
     def run(self):
         """Run core
         """
@@ -373,6 +415,19 @@ class core:
         self.__timedscheduler.start()
         self.__scheduler.run()
 
+    def order_handler(self, eventname, 
+                      earlier_handler, later_handler):
+        """Order handler for given event
+
+        Do so by moving earlier handler to be just before the later handler
+
+        @param eventname name of event
+        @param earlier_handler handler that should process event earlier
+        @param later_handler handler that should process event later
+        """
+        self.__scheduler.order_handler(eventname, 
+                                       earlier_handler, later_handler)
+        
     def cleanup(self):
         """Clean up
         """
