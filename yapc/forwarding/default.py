@@ -56,8 +56,8 @@ class floodpkt(yapc.component):
 
         return True
 
-class floodall_flow(yapc.component):
-    """Class that flood all flows using flow entry at lowest priority
+class default_entries(yapc.component):
+    """Class that install default entries during startup of switch
 
     @author ykk
     @date Feb 2011
@@ -70,8 +70,15 @@ class floodall_flow(yapc.component):
         """
         ##Reference to OpenFlow connections
         self.conn = ofconn
+        ##List of entries to install
+        self.entries = []
 
         server.register_event_handler(ofevents.features_reply.name, self)
+
+    def add(self, flowentry):
+        """Add flow entry to install
+        """
+        self.entries.append(flowentry)
 
     def processevent(self, event):
         """Event handler
@@ -79,21 +86,47 @@ class floodall_flow(yapc.component):
         @param event event to handle
         """
         if (isinstance(event, ofevents.features_reply)):
-            #Install flooding flow
-            oao = pyof.ofp_action_output()
-            oao.port = pyof.OFPP_FLOOD
-
-            fm = pyof.ofp_flow_mod()
-            fm.header.xid = ofutil.get_xid()
-            fm.match.wildcards = pyof.OFPFW_ALL
-            fm.command = pyof.OFPFC_ADD
-            fm.priority = ofutil.PRIORITY['LOWEST']
-            fm.idle_timeout = pyof.OFP_FLOW_PERMANENT
-            fm.hard_timeout = pyof.OFP_FLOW_PERMANENT
-            fm.actions.append(oao)
-            self.conn.db[event.sock].send(fm.pack())
+            for fm in self.entries:
+                self.conn.db[event.sock].send(fm.get_flow_mod().pack())
 
         return True
+
+class flow_entry:
+    """Class to provide some pre-formed flow entry
+    """
+    def __init__(self):
+        """Initialize
+        """
+        self.fm = pyof.ofp_flow_mod()
+
+    def get_flow_mod(self):
+        """Function to return flow_entry in terms of flow mod.
+
+        @return ofp_flow_mod
+        """
+        self.fm.header.xid = ofutil.get_xid()
+        return self.fm
+
+class flood_all_entry(flow_entry):
+    """
+    """
+    def __init__(self, 
+                 priority = ofutil.PRIORITY['LOWEST'],
+                 idle_timeout = pyof.OFP_FLOW_PERMANENT,
+                 hard_timeout = pyof.OFP_FLOW_PERMANENT):
+        """Initialize
+        """
+        flow_entry.__init__(self)
+
+        oao = pyof.ofp_action_output()
+        oao.port = pyof.OFPP_FLOOD
+        
+        self.fm.match.wildcards = pyof.OFPFW_ALL
+        self.fm.command = pyof.OFPFC_ADD
+        self.fm.priority = priority
+        self.fm.idle_timeout = idle_timeout
+        self.fm.hard_timeout = hard_timeout
+        self.fm.actions.append(oao)
 
 class dropflow(yapc.component):
     """Class that drop flows

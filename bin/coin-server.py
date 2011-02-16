@@ -45,7 +45,8 @@ class coin_server(yapc.daemon):
                                  jsonconn.connections)
 
         #Default flows
-        #flood = default.floodall_flow(server, ofconn.connections)
+        defaultentry = default.default_entries(server, ofconn.connections)
+        defaultentry.add(default.flood_all_entry())
 
         #Network status
         sw = switches.dp_features(server)
