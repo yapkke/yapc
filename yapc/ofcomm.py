@@ -69,7 +69,7 @@ class connection:
             output.info("Connected to switch %x" % self.dpid,
                         self.__class__.__name__)
             self.handshake = True
-
+            
         else:
             output.warn("Handshake should not handle message type"+\
                             ofp_type[msg.header.type],
@@ -108,8 +108,21 @@ class connections:
     def __init__(self):
         """Initialize
         """
-        ##Dictionary of connections
+        ##Dictionary of connections (indexed by socket)
         self.db = {}
+        ##Dictionary of connections (indexed by dpid)
+        self.dpid_conn = {}
+
+    def get_conn(self, dpid):
+        """Get socket reference based on dpid
+
+        @param dpid datapath id
+        @return connection reference (else None)
+        """
+        try:
+            return self.dpid_conn[dpid]
+        except KeyError:
+            return None
         
     def add(self, sock):
         """Add connection
@@ -120,6 +133,11 @@ class connections:
         """Delete connection
         """
         if (sock in self.db):
+            #Remove connection by dpid
+            dpid = self.db[sock].dpid
+            if (dpid in self.dpid_conn):
+                self.dpid_conn.pop(dpid)
+            
             self.db.pop(sock)
             output.dbg("Remove stale OpenFlow connection "+str(sock),
                        self.__class__.__name__)
@@ -216,6 +234,9 @@ class ofserver(yapc.component, yapc.cleanup):
                 if (not self.connections.db[event.sock].handshake):
                     #Handshake
                     self.connections.db[event.sock].dohandshake(event)
+                    if (event.header.type == pyopenflow.OFPT_FEATURES_REPLY):
+                        c = self.connections.db[event.sock]
+                        self.connections.dpid_conn[c.dpid] = c 
                 elif (event.header.type == pyopenflow.OFPT_ECHO_REQUEST):
                     #Echo replies
                     self.connections.db[event.sock].replyecho(event)
