@@ -4,9 +4,11 @@
 # @date Feb 2011
 #
 import struct
+import time
 import dpkt.ethernet
 import yapc.interface as yapc
 import yapc.events.openflow as ofevents
+import yapc.events.network as netevents
 import yapc.packet.lldp as lldppkt
 import yapc.netstate.switches as swstate
 import yapc.memcacheutil as mc
@@ -15,20 +17,72 @@ import yapc.openflowutil as ofutil
 import yapc.parseutil as parseutil
 import yapc.output as output
 
-class lldp_link_discovery(yapc.component):
-    """ Discovery links using LLDP
+class link_maintain:
+    """Class that maintain link and timeout
 
     @author ykk
     @date Feb 2011
     """
-    def __init__(self, server, ofconn, interval=10):
+    def __init__(self, server, timeout):
+        """Initialize
+        """
+        ##Reference to server
+        self.server = server
+        ##Time to wait before timing out link
+        self.timeout = timeout
+        ##List of time
+        self.__expiration = []
+        self.__links = []
+        
+        mc.get_client()
+        
+
+    def update(self, src_dpid, src_port, dst_dpid, dst_port):
+        """Update link
+        """
+        link = (src_dpid, src_port, dst_dpid, dst_port)
+        try:
+            index = self.__links.index(link)
+            self.__expiration.pop(index)
+            self.__links.pop(index)
+        except ValueError:
+            self.server.post_event(netevents.link_up(link[0], link[1],
+                                                     link[2], link[3]))
+        self.__expiration.append(time.time()+self.timeout)
+        self.__links.append(link)
+
+    def check_expire(self):
+        """Expire outdated links
+        """
+        while (len(self.__expiration) > 0 and
+            self.__expiration[0] > time.time()):
+            #Expired link
+            link = self.__links.pop(0)
+            self.__expiration.pop(0)
+            self.server.post_event(netevents.link_down(link[0], link[1],
+                                                       link[2], link[3]))
+        
+class lldp_link_discovery(yapc.component):
+    """Discover links using LLDP
+
+    @author ykk
+    @date Feb 2011
+    """
+    def __init__(self, server, ofconn,
+                 sendinterval=10, linktimeout=30):
         """Initialize
 
         @param server yapc core
         """
+        if (sendinterval > linktimeout):
+            output.warn("Probe interval of "+str(sendinterval)+\
+                        "is smaller than timeout of "+str(linktimeout),
+                        self.__class__.__name__)
         ##Interval to send LLDP per switch/port
-        self.interval = interval
-        self.__minterval = interval
+        self.interval = sendinterval
+        self.__minterval = sendinterval
+        ##Time to wait before timing out link
+        self.link_maintain = link_maintain(server, linktimeout)
         ##Reference to core
         self.server = server
         ##Reference to OpenFlow connections
@@ -43,10 +97,12 @@ class lldp_link_discovery(yapc.component):
         self.__po.actions.append(oao)
 
         mc.get_client()
-        
+
         server.register_event_handler(ofevents.pktin.name,
                                       self)
         server.register_event_handler(ofevents.port_status.name,
+                                      self)
+        server.register_event_handler(ofevents.features_reply.name,
                                       self)
         server.post_event(yapc.priv_callback(self, True),
                           self.interval)
@@ -62,20 +118,28 @@ class lldp_link_discovery(yapc.component):
                 src_port = int(lldp.data.value[1:])
                 dst_dpid = self.conn.db[event.sock].dpid
                 dst_port = event.pktin.in_port
-                output.dbg("%x:" % dst_dpid + str(dst_port)+\
-                           " receive LLDP packet from %x" % src_dpid+\
-                           ":"+str(src_port),
-                           self.__class__.__name__)
+                self.link_maintain.update(src_dpid, src_port,
+                                          dst_dpid, dst_port)
+                output.vdbg("%x:" % dst_dpid + str(dst_port)+\
+                            " receive LLDP packet from %x" % src_dpid+\
+                            ":"+str(src_port),
+                            self.__class__.__name__)
                 
                 return False
         
         elif isinstance(event, ofevents.port_status):
             #New port, so let's try to find a new link fast
-            pass
-             
+            self.send_lldp(self.conn.db[event.sock].dpid,
+                           event.port.desc)
+
+        elif isinstance(event, ofevents.features_reply):
+            #New switch, so let's try to find new links fast
+            for p in event.features.ports:
+                self.send_lldp(event.features.datapath_id, p)
+
         elif isinstance(event, yapc.priv_callback):
             if (event.magic ==True):
-                #Regular enumeration of switch port to maintain
+                #Periodic enumeration of switch port to maintain
                 dpidsl = mc.get(swstate.dp_features.DP_SOCK_LIST)
                 if (dpidsl != None):
                     for key in dpidsl:
