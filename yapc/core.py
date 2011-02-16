@@ -201,7 +201,7 @@ class dispatcher(threading.Thread):
                         break
             except KeyError:
                 #No handler, so pass
-                output.warn("Event "+str(event.name)+" does not have handler",
+                output.vdbg("Event "+str(event.name)+" does not have handler",
                             self.__class__.__name__)
 
     def __handle_event(self, handler, event):
@@ -225,6 +225,7 @@ class dispatcher(threading.Thread):
                           self.__class__.__name__)
             self.cleanup.cleanup()
             raise
+            sys.exit(1)
         return r
 
     def registereventhandler(self, eventname, handler):
@@ -436,22 +437,24 @@ class core:
     def cleanup(self):
         """Clean up
         """
-        output.dbg("Cleaning up...",
-                   self.__class__.__name__)
-        for shutdown in self.cleanups:
-            shutdown.cleanup()
-
-    def signalhandler(self, signal, frame):
-        """Handle signal
-        """
         ##Set running to false for all
         self.recv.running = False
         self.__timedscheduler.running = False
         self.__scheduler.running = False
 
-        self.cleanup()
+        output.dbg("Cleaning up...",
+                   self.__class__.__name__)
+        for shutdown in self.cleanups:
+            output.dbg("Cleaning up "+shutdown.__class__.__name__+"...",
+                       self.__class__.__name__)
+            shutdown.cleanup()
 
         self.__timedscheduler.join(1.0)
+
+    def signalhandler(self, signal, frame):
+        """Handle signal
+        """
+        self.cleanup()
 
         output.info("Exiting yapc...", self.__class__.__name__)
         sys.exit(0)

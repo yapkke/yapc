@@ -68,7 +68,6 @@ class dp_features(yapc.component):
 
             #Maintain dp features in memcache
             mc.set(key, event.features)
-            
 
         elif isinstance(event, ofevents.port_status):
             #Port status
