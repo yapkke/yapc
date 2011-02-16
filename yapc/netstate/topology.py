@@ -50,12 +50,13 @@ class link_maintain:
                                                      link[2], link[3]))
         self.__expiration.append(time.time()+self.timeout)
         self.__links.append(link)
+        self.check_expire
 
     def check_expire(self):
         """Expire outdated links
         """
         while (len(self.__expiration) > 0 and
-            self.__expiration[0] > time.time()):
+               (self.__expiration[0] < time.time())):
             #Expired link
             link = self.__links.pop(0)
             self.__expiration.pop(0)
@@ -148,12 +149,13 @@ class lldp_link_discovery(yapc.component):
                             if (p.port_no <= pyof.OFPP_MAX and
                                 (sw.datapath_id, p) not in self.__sw_port):
                                 self.__sw_port.append((sw.datapath_id, p))
-                    self.__minterval = float(self.interval)/len(self.__sw_port)
-                    self.server.post_event(yapc.priv_callback(self, False),0)
+                    if (len(self.__sw_port) != 0):
+                        self.__minterval = float(self.interval)/len(self.__sw_port)
+                        self.server.post_event(yapc.priv_callback(self, False),0)
                     output.vdbg("Gather "+str(len(self.__sw_port))+" to send LLDP to",
                                self.__class__.__name__)
                 else:
-                    output.dbg("No switch port to send LLDP too",
+                    output.dbg("No switch port to send LLDP to",
                                self.__class__.__name__)
                 self.server.post_event(yapc.priv_callback(self, True),
                                   self.interval)
@@ -164,6 +166,7 @@ class lldp_link_discovery(yapc.component):
                     self.send_lldp(sw, port)
                     self.server.post_event(yapc.priv_callback(self, False),
                                            self.__minterval)
+                self.link_maintain.check_expire()
                 
         return True
 
@@ -175,10 +178,12 @@ class lldp_link_discovery(yapc.component):
         """
         self.__po.xid = ofutil.get_xid()
         self.__po.actions[0].port = port.port_no
-        self.conn.get_conn(sw).send(self.__po.pack()+\
-                                    self.form_eth_lldp(sw, port))
-        output.vdbg("Sending LLDP to %x:" % sw +str(port.port_no),
-                    self.__class__.__name__)
+        switch = self.conn.get_conn(sw)
+        if (switch != None):
+            switch.send(self.__po.pack()+\
+                        self.form_eth_lldp(sw, port))
+            output.vdbg("Sending LLDP to %x:" % sw +str(port.port_no),
+                        self.__class__.__name__)
 
     def form_eth_lldp(self, sw, port):
         """Form Ethernet packet with switch and port
