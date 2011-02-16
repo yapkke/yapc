@@ -93,6 +93,9 @@ class default_entries(yapc.component):
 
 class flow_entry:
     """Class to provide some pre-formed flow entry
+
+    @author ykk
+    @date Feb 2011
     """
     def __init__(self):
         """Initialize
@@ -108,7 +111,12 @@ class flow_entry:
         return self.fm
 
 class flood_all_entry(flow_entry):
-    """
+    """Flow entry to flood all packets
+
+    Uses as a low priority default
+
+    @author ykk
+    @date Feb 2011
     """
     def __init__(self, 
                  priority = ofutil.PRIORITY['LOWEST'],
@@ -127,6 +135,28 @@ class flood_all_entry(flow_entry):
         self.fm.idle_timeout = idle_timeout
         self.fm.hard_timeout = hard_timeout
         self.fm.actions.append(oao)
+
+class drop_all_entry(flow_entry):
+    """Flow entry to drop all packets
+
+    Uses as a low priority default
+
+    @author ykk
+    @date Feb 2011
+    """
+    def __init__(self, 
+                 priority = ofutil.PRIORITY['LOWEST'],
+                 idle_timeout = pyof.OFP_FLOW_PERMANENT,
+                 hard_timeout = pyof.OFP_FLOW_PERMANENT):
+        """Initialize
+        """
+        flow_entry.__init__(self)
+
+        self.fm.match.wildcards = pyof.OFPFW_ALL
+        self.fm.command = pyof.OFPFC_ADD
+        self.fm.priority = priority
+        self.fm.idle_timeout = idle_timeout
+        self.fm.hard_timeout = hard_timeout
 
 class dropflow(yapc.component):
     """Class that drop flows
