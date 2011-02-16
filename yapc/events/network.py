@@ -28,8 +28,8 @@ class link_event(yapc.event):
         self.dst_port = dst_port
         output.dbg("Link event of %x" % src_dpid +\
                    ":"+str(src_port)+\
-                   "to %x" % dst_dpid +\
-                   ":"+str(dst_port)+,
+                   " to %x" % dst_dpid +\
+                   ":"+str(dst_port),
                    self.__class__.__name__)
     
 class link_down(link_event):
