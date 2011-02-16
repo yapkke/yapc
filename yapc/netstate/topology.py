@@ -66,6 +66,8 @@ class link_maintain:
 class lldp_link_discovery(yapc.component):
     """Discover links using LLDP
 
+    Sends LLDP at regular intervals.
+
     @author ykk
     @date Feb 2011
     """
