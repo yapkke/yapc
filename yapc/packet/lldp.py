@@ -18,6 +18,12 @@ class LLDP_TLV(dpkt.Packet):
     __hdr__ = (
         ('typelen', 'H', 0),
         )
+
+    def __init__(self, *args, **kwargs):
+        self.type = 0
+        self.len = 0
+        self.data = None
+        dpkt.Packet.__init__(self, *args, **kwargs)
     
     def unpack(self, buf):
         dpkt.Packet.unpack(self, buf)
