@@ -31,6 +31,18 @@ def byte_str2array(str):
         r.append(struct.unpack("B", str[i])[0])
     return r
 
+
+def array2byte_str(array):
+    """Convert array to binary str
+    
+    @param array array of value
+    @return binary string
+    """
+    r = ""
+    for i in range(0, len(array)):
+        r += struct.pack("B", array[i])
+    return r
+
 def array2val(array):
     """Convert array to value
 
