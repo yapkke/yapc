@@ -46,7 +46,10 @@ class coin_server(yapc.daemon):
 
         #Default flows
         defaultentry = default.default_entries(server, ofconn.connections)
-        defaultentry.add(default.flood_all_entry())
+        defaultentry.add(default.drop_all_entry())
+        defaultentry.add(default.get_tcp_entry())
+        defaultentry.add(default.get_udp_entry())
+        defaultentry.add(default.get_icmp_entry())
 
         #Network status
         sw = switches.dp_features(server)
@@ -56,8 +59,8 @@ class coin_server(yapc.daemon):
         ovs = coinovs.switch(server, jsonconn.connections)
         coinserver.switch = ovs
 
-        #Default flow droppping
-        flowdrop = default.dropflow(server, ofconn.connections)
+        #Default flow flood
+        floodpkt = default.floodpkt(server, ofconn.connections)
        
         server.run()       
         sys.exit(0)

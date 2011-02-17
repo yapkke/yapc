@@ -5,6 +5,7 @@
 # @author ykk
 # @date Feb 2011
 #
+import dpkt
 import yapc.interface as yapc
 import yapc.output as output
 import yapc.events.openflow as ofevents
@@ -12,7 +13,7 @@ import yapc.pyopenflow as pyof
 import yapc.openflowutil as ofutil
 
 class floodpkt(yapc.component):
-    """Class that floods packet
+    """Class that floods packet using packet out
 
     @author ykk
     @date Feb 2011
@@ -109,6 +110,96 @@ class flow_entry:
         """
         self.fm.header.xid = ofutil.get_xid()
         return self.fm
+
+class get_tcp_entry(flow_entry):
+    """Flow entry to send UDP packets to controller
+
+    Uses as a low priority default to do active flow setup for TCP
+
+    @author ykk
+    @date Feb 2011
+    """
+    def __init__(self, 
+                 priority = ofutil.PRIORITY['LOW'],
+                 idle_timeout = pyof.OFP_FLOW_PERMANENT,
+                 hard_timeout = pyof.OFP_FLOW_PERMANENT):
+        """Initialize
+        """
+        flow_entry.__init__(self)
+
+        oao = pyof.ofp_action_output()
+        oao.max_len = 1500
+        oao.port = pyof.OFPP_CONTROLLER
+        
+        self.fm.match.wildcards = pyof.OFPFW_ALL-\
+            pyof.OFPFW_DL_TYPE - pyof.OFPFW_NW_PROTO
+        self.fm.match.dl_type = dpkt.ethernet.ETH_TYPE_IP
+        self.fm.match.nw_proto = dpkt.ip.IP_PROTO_TCP
+        self.fm.command = pyof.OFPFC_ADD
+        self.fm.priority = priority
+        self.fm.idle_timeout = idle_timeout
+        self.fm.hard_timeout = hard_timeout
+        self.fm.actions.append(oao)
+
+class get_udp_entry(flow_entry):
+    """Flow entry to send UDP packets to controller
+
+    Uses as a low priority default to do active flow setup for TCP
+
+    @author ykk
+    @date Feb 2011
+    """
+    def __init__(self, 
+                 priority = ofutil.PRIORITY['LOW'],
+                 idle_timeout = pyof.OFP_FLOW_PERMANENT,
+                 hard_timeout = pyof.OFP_FLOW_PERMANENT):
+        """Initialize
+        """
+        flow_entry.__init__(self)
+
+        oao = pyof.ofp_action_output()
+        oao.max_len = 1500
+        oao.port = pyof.OFPP_CONTROLLER
+        
+        self.fm.match.wildcards = pyof.OFPFW_ALL-\
+            pyof.OFPFW_DL_TYPE - pyof.OFPFW_NW_PROTO
+        self.fm.match.dl_type = dpkt.ethernet.ETH_TYPE_IP
+        self.fm.match.nw_proto = dpkt.ip.IP_PROTO_UDP
+        self.fm.command = pyof.OFPFC_ADD
+        self.fm.priority = priority
+        self.fm.idle_timeout = idle_timeout
+        self.fm.hard_timeout = hard_timeout
+        self.fm.actions.append(oao)
+
+class get_icmp_entry(flow_entry):
+    """Flow entry to send UDP packets to controller
+
+    Uses as a low priority default to do active flow setup for TCP
+
+    @author ykk
+    @date Feb 2011
+    """
+    def __init__(self, 
+                 priority = ofutil.PRIORITY['LOW'],
+                 idle_timeout = pyof.OFP_FLOW_PERMANENT,
+                 hard_timeout = pyof.OFP_FLOW_PERMANENT):
+        """Initialize
+        """
+        flow_entry.__init__(self)
+
+        oao = pyof.ofp_action_output()
+        oao.max_len = 1500
+        oao.port = pyof.OFPP_CONTROLLER
+        
+        self.fm.match.wildcards = pyof.OFPFW_ALL-\
+            pyof.OFPFW_DL_TYPE - pyof.OFPFW_NW_PROTO
+        self.fm.match.dl_type = dpkt.ethernet.ETH_TYPE_IP
+        self.fm.match.nw_proto = dpkt.ip.IP_PROTO_ICMP
+        self.fm.command = pyof.OFPFC_ADD
+        self.fm.priority = priority
+        self.fm.idle_timeout = idle_timeout
+        self.fm.hard_timeout = hard_timeout
+        self.fm.actions.append(oao)
 
 class flood_all_entry(flow_entry):
     """Flow entry to flood all packets
