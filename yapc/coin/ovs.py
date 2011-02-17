@@ -66,6 +66,13 @@ class switch(yapc.component, ovs.switch):
             output.dbg("Receive JSON message "+simplejson.dumps(event.message),
                        self.__class__.__name__)
 
+    def add_if(self, name):
+        """Add interfaces to COIN switch fabric
+
+        @param name name of interface
+        """
+        self.datapaths[COIN_DP_NAME].add_if(name)
+
     def __process_switch_json(self, event):
         """Process JSON messages for switch
 
@@ -76,7 +83,7 @@ class switch(yapc.component, ovs.switch):
         reply["subtype"] = "ovs"
 
         if (event.message["command"] == "add_if"):
-            self.datapaths[COIN_DP_NAME].add_if(event.message["name"])
+            self.add_id(event.message["name"])
             reply["executed"] = True
         elif (event.message["command"] == "del_if"):
             self.datapaths[COIN_DP_NAME].del_if(event.message["name"])

@@ -25,6 +25,8 @@ class coin_server(yapc.daemon):
         self.forcejson = False
         ##Socket to talk to
         self.sock = coin.SOCK_NAME
+        ##Interfaces to add
+        self.interfaces = []
 
     def run(self):
         """Run server
@@ -61,6 +63,10 @@ class coin_server(yapc.daemon):
 
         #Default flow flood
         floodpkt = default.floodpkt(server, ofconn.connections)
+
+        #Add interfaces
+        for i in self.interfaces:
+            ovs.add_if(i)
        
         server.run()       
         sys.exit(0)
@@ -79,14 +85,15 @@ def usage():
     print "--vs\n\tVerbose output for selected component"
     print "--very-verbose\n\tVery verbose output"
     print "-d/--daemon\n\tRun as daemon"
+    print "-i/--interface\n\tSpecify interface to add"
 
 coins = coin_server()
 
 #Parse options and arguments
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "hvdfs:",
+    opts, args = getopt.getopt(sys.argv[1:], "hvdfs:i:",
                                ["help","verbose","daemon", 
-                                "very-verbose","vs=",
+                                "very-verbose","vs=", "interface=",
                                 "force-json","sock="])
 except getopt.GetoptError:
     print "Option error!"
@@ -110,6 +117,8 @@ for opt,arg in opts:
         coins.daemon=True
     elif (opt in ("-s","--sock")):
         coins.sock = arg
+    elif (opt in ("-i","--interface")):
+        coins.interfaces.append(arg)
     elif (opt in ("-f","--force-json")):
         coins.forcejson=True
     else:
