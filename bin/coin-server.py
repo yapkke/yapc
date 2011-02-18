@@ -14,6 +14,7 @@ import yapc.coin.ovs as coinovs
 import yapc.netstate.switches as switches
 import yapc.netstate.swhost as switchhost
 import yapc.forwarding.default as default
+import yapc.forwarding.flows as flows
 import yapc.debug.openflow as ofdbg
 import sys
 import getopt
@@ -48,30 +49,10 @@ class coin_server(yapc.daemon):
 
         #Default flows
         defaultentry = default.default_entries(server, ofconn.connections)
-        defaultentry.add(default.arp_entry(default.flow_entry.FLOOD))
-        defaultentry.add(default.udp_entry(default.flow_entry.FLOOD,
-                                           default.UDP_MDNS))
-        defaultentry.add(default.udp_entry(default.flow_entry.FLOOD,
-                                           default.UDP_BOOTPC))
-
-        defaultentry.add(default.igmp_entry(default.flow_entry.DROP))
-        defaultentry.add(default.udp_entry(default.flow_entry.DROP,
-                                           default.UDP_SUNRPC))
-        defaultentry.add(default.udp_entry(default.flow_entry.DROP,
-                                           default.UDP_NETBIOS))
-        defaultentry.add(default.udp_entry(default.flow_entry.DROP,
-                                           default.UDP_NETBIOS_DGM))
-        defaultentry.add(default.udp_entry(default.flow_entry.DROP,
-                                           default.UDP_MS_LICENSE))
-        defaultentry.add(default.udp_entry(default.flow_entry.DROP,
-                                           default.UDP_BOOTPS))
-        defaultentry.add(default.udp_entry(default.flow_entry.DROP,
-                                           17500))
-
-        #defaultentry.add(default.drop_all_entry())
-        #defaultentry.add(default.get_tcp_entry())
-        #defaultentry.add(default.get_udp_entry())
-        #defaultentry.add(default.get_icmp_entry())
+        defaultentry.add(flows.all_entry(flows.flow_entry.DROP))
+        defaultentry.add(flows.tcp_entry(flows.flow_entry.GET))
+        defaultentry.add(flows.udp_entry(flows.flow_entry.GET))
+        defaultentry.add(flows.icmp_entry(flows.flow_entry.GET))
 
         #Network status
         sw = switches.dp_features(server)
