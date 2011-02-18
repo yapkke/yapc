@@ -6,7 +6,6 @@
 # @date Feb 2011
 #
 import yapc.interface as yapc
-import yapc.openflowutil as ofutil
 import yapc.parseutil as pu
 import yapc.events.openflow as ofevents
 import yapc.netstate.swhost as swhost

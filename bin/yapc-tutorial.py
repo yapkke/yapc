@@ -6,7 +6,7 @@ import yapc.interface as yapc
 import yapc.ofcomm as ofcomm
 import yapc.pyopenflow as pyof
 import yapc.events.openflow as ofevents
-import yapc.openflowutil as ofutil
+import yapc.forwarding.flows as flows
 
 class tutorial(yapc.component):
     """Our very simple packet-out based tutorial
@@ -38,25 +38,19 @@ class tutorial(yapc.component):
                        event.pktin.show(),
                        self.__class__.__name__)
 
-            oao = pyof.ofp_action_output()
-            oao.port = pyof.OFPP_FLOOD
-
-            po = pyof.ofp_packet_out()
-            po.header.xid =  ofutil.get_xid()
-            po.in_port = event.match.in_port
-            po.actions_len = oao.len
-            po.actions.append(oao)
+            flow = flows.exact_entry(event.match)
+            flow.set_buffer(event.pktin.buffer_id)
+            flow.add_output(pyof.OFPP_FLOOD)
             
-            if (event.pktin.buffer_id == po.buffer_id):
+            if (event.pktin.buffer_id == flows.UNBUFFERED_ID):
                 ##Not buffered
-                self.conn.db[event.sock].send(po.pack()+event.pkt)
+                self.conn.db[event.sock].send(flow.get_packet_out().pack()+event.pkt)
                 output.vdbg("Flood unbuffered packet with match "+\
                                 event.match.show().replace('\n',';'))
           
             else:
                 ##Buffered packet
-                po.buffer_id = event.pktin.buffer_id
-                self.conn.db[event.sock].send(po.pack())
+                self.conn.db[event.sock].send(flow.get_packet_out().pack())
                 output.vdbg("Flood buffered packet with match "+\
                                 event.match.show().replace('\n',';'))
 

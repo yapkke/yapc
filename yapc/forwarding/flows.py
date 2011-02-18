@@ -154,8 +154,8 @@ class exact_entry(flow_entry):
                  match,
                  action=flow_entry.NONE,
                  priority = ofutil.PRIORITY['DEFAULT'],
-                 idle_timeout = pyof.OFP_FLOW_PERMANENT,
-                 hard_timeout = pyof.OFP_FLOW_PERMANENT):
+                 idle_timeout = DEFAULT_TIMEOUT,
+                 hard_timeout = DEFAULT_TIMEOUT):
         """Initialize
         """
         flow_entry.__init__(self, action)

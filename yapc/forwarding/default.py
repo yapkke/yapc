@@ -9,7 +9,6 @@ import yapc.interface as yapc
 import yapc.output as output
 import yapc.events.openflow as ofevents
 import yapc.pyopenflow as pyof
-import yapc.openflowutil as ofutil
 import yapc.forwarding.flows as flows
 
 class floodpkt(yapc.component):
