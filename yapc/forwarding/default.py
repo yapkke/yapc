@@ -36,6 +36,7 @@ class floodpkt(yapc.component):
         """
         if (isinstance(event, ofevents.pktin)):
             flow = flows.exact_entry(event.match)
+            flow.set_buffer(event.pktin.buffer_id)
             flow.add_output(pyof.OFPP_FLOOD)
            
             if (event.pktin.buffer_id == flows.UNBUFFERED_ID):
@@ -43,7 +44,6 @@ class floodpkt(yapc.component):
                 output.vdbg("Flood unbuffered packet with match "+\
                                 event.match.show().replace('\n',';'))
             else:
-                po.buffer_id = event.pktin.buffer_id
                 self.conn.db[event.sock].send(flow.get_packet_out().pack())
                 output.vdbg("Flood buffered packet with match "+\
                                 event.match.show().replace('\n',';'))
@@ -109,7 +109,8 @@ class dropflow(yapc.component):
         """
         if (isinstance(event, ofevents.pktin)):
             flow = flows.exact_entry(event.match)
-            self.conn.db[event.sock].send(flow.get_flow_mod().pack())
+            flow.set_buffer(event.pktin.buffer_id)
+            self.conn.db[event.sock].send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
             output.vdbg("Dropping flow with match "+\
                             event.match.show().replace('\n',';'))
 

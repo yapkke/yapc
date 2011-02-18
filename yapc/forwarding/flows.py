@@ -50,6 +50,11 @@ class actions:
         oao.port = port
         self.add(oao)
 
+    def set_buffer(self, buffer_id):
+        """Set buffer id
+        """
+        self.buffer_id = buffer_id
+
 class flow_entry(actions):
     """Class to provide some pre-formed flow entry
 
