@@ -10,6 +10,7 @@ import yapc.output as output
 import yapc.events.openflow as ofevents
 import yapc.pyopenflow as pyof
 import yapc.openflowutil as ofutil
+import yapc.forwarding.flows as flows
 
 class floodpkt(yapc.component):
     """Class that floods packet using packet out
@@ -34,23 +35,16 @@ class floodpkt(yapc.component):
         @param event event to handle
         """
         if (isinstance(event, ofevents.pktin)):
-            oao = pyof.ofp_action_output()
-            oao.port = pyof.OFPP_FLOOD
-
-            po = pyof.ofp_packet_out()
-            po.header.xid =  ofutil.get_xid()
-            po.in_port = event.match.in_port
-            po.actions_len = oao.len
-            po.actions.append(oao)
-            
-            if (event.pktin.buffer_id == po.buffer_id):
-                self.conn.db[event.sock].send(po.pack()+event.pkt)
+            flow = flows.exact_entry(event.match)
+            flow.add_output(pyof.OFPP_FLOOD)
+           
+            if (event.pktin.buffer_id == flows.UNBUFFERED_ID):
+                self.conn.db[event.sock].send(flow.get_packet_out().pack()+event.pkt)
                 output.vdbg("Flood unbuffered packet with match "+\
                                 event.match.show().replace('\n',';'))
-          
             else:
                 po.buffer_id = event.pktin.buffer_id
-                self.conn.db[event.sock].send(po.pack())
+                self.conn.db[event.sock].send(flow.get_packet_out().pack())
                 output.vdbg("Flood buffered packet with match "+\
                                 event.match.show().replace('\n',';'))
 
@@ -114,26 +108,9 @@ class dropflow(yapc.component):
         @param event event to handle
         """
         if (isinstance(event, ofevents.pktin)):
-            self.dropflow(event)
+            flow = flows.exact_entry(event.match)
+            self.conn.db[event.sock].send(flow.get_flow_mod().pack())
+            output.vdbg("Dropping flow with match "+\
+                            event.match.show().replace('\n',';'))
 
         return True
-
-    def dropflow(self, event):
-        """Drop flow
-
-        @param event packet-in event
-        """
-        #Install dropping flow
-        fm = pyof.ofp_flow_mod()
-        fm.header.xid = ofutil.get_xid()
-        fm.match = event.match
-        fm.command = pyof.OFPFC_ADD
-        fm.idle_timeout = 5
-        fm.buffer_id = event.pktin.buffer_id
-        self.conn.db[event.sock].send(fm.pack())
-
-        output.vdbg("Dropping flow with match "+\
-                        event.match.show().replace('\n',';'))
-
-        #Do not need to check for buffer_id == -1, since we are
-        #dropping packets

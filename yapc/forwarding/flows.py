@@ -18,7 +18,9 @@ UDP_NETBIOS_DGM = 138
 UDP_MS_LICENSE = 2223
 UDP_MDNS = 5353
 
+##Buffer id of unbuffered packet
 UNBUFFERED_ID = 4294967295
+##Default timeout value
 DEFAULT_TIMEOUT = 5
 
 class actions:
@@ -36,9 +38,17 @@ class actions:
         self.buffer_id = buffer_id
 
     def add(self, action):
-        """Add more actions to flow entry
+        """Add more actions to list
         """
         self.actions.append(action)
+
+    def add_output(self, port=pyof.OFPP_CONTROLLER):
+        """Add output action to list
+        """
+        oao = pyof.ofp_action_output()
+        oao.max_len = pyof.OFP_DEFAULT_MISS_SEND_LEN
+        oao.port = port
+        self.add(oao)
 
 class flow_entry(actions):
     """Class to provide some pre-formed flow entry
@@ -67,15 +77,10 @@ class flow_entry(actions):
         ##Flags
         self.flags = 0
 
-        oao = pyof.ofp_action_output()
-        oao.max_len = pyof.OFP_DEFAULT_MISS_SEND_LEN
         if (action == flow_entry.GET):
-            oao.port = pyof.OFPP_CONTROLLER
+            self.add_output(pyof.OFPP_CONTROLLER)
         elif (action == flow_entry.FLOOD):
-            oao.port = pyof.OFPP_FLOOD
-
-        if (action != flow_entry.DROP):
-            self.actions.append(oao)
+            self.add_output(pyof.OFPP_FLOOD)
 
     def set_priority(self, priority):
         """Set priority of flow entry
@@ -97,6 +102,22 @@ class flow_entry(actions):
 
         return True
 
+    def get_packet_out(self):
+        """Function to return flow_entry in terms of packet out
+
+        @return ofp_packet_out
+        """
+        po = pyof.ofp_packet_out()
+        po.buffer_id = self.buffer_id
+        po.in_port = self.match.in_port
+        po.actions_len = 0
+        for a in self.actions:
+            po.actions_len += a.len
+        po.actions = self.actions[:]
+
+        po.header.xid = ofutil.get_xid()
+        return po
+
     def get_flow_mod(self, command=pyof.OFPFC_ADD, 
                      cookie=0):
         """Function to return flow_entry in terms of flow mod.
@@ -112,9 +133,9 @@ class flow_entry(actions):
         fm.priority = self.priority
         fm.buffer_id = self.buffer_id
         fm.out_port = self.out_port
-        fm.flags = self.flags
-        
+        fm.flags = self.flags       
         fm.actions = self.actions[:]
+
         fm.header.xid = ofutil.get_xid()
         return fm
 
@@ -127,7 +148,7 @@ class exact_entry(flow_entry):
     def __init__(self, 
                  match,
                  action=flow_entry.NONE,
-                 priority = ofutil.PRIORITY['LOWEST'],
+                 priority = ofutil.PRIORITY['DEFAULT'],
                  idle_timeout = pyof.OFP_FLOW_PERMANENT,
                  hard_timeout = pyof.OFP_FLOW_PERMANENT):
         """Initialize
