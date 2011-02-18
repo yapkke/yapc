@@ -50,9 +50,9 @@ class coin_server(yapc.daemon):
         #Default flows
         defaultentry = default.default_entries(server, ofconn.connections)
         defaultentry.add(flows.all_entry(flows.flow_entry.DROP))
-        defaultentry.add(flows.tcp_entry(flows.flow_entry.GET))
-        defaultentry.add(flows.udp_entry(flows.flow_entry.GET))
-        defaultentry.add(flows.icmp_entry(flows.flow_entry.GET))
+        defaultentry.add(flows.tcp_entry(action=flows.flow_entry.GET))
+        defaultentry.add(flows.udp_entry(action=flows.flow_entry.GET))
+        defaultentry.add(flows.icmp_entry(action=flows.flow_entry.GET))
 
         #Network status
         sw = switches.dp_features(server)

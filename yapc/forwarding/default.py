@@ -87,7 +87,7 @@ class default_entries(yapc.component):
         """
         if (isinstance(event, ofevents.features_reply)):
             for fm in self.entries:
-                self.conn.db[event.sock].send(fm.get_flow_mod().pack())
+                self.conn.db[event.sock].send(fm.get_flow_mod(pyof.OFPFC_ADD).pack())
 
         return True
 
