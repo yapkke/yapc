@@ -5,6 +5,28 @@
 #
 import yapc.output as output
 import struct
+import os
+
+global oui_file
+oui_file = None
+
+def __get_oui_file(filename="oui.txt"):
+    global oui_file
+    if (oui_file != None):
+        return
+
+    oui_file= {}
+    fileRef = open(filename, "r")
+    lastline = ""
+    for l in fileRef:
+        sl = l.strip()
+        if (sl != "" and
+            lastline == ""):
+            r = sl.split("(hex)")
+            if (len(r) >= 2):
+                oui_file[r[0].strip()] = r[1].strip()
+        lastline = sl
+    fileRef.close()
 
 def get_null_terminated_str(s):
     """Get null terminated string
@@ -43,6 +65,12 @@ def array2byte_str(array):
         r += struct.pack("B", array[i])
     return r
 
+def array2hex_str(array,separator=":",minlen=2):
+    r = ""
+    for i in range(0, len(array)):
+        r += ("%0"+str(minlen)+"x") % array[i]+separator
+    return r[:-1]
+
 def array2val(array):
     """Convert array to value
 
@@ -55,3 +83,20 @@ def array2val(array):
     for i in range(0, len(a)):
         r += a[i] * pow(2,8*i)
     return r
+
+def get_oui(array):
+    if (len(array) < 3):
+        return None
+    
+    return array2hex_str(array, "-")[:8] 
+
+def get_oui_name(oui):
+    if (len(oui) != 8):
+        return
+
+    __get_oui_file()
+    try:
+        return oui_file[oui.replace(":","-").upper()]
+    except KeyError:
+        return None
+    
