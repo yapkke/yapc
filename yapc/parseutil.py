@@ -10,10 +10,15 @@ import os
 global oui_file
 oui_file = None
 
-def __get_oui_file(filename="oui.txt"):
+def __get_oui_file(filename=None):
     global oui_file
     if (oui_file != None):
         return
+
+    if (filename==None):
+        filename = __file__
+        filename = filename[:filename.rfind("/")]
+        filename +="/oui.txt"
 
     oui_file= {}
     fileRef = open(filename, "r")
