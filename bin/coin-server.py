@@ -49,7 +49,10 @@ class coin_server(yapc.daemon):
 
         #Default flows
         defaultentry = default.default_entries(server, ofconn.connections)
-        defaultentry.add(flows.all_entry(flows.flow_entry.DROP))
+        defaultentry.add(flows.all_entry(flows.flow_entry.DROP,
+                                         ofutil.PRIORITY['LOWEST'],
+                                         pyof.OFP_FLOW_PERMANENT,
+                                         pyof.OFP_FLOW_PERMANENT))
         defaultentry.add(flows.tcp_entry(action=flows.flow_entry.GET))
         defaultentry.add(flows.udp_entry(action=flows.flow_entry.GET))
         defaultentry.add(flows.icmp_entry(action=flows.flow_entry.GET))
