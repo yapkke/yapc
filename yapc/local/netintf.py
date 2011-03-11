@@ -12,6 +12,8 @@ import netifaces
 import os
 
 IFCONFIG = "ifconfig"
+IWCONFIG = "iwconfig"
+IWLIST = "iwlist"
 DHCP = "dhclient"
 ROUTE = "route"
 
@@ -250,7 +252,128 @@ class route_mgr:
                     g.append(r.gateway)
         return g
 
-class interfacemgr(ipv4_addr_mgr, route_mgr, yapc.cleanup):
+class wifi_mgr:
+    """WiFi interface manager
+
+    @author ykk
+    @date Mar 2011
+    """        
+    def __parseiwconfigitem(self, line, name, divider=":", startafterdivider=1, stripquote=True):
+        """Parse single line of iwconfig or iwlist
+
+        @param line line to parse
+        @param name name of metric to parse/extract
+        @param divider divider used
+        @param startafterdivider amount of space to skip after divider
+        @param stripquote strip away quotes or not
+        """
+        sindex = line.find(name)
+        start = line.find(divider,sindex)
+        end = line.find(" ",start+startafterdivider)
+        r = line[start+startafterdivider:end]
+        if (stripquote):
+            r = r.replace("\"","")
+        return r
+
+    def __parse_iwconfig(self, line):
+        """Parse iwconfig
+
+        @param line line contains iwconfig results
+        """
+        result = {}
+        result["ESSID"]=self.__parseiwconfigitem(line,"ESSID")
+        result["Nickname"]=self.__parseiwconfigitem(line,"Nickname")
+        result["Frequency"]=self.__parseiwconfigitem(line,"Frequency")
+        result["Tx-Power"]=self.__parseiwconfigitem(line,"Tx-Power")
+        result["Access Point"]=self.__parseiwconfigitem(line,"Access Point", ":", 2)
+        result["Link Quality"]=self.__parseiwconfigitem(line,"Link Quality", "=")
+        result["Signal Level"]=self.__parseiwconfigitem(line,"Signal level", "=")
+        result["Noise Level"]=self.__parseiwconfigitem(line,"Noise level", "=")
+        return result
+
+    def __parse_iwscan(self, line):
+        """Parse iwlist/iwscan
+
+        @param line line contains iwscan/iwlist results
+        """
+        result = {}
+        result["Address"]=self.__parseiwconfigitem(line,"Address",":",2)
+        result["ESSID"]=self.__parseiwconfigitem(line,"ESSID")
+        result["Mode"]=self.__parseiwconfigitem(line,"Mode")
+        result["Frequency"]=self.__parseiwconfigitem(line,"Frequency")
+        result["Encryption key"]=self.__parseiwconfigitem(line,"Encryption key")
+        result["Link Quality"]=self.__parseiwconfigitem(line,"Quality", "=")
+        result["Signal Level"]=self.__parseiwconfigitem(line,"Signal", "=")
+        result["Noise Level"]=self.__parseiwconfigitem(line,"Noise", "=")
+        return result
+
+    def __parsescan_ifapp(self, rstr, rstrs, stripnewline=True):
+        """Parse scan result if appropriate
+        
+        @param rstr string to parse
+        @param rstrs list of results to update
+        @param stripnelinw stripnewline or not
+        """
+        if (rstr.find("Cell") != -1):
+            if (stripnewline):
+                rstr = rstr.replace('\n',' ')
+            rstrs.append(self.__parse_iwscan(rstr))
+
+    def __parsescan(self, item):
+        """Parse all iwscan/iwlist results
+
+        @param item array of results
+        """
+        rstr = ""
+        rstrs = []
+        for line in item:
+            if (line.find("Cell") != -1):
+                self.__parsescan_ifapp(rstr, rstrs)
+                rstr = ""
+            rstr += line        
+        self.__parsescan_ifapp(rstr, rstrs)
+        
+        return rstrs
+
+    def get_wireless_scan(self, intf):
+        """Scan wireless using interface
+
+        @param intf interface
+        """
+        (ret, out)  = cmd.run_cmd(IWLIST+" "+intf+" scanning",
+                                  self.__class__.__name__)
+        return self.__parsescan(out)
+
+    def get_wireless_info(self, intf):
+        """Get wireless information of interface
+        
+        @param intf interface
+        """
+        (ret, out)  = cmd.run_cmd(IWCONFIG+" "+intf, self.__class__.__name__)
+        return self.__parse_iwconfig("\n".join(out))
+
+    def associate(self, intf, essid, ap=None, channel=None, 
+                  rate=None, txpower = None):
+        """Associate with an AP
+        
+        @param intf interface to associate AP with
+        @param essid SSID to associate with
+        @oaram ap mac address of AP
+        @param channel channel to use
+        @param rate rate to use
+        """
+        c = IWCONFIG+" "+intf+" essid "+essid
+        if channel != None:
+            c += " channel "+channel
+        if ap != None:
+            c += " ap "+ap
+        if rate != None:
+            c += " rate "+rate
+        if txpower != None:
+            c += " txpower "+txpower
+        cmd.run_cmd(c, self.__class__.__name__)
+
+class interfacemgr(ipv4_addr_mgr, route_mgr, wifi_mgr, yapc.cleanup):
     """Interface manager class to manage interfaces
 
     @author ykk
