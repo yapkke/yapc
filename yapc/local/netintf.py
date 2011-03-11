@@ -10,6 +10,7 @@ import yapc.commands as cmd
 import yapc.output as output
 import netifaces
 import os
+import time
 
 IFCONFIG = "ifconfig"
 IWCONFIG = "iwconfig"
@@ -371,7 +372,7 @@ class wifi_mgr:
         """
         c = IWCONFIG+" "+intf+" essid "+essid
         if channel != None:
-            c += " channel "+channel
+            c += " channel "+str(channel)
         if ap != None:
             c += " ap "+ap
         if rate != None:
@@ -379,6 +380,45 @@ class wifi_mgr:
         if txpower != None:
             c += " txpower "+txpower
         cmd.run_cmd(c, self.__class__.__name__)
+
+    def persistent_associate(self, intf, essid, ap=None, channel=None, 
+                  rate=None, txpower = None, max_tries=10, sleep=0.1):
+        """Persistently try to associate with an AP
+        
+        Check SSID for association result
+        Check ap mac if specified
+
+        @param intf interface to associate AP with
+        @param essid SSID to associate with
+        @oaram ap mac address of AP
+        @param channel channel to use
+        @param rate rate to use
+        @oaram max_tries maximum number of tries
+        @param sleep amount of time to sleep between associate and check
+        @param return success or not and number of tries
+        """
+        okay = False
+        count = 0
+        while not okay:
+            #Associate
+            self.associate(intf, essid, ap, channel, rate, txpower)
+            count += 1
+
+            time.sleep(sleep)
+
+            #Check
+            info = self.get_wireless_info(intf)
+            okay = True
+            if (info["ESSID"] != essid):
+                okay = False
+            if (ap != None and info["Access Point"] != ap):
+                okay = False
+
+            #Check max tries
+            if (count >= max_tries):
+                break;
+
+        return (okay, count)
 
 class interfacemgr(ipv4_addr_mgr, route_mgr, wifi_mgr, yapc.cleanup):
     """Interface manager class to manage interfaces
