@@ -13,10 +13,18 @@ def run_cmd(cmd, classname):
     
     @param cmd command
     @param classname name of class calling command
+    @return (status, output)
     """
-    ret = os.system(cmd)
+    out = []
+    cref = os.popen(cmd, 'r')
+    for l in cref:
+        out.append(l)
+    ret = cref.close()
+    if (ret == None):
+        ret = 0
+
     output.dbg(cmd+" (returns "+str(ret)+")", classname)
-    return ret
+    return (ret, out)
 
 def run_cmd_screen(name, cmd, classname):
     """Run command in screen
