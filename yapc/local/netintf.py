@@ -335,14 +335,21 @@ class wifi_mgr:
         
         return rstrs
 
-    def get_wireless_scan(self, intf):
+    def get_wireless_scan(self, intf, ssid=None):
         """Scan wireless using interface
 
         @param intf interface
         """
         (ret, out)  = cmd.run_cmd(IWLIST+" "+intf+" scanning",
                                   self.__class__.__name__)
-        return self.__parsescan(out)
+        scanr =  self.__parsescan(out)
+        if (ssid != None):
+            scanrfiltered = []
+            for s in scanr:
+                if (s["ESSID"] == ssid):
+                    scanrfiltered.append(s)
+            return scanrfiltered
+        return scanr
 
     def get_wireless_info(self, intf):
         """Get wireless information of interface
