@@ -41,6 +41,10 @@ class parser(yapc.component):
                 self.scheduler.post_event(error(event.sock,
                                                 event.message))
 
+            elif (event.header.type == pyof.OFPT_GET_CONFIG_REPLY):
+                self.scheduler.post_event(config_reply(event.sock,
+                                                       event.message))
+
             elif (event.header.type == pyof.OFPT_FEATURES_REPLY):
                 self.scheduler.post_event(features_reply(event.sock,
                                                          event.message))
@@ -50,7 +54,6 @@ class parser(yapc.component):
                                                       event.message))
 
         return True
-
 
 class error(ofcomm.message):
     """Error in OpenFlow
@@ -95,6 +98,35 @@ class port_status(ofcomm.message):
         if (self.header.type == pyof.OFPT_PORT_STATUS):
             self.port = pyof.ofp_port_status()
             self.port.unpack(msg)
+
+class config_reply(ofcomm.message):
+    """Switch config in OpenFlow
+
+    @author ykk
+    @date Mar 2011
+    """
+    name = "OpenFlow Switch Config Reply"
+    def __init__(self, sock, msg):
+        """Initialize
+
+        @param sock reference to socket
+        @param msg message
+        """
+        ofcomm.message.__init__(self, sock, msg)
+
+        ##Switch config struct
+        self.config = None
+
+        if (self.header.type == pyof.OFPT_GET_CONFIG_REPLY):
+            self.config = pyof.ofp_switch_config()
+            r = self.config.unpack(msg)
+            if (len(r) > 0):
+                output.warn("Config reply is of irregular length with "+\
+                                str(len(r))+" bytes remaining.",
+                            self.__class__.__name__)
+            output.dbg("Received switch config:\n"+\
+                           self.config.show("\t"),
+                       self.__class__.__name__)
 
 class features_reply(ofcomm.message):
     """Features reply event in OpenFlow
