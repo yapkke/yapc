@@ -65,7 +65,7 @@ def list_screen(classname):
     @param classname name of class calling command
     """
     (ret, out) = run_cmd(SCREEN+" -ls", classname)
-    if (len(out) == 2):
+    if (ret != 0 or len(out) == 2):
         return None
     else:
         screenlist = []
