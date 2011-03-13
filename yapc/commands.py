@@ -65,7 +65,9 @@ def list_screen(classname):
     @param classname name of class calling command
     """
     (ret, out) = run_cmd(SCREEN+" -ls", classname)
-    if (ret != 0 or len(out) == 2):
+    if (len(out) <= 2):
+        #Note that screen -ls gives weird return code in Ubuntu 8.10
+        #so we are not checking against return code here.  Yuck!
         return None
     else:
         screenlist = []
