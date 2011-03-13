@@ -17,15 +17,24 @@ class dp_config(yapc.component):
 
     Note that default_off_config_flags takes precedence over defailt_on_config_flags.
 
+    Maintain 
+    * set of datapath config keyed by (keys from get_key/socket name)
+
     @author ykk
     @date Mar 2011
     """
+    ##Key prefix in memcache for config (with socket appended to the end)
+    DP_CONFIG_KEY_PREFIX = "dp_config_"
     def __init__(self, server, ofconn):
         """Initialize
 
         @param server reference to yapc core
         @param ofconn connections to switches
         """
+        #Start memcache
+        output.dbg(mc.get_client(),
+                   self.__class__.__name__)
+
         ##Reference to connections
         self.conn = ofconn
 
@@ -38,6 +47,15 @@ class dp_config(yapc.component):
         
         server.register_event_handler(ofevents.features_reply.name, self)
         server.register_event_handler(ofevents.config_reply.name, self)
+        server.register_event_handler(comm.event.name, self)
+
+    def get_key(sock):
+        """Get key to retrieve key for datapath features
+
+        @param sock socket
+        """
+        return dp_config.DP_CONFIG_KEY_PREFIX+mc.socket_str(sock)
+    get_key = yapc.static_callable(get_key)
 
     def processevent(self, event):
         """Process OpenFlow message for config reply
@@ -61,6 +79,7 @@ class dp_config(yapc.component):
                 desired_miss_send_len = self.default_miss_send_len
             if ((event.config.flags != desired_flags) or  
                 (desired_miss_send_len != event.config.miss_send_len)):
+                #Change config to desired
                 output.dbg("Set config to desired with flag %x " % desired_flags +
                            "and miss_send_len "+str(desired_miss_send_len),
                            self.__class__.__name__)
@@ -74,6 +93,20 @@ class dp_config(yapc.component):
                 getconfig = pyof.ofp_header()
                 getconfig.type = pyof.OFPT_GET_CONFIG_REQUEST
                 self.conn.db[event.sock].send(getconfig.pack())
+            else:
+                #Remember config
+                key = self.get_key(event.sock)
+                mc.set(key, event.config)
+                output.dbg("Updated config with key "+key,
+                           self.__class__.__name__)
+
+        elif isinstance(event, comm.event):
+            #Socket close, so remove config
+            if (event.event == comm.event.SOCK_CLOSE):
+                key = self.get_key(event.sock)
+                c = mc.get(key)
+                if (c != None):
+                    mc.delete(key)
 
         return True
 
