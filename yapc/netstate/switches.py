@@ -12,6 +12,71 @@ import yapc.output as output
 import yapc.pyopenflow as pyof
 import yapc.memcacheutil as mc
 
+class dp_config(yapc.component):
+    """Class to configure switches and maintain their config state
+
+    Note that default_off_config_flags takes precedence over defailt_on_config_flags.
+
+    @author ykk
+    @date Mar 2011
+    """
+    def __init__(self, server, ofconn):
+        """Initialize
+
+        @param server reference to yapc core
+        @param ofconn connections to switches
+        """
+        ##Reference to connections
+        self.conn = ofconn
+
+        ##Default config flags to be on (OR with config received)
+        self.default_on_config_flags = 0
+        ##Default config flags to be off (NOT and AND with config received)
+        self.default_off_config_flags = 0
+        ##Default config miss send len
+        self.default_miss_send_len = None
+        
+        server.register_event_handler(ofevents.features_reply.name, self)
+        server.register_event_handler(ofevents.config_reply.name, self)
+
+    def processevent(self, event):
+        """Process OpenFlow message for config reply
+        
+        @param event OpenFlow message event to process
+        @return True
+        """
+        if isinstance(event, ofevents.features_reply):
+            #Get config
+            getconfig = pyof.ofp_header()
+            getconfig.type = pyof.OFPT_GET_CONFIG_REQUEST
+            self.conn.db[event.sock].send(getconfig.pack())
+        
+        elif isinstance(event, ofevents.config_reply):
+            #Check if I should set config
+            desired_flags = ((event.config.flags | 
+                              self.default_on_config_flags)
+                             & ~self.default_off_config_flags)
+            desired_miss_send_len = event.config.miss_send_len
+            if (self.default_miss_send_len != None):
+                desired_miss_send_len = self.default_miss_send_len
+            if ((event.config.flags != desired_flags) or  
+                (desired_miss_send_len != event.config.miss_send_len)):
+                output.dbg("Set config to desired with flag %x " % desired_flags +
+                           "and miss_send_len "+str(desired_miss_send_len),
+                           self.__class__.__name__)
+                setconfig = pyof.ofp_switch_config()
+                setconfig.header.type = pyof.OFPT_SET_CONFIG
+                setconfig.flags = desired_flags
+                setconfig.miss_send_len = desired_miss_send_len
+                self.conn.db[event.sock].send(setconfig.pack())
+            
+                #Get config again after set
+                getconfig = pyof.ofp_header()
+                getconfig.type = pyof.OFPT_GET_CONFIG_REQUEST
+                self.conn.db[event.sock].send(getconfig.pack())
+
+        return True
+
 class dp_features(yapc.component):
     """Class to maintain datapath state passively
 
@@ -40,7 +105,6 @@ class dp_features(yapc.component):
         server.register_event_handler(ofevents.port_status.name, self)
         server.register_event_handler(ofevents.features_reply.name, self)
         server.register_event_handler(comm.event.name, self)
-
 
     def get_key(sock):
         """Get key to retrieve key for datapath features
