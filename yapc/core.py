@@ -407,15 +407,17 @@ class core:
         """
         self.__scheduler.print_event_handlers()
 
-    def run(self, runbg=False):
+    def run(self, runbg=False, runtimedscheduler=True):
         """Run core
 
         @param runbg runs everything as thread in background
+        @param runtimedscheduler run timed scheduler or not
         """
         self.__scheduler.print_event_handlers()
 
         self.recv.start()
-        self.__timedscheduler.start()
+        if (runtimedscheduler):
+            self.__timedscheduler.start()
         if (runbg):
             self.__scheduler.start()
         else:
