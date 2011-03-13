@@ -16,6 +16,10 @@ memcache_client = None
 global memcache_servers
 memcache_servers = ['127.0.0.1:11211']
 
+##On/Off switch
+global memcache_on
+memcache_on = True
+
 ##Memcache debug
 DEBUG = 1
 
@@ -27,6 +31,10 @@ def get_client():
     """
     global memcache_client
     global memcache_servers
+    global memcache_on
+    if (not memcache_on):
+        return 
+
     if (memcache_client== None):
         memcache_client = memcache.Client(memcache_servers,
                                           DEBUG)
@@ -40,6 +48,10 @@ def set(name, value, timeout=0):
     @param value value to set key to
     @param timeout timeout to expire data
     """
+    global memcache_on
+    if (not memcache_on):
+        return None
+
     if (name.find(" ") != -1):
         output.warn("Memcache key cannot contain spaces",
                     "memcache util")
@@ -51,6 +63,10 @@ def get(name):
     @param name key name
     @return value
     """
+    global memcache_on
+    if (not memcache_on):
+        return None
+
     return memcache_client.get(name)
 
 def delete(name):
@@ -58,6 +74,10 @@ def delete(name):
 
     @param name key name
     """
+    global memcache_on
+    if (not memcache_on):
+        return None
+
     return memcache_client.delete(name)
 
 def socket_str(sock):
