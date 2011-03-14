@@ -15,6 +15,12 @@ import yapc.parseutil as pu
 ##Next transaction id to use
 last_xid = 0
 
+##XID modes
+XID_MODES = {'SEQ': 0,
+             'PRIVPUBLIC': 1}
+##XID mode
+xid_mode = XID_MODES['PRIVPUBLIC']
+
 ##VLAN Tag parsing
 VLAN_PRIORITY_MASK = 0xe000
 VLAN_PRIORITY_SHIFT = 13
@@ -31,11 +37,68 @@ PRIORITY = {'HIGHEST':65535,
             'MUCH LOWER':8192,
             'LOWEST':0}
 
+
+
+class xid_reservation:
+    """Class for components to reserve XID
+    
+    Reserved XID must be between  
+    2147483648 (START) to 4294967295 (END) (inclusive)
+    """
+    START = 2147483648 
+    END = 4294967295
+    def __init__(self):
+        """Initialize
+        """
+        self.reserved = []
+
+    def reserve(self, start, end):
+        """Reserve XID from start to end (inclusive)
+
+        @param start starting xid
+        @param end ending xid
+        @return success of reservation or not
+        """
+        if (end < start):
+            return False
+        if (start < xid_reservation.START):
+            return False
+        if (end > xid_reservation.END):
+            return False
+
+        #Check overlap
+        okay = True
+        for (s,e) in self.reserved:
+            if not((e < start) or (s > end)):
+                okay = False
+
+        if (okay):
+            self.reserved.append((start,end))
+            return True
+        else:
+            return False
+            
 def get_xid():
     """Retrieve XID to use
+
+    xid=0 is always reserved, since this is the default value
+    if the programmer does nothing.
+
+    In SEQ mode, simply start from 0 and add one each time
+    In PRIVPUBLIC, the first bit = 1 is resereved
     """
     global last_xid
-    last_xid += 1
+    global xid_mode
+
+    if (xid_mode == XID_MODES['SEQ']):
+        last_xid += 1
+        if (last_xid > xid_reservation.END):
+            last_xid = 0
+    elif xid_mode == XID_MODES['PRIVPUBLIC']
+        last_xid += 1
+        if (last_xid >= xid_reservation.START):
+            last_xid = 0
+        
     return last_xid
 
 def get_ofp_match(in_port, packet):
