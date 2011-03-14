@@ -94,7 +94,7 @@ def get_xid():
         last_xid += 1
         if (last_xid > xid_reservation.END):
             last_xid = 0
-    elif xid_mode == XID_MODES['PRIVPUBLIC']
+    elif xid_mode == XID_MODES['PRIVPUBLIC']:
         last_xid += 1
         if (last_xid >= xid_reservation.START):
             last_xid = 0
