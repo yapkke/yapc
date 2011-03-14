@@ -18,7 +18,7 @@ IWLIST = "iwlist"
 DHCP = "dhclient"
 ROUTE = "route"
 
-class ipv4_addr_mgr:
+class eth_ipv4_addr_mgr:
     """Interface manager class to manage addresses for IPv4
 
     @author ykk
@@ -54,6 +54,34 @@ class ipv4_addr_mgr:
             return result
         else:
             return None
+
+    def up(self, intf):
+        """Activate interface
+        
+        @param intf interface name
+        """
+        return cmd.run_cmd(IFCONFIG+" up",
+                           self.__class__.__name__)
+
+    def down(self, intf):
+        """Deactivate interface
+        
+        @param intf interface name
+        """
+        return cmd.run_cmd(IFCONFIG+" down",
+                           self.__class__.__name__)
+
+    def set_eth_addr(self, intf, addr):
+        """Set Ethernet addr
+
+        @param intf interface name
+        @param addr Ethernet address string
+        """
+        self.down(intf)
+        c = IFCONFIG+" "+intf+" hw ether "+addr
+        ret = cmd.run_cmd(c, self.__class__.__name__)
+        self.up(intf)
+        return ret
 
     def set_ipv4_addr(self, intf, addr, netmask=None):
         """Set IPv4 address
@@ -420,7 +448,7 @@ class wifi_mgr:
 
         return (okay, count)
 
-class interfacemgr(ipv4_addr_mgr, route_mgr, wifi_mgr, yapc.cleanup):
+class interfacemgr(eth_ipv4_addr_mgr, route_mgr, wifi_mgr, yapc.cleanup):
     """Interface manager class to manage interfaces
 
     @author ykk
