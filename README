@@ -10,9 +10,8 @@ easy extension and deployment.
 Background 
 ========== 
 
-I (KK Yap) have working on NOX for a while now, and there has been a
-few other OpenFlow controllers created too.  At the time of writing,
-Onix and Beacon are the other significant complete controllers.
+There is a few OpenFlow controllers out there now.  Currently,
+NOX, Onix and Beacon are the significantly complete controllers.
 However, none of them are simple to install and use.  Swig is a pain
 and OSGI is not small either.  As a bid for simplicity, YAPC is
 created.
