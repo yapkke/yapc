@@ -182,7 +182,8 @@ class ofserver(yapc.component, yapc.cleanup):
     @date Oct 2010
     """
     def __init__(self, server,
-                 port=6633, host='', backlog=10, ofservermgr=None):
+                 port=6633, host='', backlog=10, ofservermgr=None,
+                 nagle=False):
         """Initialize
 
         Bind core scheduler and receive thread
@@ -195,13 +196,13 @@ class ofserver(yapc.component, yapc.cleanup):
         output.info("Binding OpenFlow to "+str(host)+":"+str(port),
                     self.__class__.__name__)
         self.server.listen(backlog)
+
         #Create server manager
         self.ofservermgr = ofservermgr 
         if (self.ofservermgr  == None):
-            self.ofservermgr = ofserversocket()
+            self.ofservermgr = ofserversocket(server, nagle)
 
-        #Bind
-        self.ofservermgr.scheduler = server
+        #Bind 
         server.recv.addconnection(self.server, self.ofservermgr)
 
         ##OpenFlow connections
@@ -255,10 +256,11 @@ class ofserversocket(comm.sockmanager):
     @author ykk
     @date Oct 2010
     """
-    def __init__(self, scheduler=None):
+    def __init__(self, scheduler=None, nagle=False):
         """Initialize
         """
         self.scheduler = scheduler
+        self.nagle = nagle
 
     def receive(self, sock, recvthread):
         """Receive new connection
@@ -266,6 +268,8 @@ class ofserversocket(comm.sockmanager):
         client, address = sock.accept()
         if (not comm.BLOCKING):
             client.setblocking(0)
+        if (not self.nagle):
+            client.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         recvthread.addconnection(client, ofsockmanager(client, self.scheduler))
         self.scheduler.post_event(comm.event(client,
                                              comm.event.SOCK_OPEN))
