@@ -450,8 +450,11 @@ class core:
             output.dbg("Cleaning up "+shutdown.__class__.__name__+"...",
                        self.__class__.__name__)
             shutdown.cleanup()
-
-        self.__timedscheduler.join(1.0)
+        
+        try:
+            self.__timedscheduler.join(1.0)
+        except RuntimeError:
+            pass
 
     def signalhandler(self, signal, frame):
         """Handle signal
