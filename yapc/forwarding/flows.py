@@ -87,6 +87,90 @@ class flow_entry(actions):
         elif (action == flow_entry.FLOOD):
             self.add_output(pyof.OFPP_FLOOD)
 
+    def reverse(self, in_port):
+        """Compute the reverse flow
+
+        @param in_port in port of the reverse flow
+        @return reverse flow
+        """
+        fe = flow_entry()
+        fe.match = self.match
+        fe.match.in_port = in_port
+        fe.match.dl_src = self.match.dl_dst
+        fe.match.dl_dst = self.match.dl_src
+        fe.match.nw_src = self.match.nw_dst
+        fe.match.nw_dst = self.match.nw_src
+        fe.match.tp_src = self.match.tp_dst
+        fe.match.tp_dst = self.match.tp_src
+
+        fe.idle_timeout = self.idle_timeout
+        fe.hard_timeout = self.hard_timeout
+        fe.priority = self.priority
+        fe.out_port = self.out_port
+        fe.flags = self.flags
+        return fe
+
+    def is_reverse(self, flow):
+        """Check if flow is reverse flow
+
+        Check wildcards and 
+        dl_src/dl_dst, nw_src/nw_dst and tp_src/tp_dst
+
+        @param flow reference to other flow
+        @return reverse flow or not
+        """
+        if (not self.__reverse_flow(self.match.wildcards & pyof.OFPFW_DL_SRC,
+                                    self.match.wildcards & pyof.OFPFW_DL_DST,
+                                    self.match.dl_src,
+                                    self.match.dl_dst,
+                                    flow.match.wildcards & pyof.OFPFW_DL_SRC,
+                                    flow.match.wildcards & pyof.OFPFW_DL_DST,
+                                    flow.match.dl_src,
+                                    flow.match.dl_dst)):
+            return False
+
+        if (not self.__reverse_flow(self.match.wildcards & pyof.OFPFW_NW_SRC,
+                                    self.match.wildcards & pyof.OFPFW_NW_DST,
+                                    self.match.nw_src,
+                                    self.match.nw_dst,
+                                    flow.match.wildcards & pyof.OFPFW_NW_SRC,
+                                    flow.match.wildcards & pyof.OFPFW_NW_DST,
+                                    flow.match.nw_src,
+                                    flow.match.nw_dst)):
+            return False
+
+        if (not self.__reverse_flow(self.match.wildcards & pyof.OFPFW_TP_SRC,
+                                    self.match.wildcards & pyof.OFPFW_TP_DST,
+                                    self.match.tp_src,
+                                    self.match.tp_dst,
+                                    flow.match.wildcards & pyof.OFPFW_TP_SRC,
+                                    flow.match.wildcards & pyof.OFPFW_TP_DST,
+                                    flow.match.tp_src,
+                                    flow.match.tp_dst)):
+            return False
+
+        return True
+
+
+    def __reverse_flow(self, wild_src, wild_dst, src_val, dst_val,
+                       other_wild_src, other_wild_dst, other_src_val, other_dst_val):
+        """Check if reverse flow for specific layer
+        """
+        if (wild_src != other_wild_dst):
+            return False
+        elif (wild_src == 0 and
+              src_val != other_dst_val):
+                return False
+        
+        if (wild_dst != other_wild_src):
+            return False
+        elif (wild_src == 0 and
+              dst_val != other_src_val):
+                return False
+
+        return True
+            
+
     def set_priority(self, priority):
         """Set priority of flow entry
 
