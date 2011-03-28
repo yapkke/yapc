@@ -74,7 +74,7 @@ class flow_entry(actions):
         ##Idle timeout
         self.idle_timeout = DEFAULT_TIMEOUT
         ##Hard timeout
-        self.hard_timeout = DEFAULT_TIMEOUT
+        self.hard_timeout = pyof.OFP_FLOW_PERMANENT
         ##Priority
         self.priority = pyof.OFP_DEFAULT_PRIORITY
         ##Out port
@@ -191,20 +191,23 @@ class flow_entry(actions):
 
         return True
 
-    def get_packet_out(self):
+    def get_packet_out(self, set_unbuffered=False):
         """Function to return flow_entry in terms of packet out
 
+        @param set_unbuffered set packet out to for unbuffered packet
         @return ofp_packet_out
         """
         po = pyof.ofp_packet_out()
-        po.buffer_id = self.buffer_id
+        if (set_unbuffered):
+            po.buffer_id = UNBUFFERED_ID
+        else:
+            po.buffer_id = self.buffer_id
         po.in_port = self.match.in_port
         po.actions_len = 0
         for a in self.actions:
             po.actions_len += a.len
         po.actions = self.actions[:]
 
-        po.header.xid = ofutil.get_xid()
         return po
 
     def get_flow_mod(self, command=pyof.OFPFC_ADD, 
@@ -239,7 +242,7 @@ class exact_entry(flow_entry):
                  action=flow_entry.NONE,
                  priority = ofutil.PRIORITY['DEFAULT'],
                  idle_timeout = DEFAULT_TIMEOUT,
-                 hard_timeout = DEFAULT_TIMEOUT):
+                 hard_timeout = pyof.OFP_FLOW_PERMANENT):
         """Initialize
         """
         flow_entry.__init__(self, action)
@@ -261,7 +264,7 @@ class all_entry(flow_entry):
                  action=flow_entry.NONE,
                  priority = ofutil.PRIORITY['DEFAULT'],
                  idle_timeout = DEFAULT_TIMEOUT,
-                 hard_timeout = DEFAULT_TIMEOUT):
+                 hard_timeout = pyof.OFP_FLOW_PERMANENT):
         """Initialize
         """
         flow_entry.__init__(self, action)
@@ -282,7 +285,7 @@ class ethertype_entry(flow_entry):
                  action=flow_entry.NONE,
                  priority = ofutil.PRIORITY['DEFAULT'],
                  idle_timeout = DEFAULT_TIMEOUT,
-                 hard_timeout = DEFAULT_TIMEOUT):
+                 hard_timeout = pyof.OFP_FLOW_PERMANENT):
         """Initialize
         """
         flow_entry.__init__(self, action)
@@ -303,7 +306,7 @@ class arp_entry(ethertype_entry):
                  action=flow_entry.NONE,
                  priority = ofutil.PRIORITY['DEFAULT'],
                  idle_timeout = DEFAULT_TIMEOUT,
-                 hard_timeout = DEFAULT_TIMEOUT):
+                 hard_timeout = pyof.OFP_FLOW_PERMANENT):
         """Initialize
         """
         ethertype_entry.__init__(self, dpkt.ethernet.ETH_TYPE_ARP, action,
@@ -320,7 +323,7 @@ class ip_proto_entry(flow_entry):
                  action=flow_entry.NONE,
                  priority = ofutil.PRIORITY['DEFAULT'],
                  idle_timeout = DEFAULT_TIMEOUT,
-                 hard_timeout = DEFAULT_TIMEOUT):
+                 hard_timeout = pyof.OFP_FLOW_PERMANENT):
         """Initialize
         """
         flow_entry.__init__(self,action)
@@ -344,7 +347,7 @@ class icmp_entry(ip_proto_entry):
                  action=flow_entry.NONE,
                  priority = ofutil.PRIORITY['DEFAULT'],
                  idle_timeout = DEFAULT_TIMEOUT,
-                 hard_timeout = DEFAULT_TIMEOUT):
+                 hard_timeout = pyof.OFP_FLOW_PERMANENT):
         """Initialize
         """
         ip_proto_entry.__init__(self, dpkt.ip.IP_PROTO_ICMP, action,
@@ -360,7 +363,7 @@ class igmp_entry(ip_proto_entry):
                  action=flow_entry.NONE,
                  priority = ofutil.PRIORITY['DEFAULT'],
                  idle_timeout = DEFAULT_TIMEOUT,
-                 hard_timeout = DEFAULT_TIMEOUT):
+                 hard_timeout = pyof.OFP_FLOW_PERMANENT):
         """Initialize
         """
         ip_proto_entry.__init__(self, dpkt.ip.IP_PROTO_IGMP, action,
@@ -377,7 +380,7 @@ class udp_entry(ip_proto_entry):
                  action=flow_entry.NONE,
                  priority = ofutil.PRIORITY['DEFAULT'],
                  idle_timeout = DEFAULT_TIMEOUT,
-                 hard_timeout = DEFAULT_TIMEOUT):
+                 hard_timeout = pyof.OFP_FLOW_PERMANENT):
         """Initialize
         """
         ip_proto_entry.__init__(self, dpkt.ip.IP_PROTO_UDP, action,
@@ -398,7 +401,7 @@ class tcp_entry(ip_proto_entry):
                  action=flow_entry.NONE,
                  priority = ofutil.PRIORITY['DEFAULT'],
                  idle_timeout = DEFAULT_TIMEOUT,
-                 hard_timeout = DEFAULT_TIMEOUT):
+                 hard_timeout = pyof.OFP_FLOW_PERMANENT):
         """Initialize
         """
         flow_entry.__init__(self, action)
