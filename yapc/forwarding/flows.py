@@ -90,6 +90,8 @@ class flow_entry(actions):
     def reverse(self, in_port):
         """Compute the reverse flow
 
+        Does *not* include wildcard reversal
+
         @param in_port in port of the reverse flow
         @return reverse flow
         """
@@ -129,12 +131,12 @@ class flow_entry(actions):
                                     flow.match.dl_dst)):
             return False
 
-        if (not self.__reverse_flow(self.match.wildcards & pyof.OFPFW_NW_SRC,
-                                    self.match.wildcards & pyof.OFPFW_NW_DST,
+        if (not self.__reverse_flow(self.match.wildcards & pyof.OFPFW_NW_SRC_ALL,
+                                    self.match.wildcards & pyof.OFPFW_NW_DST_ALL,
                                     self.match.nw_src,
                                     self.match.nw_dst,
-                                    flow.match.wildcards & pyof.OFPFW_NW_SRC,
-                                    flow.match.wildcards & pyof.OFPFW_NW_DST,
+                                    flow.match.wildcards & pyof.OFPFW_NW_SRC_ALL,
+                                    flow.match.wildcards & pyof.OFPFW_NW_DST_ALL,
                                     flow.match.nw_src,
                                     flow.match.nw_dst)):
             return False
