@@ -6,7 +6,7 @@
 # @date Feb 2011
 #
 import dpkt
-import yapc.openflowutil as ofutil
+import yapc.util.openflow as ofutil
 import yapc.pyopenflow as pyof
 import yapc.output as output
 

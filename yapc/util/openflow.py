@@ -10,7 +10,7 @@ import struct
 import socket
 import yapc.pyopenflow as pyof
 import yapc.output as output
-import yapc.parseutil as pu
+import yapc.util.parse as pu
 
 ##Next transaction id to use
 last_xid = 0

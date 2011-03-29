@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import yapc.output as output
-import yapc.openflowutil as ofutil
+import yapc.util.openflow as ofutil
 import pcap
 import dpkt
 import sys

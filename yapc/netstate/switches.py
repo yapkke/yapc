@@ -10,7 +10,7 @@ import yapc.events.openflow as ofevents
 import yapc.comm as comm
 import yapc.output as output
 import yapc.pyopenflow as pyof
-import yapc.memcacheutil as mc
+import yapc.util.memcacheutil as mc
 
 class dp_config(yapc.component):
     """Class to configure switches and maintain their config state

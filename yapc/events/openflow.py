@@ -9,7 +9,7 @@ import yapc.interface as yapc
 import yapc.output as output
 import yapc.ofcomm as ofcomm
 import yapc.pyopenflow as pyof
-import yapc.openflowutil as ofutil
+import yapc.util.openflow as ofutil
 
 class parser(yapc.component):
     """OpenFlow parser that generates OpenFlow events

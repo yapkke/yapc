@@ -10,7 +10,7 @@ import yapc.interface as yapc
 import yapc.jsoncomm as jsoncomm
 import yapc.output as output
 import yapc.netstate.switches as swstate
-import yapc.memcacheutil as mc
+import yapc.util.memcacheutil as mc
 import simplejson
 
 COIN_DP_NAME = "dp0"

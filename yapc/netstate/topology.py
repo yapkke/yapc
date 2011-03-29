@@ -11,10 +11,10 @@ import yapc.events.openflow as ofevents
 import yapc.events.network as netevents
 import yapc.packet.lldp as lldppkt
 import yapc.netstate.switches as swstate
-import yapc.memcacheutil as mc
+import yapc.util.memcacheutil as mc
 import yapc.pyopenflow as pyof
-import yapc.openflowutil as ofutil
-import yapc.parseutil as parseutil
+import yapc.util.openflow as ofutil
+import yapc.util.parse as parseutil
 import yapc.output as output
 
 class link_maintain:
