@@ -97,7 +97,8 @@ class connection:
             try:
                 self.sock.send(header.pack()+remain)
             except socket.error:
-                output.warn("Broken pipe, message not sent")
+                output.warn("Broken pipe, message not sent",
+                            self.__class__.__name__)
 
 class connections:
     """Class to manage OpenFlow connections
@@ -151,7 +152,7 @@ class ofsockmanager(comm.sockmanager):
     def __init__(self, sock, server):
         """Initialize
         """
-        comm.sockmanager.__init__(self, sock, server)
+        comm.sockmanager.__init__(self, sock, server, 2048)
         ##Header object
         self.__header = pyopenflow.ofp_header()
        
@@ -160,9 +161,13 @@ class ofsockmanager(comm.sockmanager):
         """
         if len(self.buffer) >= len(self.__header):
             self.__header.unpack(self.buffer)
-            if (len(self.buffer) == self.__header.length):
-                self.processpacket(self.buffer)
-                self.buffer = ""
+            
+            while (len(self.buffer) >= self.__header.length):
+                self.processpacket(self.buffer[:self.__header.length])
+
+                self.buffer = self.buffer[self.__header.length:]
+                if len(self.buffer) >= len(self.__header):
+                    self.__header.unpack(self.buffer)
 
     def processpacket(self, packet):
         """Function to process packet
