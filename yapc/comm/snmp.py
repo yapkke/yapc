@@ -50,14 +50,35 @@ class message:
         """
         pMod.apiPDU.setDefaults(reqPDU)
         x = []
+        y = []
         for o,v in self.oid.items():
-            if (v == None):
-                x.append((o, pMod.Null()))
+            if (isinstance(o, pMod.ObjectIdentifier)):
+                ##Set oid for GETNEXT (walk)
+                y.append(o)
             else:
-                x.append((o, v))
-        pMod.apiPDU.setVarBinds(reqPDU,tuple(x))
+                 ##Set oid, val for GET/SET
+                if (v == None):
+                    x.append((o, pMod.Null()))
+                else:
+                    x.append((o, v))
+
+        if (len(x) != 0):
+            pMod.apiPDU.setVarBinds(reqPDU,tuple(x))
+        else:
+            pMod.apiPDU.setVarBinds(reqPDU,
+                                    map(lambda x, pMod=pMod: (x, pMod.Null()), y))
 
         return reqPDU
+
+    def pack_walk_pdu(self, pMod=V2c_PROTO_MOD):
+        """Pack and return GETNEXT (walk) PDU
+        """
+        return self.__pack_pdu(pMod.GetNextRequestPDU(), pMod)
+
+    def pack_walk_msg(self, pMod=V2c_PROTO_MOD):
+        """Shortcut to pack GETNEXT (walk) message
+        """
+        return self.pack_msg(self.pack_walk_pdu(pMod), pMod)
 
     def pack_set_pdu(self, pMod=V2c_PROTO_MOD):
         """Pack and return set PDU

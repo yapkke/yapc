@@ -12,31 +12,42 @@ class print_snmp(yapc.component):
         server.register_event_handler(snmp.response.name, self)
         self.count = 0
         self.server = server
-        self.realname = None
+        self.expectedCount = 4
+        self.walking = False
         
     def processevent(self, event):
         self.count += 1
         if (event.response != None):
-            output.dbg(str(event.response.address))
-            output.dbg(str(event.response.community))
+            #output.dbg(str(event.response.recv_msg))
+            #output.dbg(str(event.response.recv_pdu))
+            
+            output.dbg(str(event.response.address), self.__class__.__name__)
+            output.dbg(str(event.response.community), self.__class__.__name__)           
             if (not event.response.recv_error):
                 for oid, val in event.response.oid.items():
-                    output.dbg(oid.prettyPrint()+" = "+val.prettyPrint())
-
-                    if (event.response.address[0] == '127.0.0.1'):
-                        self.realname = event.response.oid[(1,3,6,1,2,1,1,1,0)]
+                    output.dbg(oid.prettyPrint()+" = "+val.prettyPrint(),
+                               self.__class__.__name__)
+                
+                if (self.walking):
+                    a = event.next_walk_obj()
+                    if (a != None):
+                        self.expectedCount += 1
+                        m = snmpcomm.message({a: None})
+                        snmpget.send(m, ('localhost', 161), snmpget.WALK)
+                        output.vdbg("Sent walk message")
             else:
-                output.dbg("SNMP Error : "+event.response.recv_error.prettyPrint())
+                output.dbg("SNMP Error : "+event.response.recv_error.prettyPrint(),
+                           self.__class__.__name__)
         else:
-            output.dbg("Error")
+            output.dbg("Error", self.__class__.__name__)
 
-        if(self.count == 3):
+        if(self.count == self.expectedCount):
             self.server.cleanup()
             
         return True
 
 server = core.core()
-output.set_mode("VVDBG")
+output.set_mode("DBG")
 snmpget = snmp.reliable_snmp(server)
 snmps = snmpcomm.snmp_udp_server(server, 5000)
 ps = print_snmp(server)
@@ -46,20 +57,32 @@ m1 = snmpcomm.message(
     {(1,3,6,1,2,1,1,1,0): None,
      (1,3,6,1,2,1,1,2,0): None})
 
-snmpget.send(m1, ('openflow2.stanford.edu', 161))
+snmpget.send(m1, ('openflow2.stanford.edu', 161), snmpget.GET)
 output.dbg("Sent message 1")
-snmpget.send(m1, ('localhost', 161))
+snmpget.send(m1, ('localhost', 161), snmpget.GET)
 output.dbg("Sent message 2")
 
 while (ps.count < 2):
     time.sleep(0.1)
+print
+print
     
-output.dbg(ps.realname)
-
 m2 = snmpcomm.message(
     {(1,3,6,1,2,1,1,1,0): snmpcomm.V2c_PROTO_MOD.OctetString('KK is stupid')})
-snmpget.send(m2, ('localhost', 161), get=False)
+snmpget.send(m2, ('localhost', 161), snmpget.SET)
+output.dbg("Sent set message")
 
 while (ps.count < 3):
+    time.sleep(0.1)
+print
+print
+
+m3 = snmpcomm.message(
+    {snmpcomm.V2c_PROTO_MOD.ObjectIdentifier((1,3,6)): None})
+ps.walking = True
+snmpget.send(m3, ('localhost', 161), snmpget.WALK)
+output.dbg("Sent walk message")
+
+while (ps.count < ps.expectedCount):
     time.sleep(0.1)
 

@@ -15,18 +15,34 @@ class response(yapc.event):
         ##SNMP recv_message is successful, else None
         self.response = recv_msg
         ##What is tried
-        self.get = entry["request"]
+        self.request = entry["request"]
         self.timeout = entry["timeout"]
         self.retry = entry["retry"]
         self.tried = entry["tried"]
         self.addr = entry["addr"]
 
+    def next_walk_obj(self):
+        """Get object for snmp walk
+
+        @return object (oid, val) else None
+        """
+        varTab =  snmpcomm.V2c_PROTO_MOD.apiPDU.getVarBindTable(self.request.pack_walk_pdu(),
+                                                                self.response.recv_pdu)
+        for oid, val in varTab[-1]:
+            if (val == None):
+                return None
+            else:
+                return oid
+     
 class reliable_snmp(yapc.component):
     """Class to implement reliable SNMP GET
 
     @author ykk
     @date Mar 2011
     """
+    GET = 1
+    SET = 2
+    WALK = 3
     def __init__(self, server, client=None):
         """Initialize
 
@@ -67,10 +83,10 @@ class reliable_snmp(yapc.component):
 
                     self.send(self.messages[event.magic]["request"],
                               self.messages[event.magic]["addr"],
+                              self.messages[event.magic]["action"],
                               self.messages[event.magic]["timeout"],
                               self.messages[event.magic]["retry"],
-                              self.messages[event.magic]["tried"],
-                              self.messages[event.magic]["get"])
+                              self.messages[event.magic]["tried"])
                     del self.messages[event.magic]
                 else:
                     self.server.post_event(response(self.messages[event.magic]))
@@ -82,7 +98,7 @@ class reliable_snmp(yapc.component):
                     
         return True
             
-    def send(self, message, addr, timeout=3, retry=10, tried=0, get=True):
+    def send(self, message, addr, action, timeout=3, retry=10, tried=0):
         """Send snmp.message
 
         @param message SNMP message to send
@@ -91,13 +107,16 @@ class reliable_snmp(yapc.component):
         @param retry number of times to retry (if None, try indefinitely)
         """
         pdu=None
-        if (get):
+        if (action == self.GET):
             pdu = message.pack_get_pdu()
-        else:
+        elif (action == self.SET):
             pdu = message.pack_set_pdu()
+        elif (action == self.WALK):
+            pdu = message.pack_walk_pdu()
+            
         msg = message.pack_msg(pdu)
         reqId = message.get_req_id(pdu)
-        output.dbg("Transmitting SNMP GET/SET with id "+str(reqId)+\
+        output.dbg("Transmitting SNMP message with id "+str(reqId)+\
                    " for the no. "+str(tried+1)+ " time",
                    self.__class__.__name__)
         self.client.send(msg, addr)
@@ -106,5 +125,5 @@ class reliable_snmp(yapc.component):
                                 "tried": tried+1,
                                 "request": message,
                                 "addr": addr,
-                                "get": get}
+                                "action": action}
         self.server.post_event(yapc.priv_callback(self, reqId), timeout)
