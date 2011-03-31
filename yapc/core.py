@@ -11,8 +11,8 @@ import sys
 import signal
 import bisect
 import threading
-import yapc.comm as comm
-import yapc.ofcomm as ofcomm
+import yapc.comm.core as comm
+import yapc.comm.openflow as ofcomm
 import yapc.output as output
 import yapc.interface as yapc
 

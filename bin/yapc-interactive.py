@@ -1,6 +1,6 @@
 import yapc.core as core
 import yapc.interface as yapc
-import yapc.ofcomm as ofcomm
+import yapc.comm.openflow as ofcomm
 import yapc.output as output
 import yapc.pyopenflow as pyopenflow
 import yapc.interactive as interactive

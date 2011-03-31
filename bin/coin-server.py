@@ -5,8 +5,8 @@
 #
 import yapc.core as core
 import yapc.interface as yapc
-import yapc.ofcomm as ofcomm
-import yapc.jsoncomm as jsoncomm
+import yapc.comm.openflow as ofcomm
+import yapc.comm.json as jsoncomm
 import yapc.events.openflow as ofevents
 import yapc.output as output
 import yapc.coin.core as coin

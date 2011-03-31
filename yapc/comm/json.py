@@ -4,7 +4,7 @@
 # @date Oct 2010
 #
 import yapc.interface as yapc
-import yapc.comm as comm
+import yapc.comm.core as comm
 import yapc.output as output
 import socket
 import simplejson

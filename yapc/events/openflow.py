@@ -7,7 +7,7 @@
 #
 import yapc.interface as yapc
 import yapc.output as output
-import yapc.ofcomm as ofcomm
+import yapc.comm.openflow as ofcomm
 import yapc.pyopenflow as pyof
 import yapc.util.openflow as ofutil
 

@@ -7,7 +7,7 @@
 #
 import yapc.interface as yapc
 import yapc.events.openflow as ofevents
-import yapc.jsoncomm as jsoncomm
+import yapc.comm.json as jsoncomm
 import yapc.output as output
 import yapc.commands as cmd
 import yapc.local.netintf as loifaces
