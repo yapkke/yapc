@@ -3,9 +3,7 @@ import yapc.comm.udp as ucomm
 import yapc.core as core
 import yapc.interface as yapc
 import yapc.output as output
-import socket
 import time
-import select
 
 class print_udp(yapc.component):
     def __init__(self, server):
