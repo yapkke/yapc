@@ -210,6 +210,9 @@ class ofserver(yapc.component, yapc.cleanup):
         #Bind 
         server.recv.addconnection(self.server, self.ofservermgr)
 
+        ##Cleanup
+        server.register_cleanup(self)
+
         ##OpenFlow connections
         self.connections = connections()
         server.register_event_handler(message.name,
