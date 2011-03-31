@@ -24,6 +24,11 @@ class message:
         if (self.oid == None):
             self.oid = {}
 
+    def get_req_id(self, pdu, pMod=V2c_PROTO_MOD):
+        """Get request id of PDU
+        """
+        return pMod.apiPDU.getRequestID(pdu)
+
     def unpack_msg(self, msg, pMod=V2c_PROTO_MOD):
         """Unpack a SNMP message
         """

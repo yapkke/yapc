@@ -1,40 +1,48 @@
 #!/usr/bin/env python
 import yapc.core as core
 import yapc.interface as yapc
-import yapc.comm.snmp as snmp
+import yapc.comm.snmp as snmpcomm
+import yapc.util.snmp as snmp
 import yapc.output as output
 import time
+import sys
 
 class print_snmp(yapc.component):
     def __init__(self, server):
-        server.register_event_handler(snmp.recv_message.name, self)
-
+        server.register_event_handler(snmp.get_response.name, self)
+        self.count = 0
+        self.server = server
+        
     def processevent(self, event):
-        output.dbg(str(event.address))
-        output.dbg(str(event.community))
-        for oid, val in event.oid.items():
-            output.dbg(oid.prettyPrint()+" = "+val.prettyPrint())
+        self.count += 1
+        if (event.response != None):
+            output.dbg(str(event.response.address))
+            output.dbg(str(event.response.community))
+            for oid, val in event.response.oid.items():
+                output.dbg(oid.prettyPrint()+" = "+val.prettyPrint())
+        else:
+            output.dbg("Error")
+
+        if(self.count == 2):
+            self.server.cleanup()
+            
         return True
 
 server = core.core()
 output.set_mode("DBG")
-snmpget = snmp.snmp_udp_client(server)
-snmps = snmp.snmp_udp_server(server, 5000)
+snmpget = snmp.reliable_snmp(server)
+snmps = snmpcomm.snmp_udp_server(server, 5000)
 ps = print_snmp(server)
 server.run(runbg=True)
 
-m1 = snmp.message(
+m1 = snmpcomm.message(
     {(1,3,6,1,2,1,1,1,0): None,
      (1,3,6,1,2,1,1,3,0): None})
-reqMsg = m1.pack_msg(m1.pack_get_pdu())
+m2 = snmpcomm.message(
+    {(1,3,6,1,2,1,1,1,0): None})
 
-reqMsg2 = snmp.message(
-    {(1,3,6,1,2,1,1,1,0): None}).pack_get_msg()
-
-snmpget.send(reqMsg, ('171.67.74.239', 161))
+snmpget.send(m1, ('127.0.0.1', 161))
 output.dbg("Sent message 1")
-snmpget.send(reqMsg2, ('openflow2.stanford.edu', 161))
+snmpget.send(m2, ('localhost', 161))
 output.dbg("Sent message 2")
 
-time.sleep(10)
-server.cleanup()
