@@ -45,10 +45,9 @@ class message:
                 
         return (snmp_msg, snmp_pdu, snmp_error)
 
-    def pack_get_pdu(self, pMod=V2c_PROTO_MOD):
-        """Pack and return request PDU
+    def __pack_pdu(self, reqPDU, pMod=V2c_PROTO_MOD):
+        """Pack generic get/set PDU
         """
-        reqPDU = pMod.GetRequestPDU()
         pMod.apiPDU.setDefaults(reqPDU)
         x = []
         for o,v in self.oid.items():
@@ -58,6 +57,22 @@ class message:
                 x.append((o, v))
         pMod.apiPDU.setVarBinds(reqPDU,tuple(x))
 
+        return reqPDU
+
+    def pack_set_pdu(self, pMod=V2c_PROTO_MOD):
+        """Pack and return set PDU
+        """
+        return self.__pack_pdu(pMod.SetRequestPDU(), pMod)
+
+    def pack_set_msg(self, pMod=V2c_PROTO_MOD):
+        """Shortcut to pack SET message
+        """
+        return self.pack_msg(self.pack_set_pdu(pMod), pMod)
+
+    def pack_get_pdu(self, pMod=V2c_PROTO_MOD):
+        """Pack and return request PDU
+        """
+        return self.__pack_pdu(pMod.GetRequestPDU(), pMod)
         return reqPDU
 
     def pack_get_msg(self, pMod=V2c_PROTO_MOD):
@@ -148,3 +163,4 @@ class snmpsocket(ucomm.udpsocket):
                     self.__class__.__name__)        
         data, addr = sock.recvfrom(self.maxlen)
         self.scheduler.post_event(recv_message(sock, data, addr))
+       
