@@ -9,20 +9,6 @@ import yapc.output as output
 import socket
 import sys
 
-global udp_client_sock
-udp_client_sock = None
-
-def send(message, address):
-    """Send UDP message to address
-
-    @param message message
-    @param address (host, port)
-    """
-    global udp_client_sock
-    if (udp_client_sock == None):
-        udp_client_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    udp_client_sock.sendto(message, address)
-
 class message(yapc.event):
     """UDP message event
 
@@ -39,6 +25,11 @@ class message(yapc.event):
         self.message = msg
         ##Address of peer
         self.address = addr
+
+    def reply(self, message):
+        """Reply with message
+        """
+        self.sock.sendto(message, self.address)
 
 class udpserver(yapc.component, yapc.cleanup):
     """Class to create UDP server socket
@@ -62,9 +53,7 @@ class udpserver(yapc.component, yapc.cleanup):
         #Create server manager
         self.udpservermgr = udpservermgr 
         if (self.udpservermgr  == None):
-            self.udpservermgr = udpserversocket(server)
-
-        #Bind 
+            self.udpservermgr = udpsocket(server)
         server.recv.addconnection(self.server, self.udpservermgr)
 
         ##Cleanup
@@ -73,14 +62,46 @@ class udpserver(yapc.component, yapc.cleanup):
     def cleanup(self):
         """Function to clean up server socket
         """
-        global udp_client_sock
         self.server.close()
-        if (udp_client_sock != None):
-            udp_client_sock.close()
-            udp_client_sock = None
+
+class udpclient(yapc.component, yapc.cleanup):
+    """Class to create UDP client socket
+
+    @author ykk
+    @date Mar 2011
+    """
+    def __init__(self, server, udpclientmgr=None):
+        """Initialize
+
+        Install client connection into receive thread
+        """
+        #Create client connection
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+        #Create server manager
+        self.udpclientmgr = udpclientmgr 
+        if (self.udpclientmgr  == None):
+            self.udpclientmgr = udpsocket(server)
+        server.recv.addconnection(self.sock, self.udpclientmgr)
+
+        ##Cleanup
+        server.register_cleanup(self)
         
-class udpserversocket(comm.sockmanager):
-    """Class to receive UDP packets
+    def cleanup(self):
+        """Function to clean up server socket
+        """
+        self.sock.close()
+
+    def send(self, message, addr):
+        """Send message
+
+        @param message message to send
+        @param address (host, port)
+        """
+        self.sock.sendto(message, addr)
+
+class udpsocket(comm.sockmanager):
+    """Class to receive UDP packets from socket
 
     @author ykk
     @date Mar 2011
