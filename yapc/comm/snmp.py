@@ -17,32 +17,49 @@ class message:
         @param oid dictionary of oid
         @param community community string
         """
-        ##Community string
+        #Version
+        self.version = api.protoVersion2c
+        #Community string
         self.community = community
-        ##List of oid
+        #List of oid
         self.oid = oid
         if (self.oid == None):
             self.oid = {}
+        #Trap values
+        self.trap = {}
 
     def get_req_id(self, pdu, pMod=V2c_PROTO_MOD):
         """Get request id of PDU
         """
         return pMod.apiPDU.getRequestID(pdu)
 
-    def unpack_msg(self, msg, pMod=V2c_PROTO_MOD):
+    def unpack_msg(self, msg):
         """Unpack a SNMP message
         """
+        self.version = api.decodeMessageVersion(msg)
+        pMod = api.protoModules[int(self.version)]
+        
         snmp_msg, m = decoder.decode(msg,
                                      asn1Spec=pMod.Message())
         snmp_pdu = pMod.apiMessage.getPDU(snmp_msg)
         snmp_error = pMod.apiPDU.getErrorStatus(snmp_pdu)
 
+        #Decode common values
         self.community = pMod.apiMessage.getCommunity(snmp_msg)
         self.oid = {}
         if (not snmp_error):
             for oid, val in pMod.apiPDU.getVarBinds(snmp_pdu):
                 self.oid[oid] = val
-                
+
+        #Decode trap
+        if (snmp_pdu.isSameTypeWith(pMod.TrapPDU())):
+            if (self.vesion === api.protoVersion1):
+                self.trap["enterprise"] = pMod.apiTrapPDU.getEnterprise(snmp_pdu)
+                self.trap["agent addr"] = pMod.apiTrapPDU.getAgentAddr(snmp_pdu)
+                self.trap["generic trap"] = pMod.apiTrapPDU.getGenericTrap(snmp_pdu)
+                self.trap["specific trap"] = pMod.apiTrapPDU.getSpecificTrap(snmp_pdu)
+                self.trap["uptime"] = pMod.apiTrapPDU.getTimeStamp(snmp_pdu)
+            
         return (snmp_msg, snmp_pdu, snmp_error)
 
     def __pack_pdu(self, reqPDU, pMod=V2c_PROTO_MOD):

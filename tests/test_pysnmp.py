@@ -22,6 +22,7 @@ class print_snmp(yapc.component):
             
             if (not event.response.recv_error):
                 if (event.action != snmpget.WALK):
+                    output.dbg(str(event.response.version), self.__class__.__name__)
                     output.dbg(str(event.response.address), self.__class__.__name__)
                     output.dbg(str(event.response.community), self.__class__.__name__)           
                     for oid, val in event.response.oid.items():
