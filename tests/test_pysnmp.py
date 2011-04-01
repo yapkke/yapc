@@ -13,7 +13,6 @@ class print_snmp(yapc.component):
         self.count = 0
         self.server = server
         self.expectedCount = 4
-        self.walking = False
         
     def processevent(self, event):
         self.count += 1
@@ -21,20 +20,21 @@ class print_snmp(yapc.component):
             #output.dbg(str(event.response.recv_msg))
             #output.dbg(str(event.response.recv_pdu))
             
-            output.dbg(str(event.response.address), self.__class__.__name__)
-            output.dbg(str(event.response.community), self.__class__.__name__)           
             if (not event.response.recv_error):
-                for oid, val in event.response.oid.items():
-                    output.dbg(oid.prettyPrint()+" = "+val.prettyPrint(),
-                               self.__class__.__name__)
-                
-                if (self.walking):
-                    a = event.next_walk_obj()
-                    if (a != None):
+                if (event.action != snmpget.WALK):
+                    output.dbg(str(event.response.address), self.__class__.__name__)
+                    output.dbg(str(event.response.community), self.__class__.__name__)           
+                    for oid, val in event.response.oid.items():
+                        output.dbg(oid.prettyPrint()+" = "+val.prettyPrint(),
+                                   self.__class__.__name__)
+                else:
+                    m = event.next_walk_msg()
+                    if (m != None):
+                        for oid, val in event.response.oid.items():
+                            output.dbg(oid.prettyPrint()+" = "+val.prettyPrint(),
+                                       self.__class__.__name__)
                         self.expectedCount += 1
-                        m = snmpcomm.message({a: None})
                         snmpget.send(m, ('localhost', 161), snmpget.WALK)
-                        output.vdbg("Sent walk message")
             else:
                 output.dbg("SNMP Error : "+event.response.recv_error.prettyPrint(),
                            self.__class__.__name__)

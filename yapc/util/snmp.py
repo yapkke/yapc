@@ -12,20 +12,29 @@ class response(yapc.event):
     def __init__(self, entry, recv_msg=None):
         """Initialize with get and response
         """
-        ##SNMP recv_message is successful, else None
+        #SNMP recv_message is successful, else None
         self.response = recv_msg
-        ##What is tried
+        #Request message
         self.request = entry["request"]
+        #Timeout for each retry
         self.timeout = entry["timeout"]
+        #Maximum number of retry
         self.retry = entry["retry"]
+        #Number of times tried until now
         self.tried = entry["tried"]
+        #Address message is sent to
         self.addr = entry["addr"]
+        #Last PDU sent with message
+        self.action = entry["action"]
 
     def next_walk_obj(self):
         """Get object for snmp walk
 
         @return object (oid, val) else None
         """
+        if (self.action != reliable_snmp.WALK):
+            return None
+        
         varTab =  snmpcomm.V2c_PROTO_MOD.apiPDU.getVarBindTable(self.request.pack_walk_pdu(),
                                                                 self.response.recv_pdu)
         for oid, val in varTab[-1]:
@@ -33,7 +42,18 @@ class response(yapc.event):
                 return None
             else:
                 return oid
-     
+
+    def next_walk_msg(self):
+        """Return next walk message to send if any
+        """
+        if (self.action != reliable_snmp.WALK):
+            return None
+
+        nwo = self.next_walk_obj()
+        if (nwo != None):
+            return snmpcomm.message({nwo:None})
+        return None
+
 class reliable_snmp(yapc.component):
     """Class to implement reliable SNMP GET
 
@@ -116,7 +136,7 @@ class reliable_snmp(yapc.component):
             
         msg = message.pack_msg(pdu)
         reqId = message.get_req_id(pdu)
-        output.dbg("Transmitting SNMP message with id "+str(reqId)+\
+        output.vdbg("Transmitting SNMP message with id "+str(reqId)+\
                    " for the no. "+str(tried+1)+ " time",
                    self.__class__.__name__)
         self.client.send(msg, addr)
@@ -127,3 +147,4 @@ class reliable_snmp(yapc.component):
                                 "addr": addr,
                                 "action": action}
         self.server.post_event(yapc.priv_callback(self, reqId), timeout)
+        
