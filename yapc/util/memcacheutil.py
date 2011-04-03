@@ -26,7 +26,8 @@ memcache_mode = MEMCACHE_MODE["ON"]
 ##Memcache debug
 DEBUG = 1
 
-def get_client():
+def get_client(servers=memcache_servers, 
+               debug=DEBUG):
     """Get client for memcache
 
     @param servers list of servers
@@ -36,16 +37,18 @@ def get_client():
     global memcache_servers
     global memcache_mode
     if (memcache_mode == MEMCACHE_MODE["OFF"]):
+        output.vdbg("Not using memcache")
         return 
  
     if (memcache_client== None):
         if (memcache_mode == MEMCACHE_MODE["ON"]):
             import memcache
-            memcache_client = memcache.Client(memcache_servers,
-                                              DEBUG)
+            memcache_client = memcache.Client(servers, debug)
             memcache_client.flush_all()
+            output.vdbg("Using memcache")
         elif (memcache_mode == MEMCACHE_MODE["LOCAL"]):
             memcache_client = local_memcache()
+            output.vdbg("Using local memcache")
     return memcache_client
 
 def set(name, value, timeout=0):
@@ -55,8 +58,8 @@ def set(name, value, timeout=0):
     @param value value to set key to
     @param timeout timeout to expire data
     """
-    global memcache_on
-    if (not memcache_on):
+    global memcache_mode
+    if (memcache_mode == MEMCACHE_MODE["OFF"]):
         return None
 
     if (name.find(" ") != -1):
@@ -70,8 +73,8 @@ def get(name):
     @param name key name
     @return value
     """
-    global memcache_on
-    if (not memcache_on):
+    global memcache_mode
+    if (memcache_mode == MEMCACHE_MODE["OFF"]):
         return None
 
     return memcache_client.get(name)
@@ -81,8 +84,8 @@ def delete(name):
 
     @param name key name
     """
-    global memcache_on
-    if (not memcache_on):
+    global memcache_mode
+    if (memcache_mode == MEMCACHE_MODE["OFF"]):
         return None
 
     return memcache_client.delete(name)

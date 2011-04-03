@@ -219,9 +219,10 @@ class dispatcher(threading.Thread):
                                 " True/False (using True by default)",
                             self.__class__.__name__)
                 r = True
-        except:
+        except Exception as errinst:
             output.output("CRITICAL",
-                          "Error occurs here... going to clean up",
+                          "Error ("+str(errinst)+") occurs here..."+\
+                              " going to clean up",
                           self.__class__.__name__)
             self.cleanup.cleanup()
             raise
