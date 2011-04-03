@@ -5,7 +5,6 @@
 # @author ykk
 # @date Feb 2011
 #
-import memcache
 import time
 import yapc.output as output
 
@@ -20,8 +19,8 @@ memcache_servers = ['127.0.0.1:11211']
 ##On/Off switch
 global memcache_mode
 MEMCACHE_MODE = {"ON":0,
-                 "OFF" = 1,
-                 "LOCAL" = 2}
+                 "OFF": 1,
+                 "LOCAL": 2}
 memcache_mode = MEMCACHE_MODE["ON"]
 
 ##Memcache debug
@@ -41,6 +40,7 @@ def get_client():
  
     if (memcache_client== None):
         if (memcache_mode == MEMCACHE_MODE["ON"]):
+            import memcache
             memcache_client = memcache.Client(memcache_servers,
                                               DEBUG)
             memcache_client.flush_all()
