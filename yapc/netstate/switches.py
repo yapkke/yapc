@@ -7,7 +7,7 @@
 #
 import yapc.interface as yapc
 import yapc.events.openflow as ofevents
-import yapc.comm as comm
+import yapc.comm.core as comm
 import yapc.output as output
 import yapc.pyopenflow as pyof
 import yapc.util.memcacheutil as mc
@@ -15,7 +15,8 @@ import yapc.util.memcacheutil as mc
 class dp_config(yapc.component):
     """Class to configure switches and maintain their config state
 
-    Note that default_off_config_flags takes precedence over defailt_on_config_flags.
+    Note that default_off_config_flags takes precedence over 
+    default_on_config_flags.
 
     Maintain 
     * set of datapath config keyed by (keys from get_key/socket name)
