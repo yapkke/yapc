@@ -63,11 +63,18 @@ class host_dns(yapc.component):
                         if (rtype == "an"):
                             nameaddr[rr["name"]].append(rr["rdata"])
                             
-                        output.dbg(rtype+" record: "+\
-                                       rr["name"]+" binded to "+socket.inet_ntoa(rr["rdata"])+\
-                                       " with TTL of "+str(rr["ttl"])+ "s for host "+\
-                                       pu.array2hex_str(event.match.dl_dst),
-                                   self.__class__.__name__)
+                        if (len(rr["rdata"]) == 4):
+                            output.dbg(rtype+" record: "+\
+                                           rr["name"]+" binded to "+socket.inet_ntoa(rr["rdata"])+\
+                                           " with TTL of "+str(rr["ttl"])+ "s for host "+\
+                                           pu.array2hex_str(event.match.dl_dst),
+                                       self.__class__.__name__)
+                        else:
+                            output.dbg(rtype+" record: "+\
+                                           rr["name"]+" binded to "+str(rr["rdata"])+\
+                                           " with TTL of "+str(rr["ttl"])+ "s for host "+\
+                                           pu.array2hex_str(event.match.dl_dst),
+                                       self.__class__.__name__)
 
                 for name,val in nameaddr.items():
                     output.dbg(name+"=>"+str(len(val))+" IP addresses",
