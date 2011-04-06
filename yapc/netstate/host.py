@@ -57,13 +57,12 @@ class host_dns(yapc.component):
 
                 for rtype in ["an","ar"]:
                     for rr in dnsreply[rtype]:
-                        mc.set(host_dns.get_addr_key(socket.inet_ntoa(rr["rdata"])),
-                               rr["name"], rr["ttl"])
-
                         if (rtype == "an"):
                             nameaddr[rr["name"]].append(rr["rdata"])
                             
                         if (len(rr["rdata"]) == 4):
+                            mc.set(host_dns.get_addr_key(socket.inet_ntoa(rr["rdata"])),
+                                   rr["name"], rr["ttl"])
                             output.dbg(rtype+" record: "+\
                                            rr["name"]+" binded to "+socket.inet_ntoa(rr["rdata"])+\
                                            " with TTL of "+str(rr["ttl"])+ "s for host "+\
