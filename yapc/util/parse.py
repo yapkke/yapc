@@ -5,6 +5,7 @@
 #
 import yapc.output as output
 import struct
+import socket
 import os
 
 global oui_file
@@ -42,6 +43,20 @@ def get_null_terminated_str(s):
                "parse utility")
     return s[:s.find('\x00')]
 
+def get_packed_ip(value):
+    """Get packed IP string given value
+
+    @param value value of IP address (long)
+    """
+    return struct.pack(">L", value)
+
+def get_ip_string(value):
+    """Get IP string given value
+
+    @param value value of IP address (long)
+    """
+    return socket.inet_ntoa(get_packed_ip(value))
+
 def is_multicast_mac(mac_array):
     """Determine if mac is multicast
     """
@@ -57,7 +72,6 @@ def byte_str2array(str):
     for i in range(0, len(str)):
         r.append(struct.unpack("B", str[i])[0])
     return r
-
 
 def array2byte_str(array):
     """Convert array to binary str
