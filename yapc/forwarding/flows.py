@@ -61,6 +61,7 @@ class actions:
         else:
             oanw.type = pyof.OFPAT_SET_NW_DST
         oanw.nw_addr = addr
+        self.add(oanw)
 
     def set_buffer(self, buffer_id):
         """Set buffer id
@@ -102,13 +103,16 @@ class flow_entry(actions):
     def reverse(self, in_port):
         """Compute the reverse flow
 
-        Does *not* include wildcard reversal
-
+        Heavily wildcarded except for addresses and ports
+        
         @param in_port in port of the reverse flow
         @return reverse flow
         """
         fe = flow_entry()
-        fe.match = self.match
+        fe.match.wildcards = pyof.OFPFW_ALL - pyof.OFPFW_IN_PORT - \
+            pyof.OFPFW_DL_SRC - pyof.OFPFW_DL_DST - \
+            pyof.OFPFW_NW_SRC_ALL - pyof.OFPFW_NW_DST_ALL - \
+            pyof.OFPFW_TP_SRC - pyof.OFPFW_TP_DST
         fe.match.in_port = in_port
         fe.match.dl_src = self.match.dl_dst
         fe.match.dl_dst = self.match.dl_src
