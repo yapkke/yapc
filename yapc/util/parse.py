@@ -43,19 +43,34 @@ def get_null_terminated_str(s):
                "parse utility")
     return s[:s.find('\x00')]
 
-def get_packed_ip(value):
+def ip_val2binary(value):
     """Get packed IP string given value
 
     @param value value of IP address (long)
     """
     return struct.pack(">L", value)
 
-def get_ip_string(value):
+def ip_binary2val(packed):
+    """Get value of IP from packed string
+    """
+    return struct.unpack(">L", packed)[0]
+
+def ip_val2string(value):
     """Get IP string given value
 
     @param value value of IP address (long)
     """
-    return socket.inet_ntoa(get_packed_ip(value))
+    return socket.inet_ntoa(ip_val2binary(value))
+
+def ip_string2val(string):
+    """Get value of IP address from string
+    """
+    return ip_binary2val(ip_string2binary(string))
+
+def ip_string2binary(string):
+    """Get packed IP string from string
+    """
+    return socket.inet_aton(string)
 
 def is_multicast_mac(mac_array):
     """Determine if mac is multicast
