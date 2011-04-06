@@ -18,7 +18,7 @@ class host_dns(yapc.component):
     @date Apr 2011
     """
     ##Key prefix for domain name
-    HOST_DNS__DOMAIN_PREFIX = "dnshost_domain_"
+    HOST_DNS_DOMAIN_PREFIX = "dnshost_domain_"
     ##Key prefix for domain name
     HOST_DNS_IP_PREFIX = "dnshost_ip_"
     def __init__(self, server):
@@ -33,7 +33,8 @@ class host_dns(yapc.component):
 
         @param domain_name domain name
         """
-        return host_dns.HOST_DNS_DOMAIN_PREFIX+host+"_"+domain_name
+        return host_dns.HOST_DNS_DOMAIN_PREFIX+\
+            pu.array2hex_str(host)+"_"+domain_name
     get_name_key = yapc.static_callable(get_name_key)
 
     def get_addr_key(ipaddr):
@@ -41,7 +42,7 @@ class host_dns(yapc.component):
 
         @param ipaddr IP address in value
         """
-        return host_dns.HOST_DNS_IP_PREFIX+ipaddr
+        return host_dns.HOST_DNS_IP_PREFIX+socket.inet_ntoa(ipaddr)
     get_addr_key = yapc.static_callable(get_addr_key)
 
     def processevent(self, event):
@@ -49,35 +50,39 @@ class host_dns(yapc.component):
         """
         if (isinstance(event, ofevents.pktin)):
             if (event.match.tp_src == 53):
-                dnsreply = dpkt.dns.DNS(event.dpkt["data"]["data"]["data"])
+                try:
+                    dnsreply = dpkt.dns.DNS(event.dpkt["data"]["data"]["data"])
+                except:
+                    return True
                 nameaddr = {}
 
-                for q in dnsreply["qd"]:
-                    nameaddr[q["name"]] = []
+                for rr in dnsreply["an"]:
+                    if (rr["type"] == 1):
+                        #Record address for domain name
+                        if (rr["name"] not in nameaddr):
+                            nameaddr[rr["name"]] = []
+                        nameaddr[rr["name"]].append(rr["rdata"])
+                        #Record domain name for address
+                        mc.set(host_dns.get_addr_key(rr["rdata"]), rr["name"], rr["ttl"])
+                        output.vdbg("AN: "+socket.inet_ntoa(rr["rdata"])+" set to "+rr["name"]+\
+                                        " with TTL "+str(rr["ttl"]),
+                                    self.__class__.__name__)
 
-                for rtype in ["an","ar"]:
-                    for rr in dnsreply[rtype]:
-                        if (rtype == "an"):
-                            nameaddr[rr["name"]].append(rr["rdata"])
-                            
-                        if (len(rr["rdata"]) == 4):
-                            mc.set(host_dns.get_addr_key(socket.inet_ntoa(rr["rdata"])),
-                                   rr["name"], rr["ttl"])
-                            output.dbg(rtype+" record: "+\
-                                           rr["name"]+" binded to "+socket.inet_ntoa(rr["rdata"])+\
-                                           " with TTL of "+str(rr["ttl"])+ "s for host "+\
-                                           pu.array2hex_str(event.match.dl_dst),
-                                       self.__class__.__name__)
-                        else:
-                            output.dbg(rtype+" record: "+\
-                                           rr["name"]+" binded to "+str(rr["rdata"])+\
-                                           " with TTL of "+str(rr["ttl"])+ "s for host "+\
-                                           pu.array2hex_str(event.match.dl_dst),
-                                       self.__class__.__name__)
+                for rr in dnsreply["ar"]:
+                    if (rr["type"] == 1):
+                        #Record domain name for address
+                        mc.set(host_dns.get_addr_key(rr["rdata"]), rr["name"], rr["ttl"])
+                        output.vdbg("AR: "+socket.inet_ntoa(rr["rdata"])+" set to "+rr["name"]+\
+                                        " with TTL "+str(rr["ttl"]),
+                                    self.__class__.__name__)
 
                 for name,val in nameaddr.items():
-                    output.dbg(name+"=>"+str(len(val))+" IP addresses",
-                               self.__class__.__name__)
+                    if (len(val) != 0):
+                        mc.set(host_dns.get_name_key(event.match.dl_src, name), val)
+                        output.dbg(name+"=>"+str(len(val))+" IP addresses",
+                                   self.__class__.__name__)
+                    
+
 
         return True
         
