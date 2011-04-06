@@ -64,7 +64,10 @@ class sockmanager:
         """Handle received
         """
         while (len(select.select([sock], [], [], 0)[0]) != 0):
-            received = sock.recv(self.maxlen)
+            try:
+                received = sock.recv(self.maxlen)
+            except:
+                received = ""
             if (len(received) == 0):
                 recvthread.removeconnection(sock)
                 self.scheduler.post_event(event(self.sock,
