@@ -116,6 +116,7 @@ class local_memcache:
                 return value
             else:
                 self.delete(name)
+                return None
         except KeyError:
             return None
 
@@ -130,4 +131,7 @@ class local_memcache:
     def delete(self, name):
         """Delete key
         """
-        del self.dict[name]
+        try:
+            del self.dict[name]
+        except KeyError:
+            pass
