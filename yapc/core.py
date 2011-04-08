@@ -11,6 +11,7 @@ import sys
 import signal
 import bisect
 import threading
+import traceback
 import yapc.comm.core as comm
 import yapc.comm.openflow as ofcomm
 import yapc.output as output
@@ -221,7 +222,7 @@ class dispatcher(threading.Thread):
                 r = True
         except Exception as errinst:
             output.output("CRITICAL",
-                          "Error ("+str(errinst)+") occurs here..."+\
+                          "Error "+str(traceback.format_exc())+"\n\t occurs here..."+\
                               " going to clean up",
                           self.__class__.__name__)
             self.cleanup.cleanup()
