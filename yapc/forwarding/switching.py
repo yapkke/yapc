@@ -52,7 +52,8 @@ class learningswitch(yapc.component):
                 self.installflow(event, port)
                 return False
             else:
-                output.dbg("No binding found for mac %x"  % pu.array2val(event.match.dl_dst))
+                output.dbg("No binding found for mac %x"  % pu.array2val(event.match.dl_dst),
+                           self.__class__.__name__)
             
             return True     
 
