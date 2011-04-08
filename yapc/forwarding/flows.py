@@ -100,6 +100,38 @@ class flow_entry(actions):
         elif (action == flow_entry.FLOOD):
             self.add_output(pyof.OFPP_FLOOD)
 
+    def set_nw_src(self, src_ip):
+        """Set source IP in match
+
+        @param src_ip value of IP address
+        """
+        self.match.wildcards = self.match.wildcards | pyof.OFPFW_NW_SRC_ALL
+        self.match.nw_src = src_ip
+
+    def set_nw_dst(self, dst_ip):
+        """Set destination IP in match
+        
+        @param dst_ip value of IP address
+        """
+        self.match.wildcards = self.match.wildcards | pyof.OFPFW_NW_DST_ALL
+        self.match.nw_dst = dst_ip
+
+    def set_tp_src(self, tp_src):
+        """Set source IP in match
+        
+        @param tp_src source transport port
+        """
+        self.match.wildcards = self.match.wildcards | pyof.OFPFW_TP_SRC
+        self.match.tp_src = tp_src
+
+    def set_tp_dst(self, tp_dst):
+        """Set destination IP in match
+        
+        @param tp_dst destination transport port
+        """
+        self.match.wildcards = self.match.wildcards | pyof.OFPFW_TP_DST
+        self.match.tp_dst = tp_dst
+
     def reverse(self, in_port):
         """Compute the reverse flow
 
