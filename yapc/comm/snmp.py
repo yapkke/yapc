@@ -1,5 +1,7 @@
 from pysnmp.proto import api
 from pyasn1.codec.ber import encoder, decoder
+from pyasn1.type import univ
+import yapc.interface as yapc
 import yapc.comm.udp as ucomm
 import yapc.output as output
 import socket
@@ -29,14 +31,6 @@ class base_message:
         #Message is trap or not
         self.isTrap = isTrap
 
-    def unpack_pdu(self, snmp_pdu):
-        """Unpack a PDU
-        """
-        pMod = api.protoModules[int(self.version)]
-        self.oid = {}
-        for oid, val in pMod.apiPDU.getVarBinds(snmp_pdu):
-            self.oid[oid] = val
-
     def unpack_msg(self, msg):
         """Unpack a SNMP message
         """
@@ -49,10 +43,29 @@ class base_message:
         snmp_error = pMod.apiPDU.getErrorStatus(snmp_pdu)
 
         self.community = pMod.apiMessage.getCommunity(snmp_msg)
-        if (snmp_pdu.isSameTypeWith(pMod.TrapPDU())):
-            self.isTrap = True
-            
+        self.isTrap = snmp_pdu.isSameTypeWith(pMod.TrapPDU())
+
         return (snmp_msg, snmp_pdu, snmp_error)
+
+    def set_oid_val(self, oid, value):
+        """Set oid to value
+
+        @param oid oid string (not encoded)
+        @param value object holding value (encoded)
+        """
+        self.oid[oid] = value
+
+    def encode_oid(oid):
+        return univ.ObjectIdentifier(oid)
+    encode_oid = yapc.static_callable(encode_oid)
+
+    def encode_int(int):
+        return univ.Integer(int)
+    encode_int = yapc.static_callable(encode_int)
+
+    def encode_string(string):
+        return univ.OctetString(string)
+    encode_string = yapc.static_callable(encode_string)
 
 class trap_message(base_message):
     """Class to represent SNMP trap message
@@ -78,34 +91,12 @@ class trap_message(base_message):
         self.specific_trap = None
 
     def pack_trap_msg(self):
-        targs = {}
-        varargs = []
-        if (self.version == api.protoVersion1):
-            targs['enterprise'] = self.enterprise
-            targs['agent addr'] = self.agent_addr
-            targs['generic_trap'] = self.generic_trap
-            targs['specific_trap'] = self.specific_trap
-            if (self.uptime == None):
-                targs['time_stamp'] = time.time()
-            else:
-                targs['time_stamp'] = self.uptime
-        elif (self.version == api.protoVersion2c):
-            if (self.uptime == None):
-                varargs.append(('.1.3.6.1.2.1.1.3.0', 'TIMETICKS',
-                                int(time.time())))
-            else:
-                varargs.append(('.1.3.6.1.2.1.1.3.0', 'TIMETICKS',
-                                int(self.uptime)))
-                varargs.append(('.1.3.6.1.6.3.1.1.4.1.0', 'OBJECTID',
-                                self.enterprise))
-        
+        pass
 
     def unpack_trap_pdu(self, snmp_pdu):
         """Unpack a SNMP Trap message
         """
         pMod = api.protoModules[int(self.version)]
-        base_message.unpack_pdu(self, snmp_pdu)
-
         #Decode trap
         if (self.version == api.protoVersion1):
             self.enterprise = pMod.apiTrapPDU.getEnterprise(snmp_pdu)
@@ -113,7 +104,12 @@ class trap_message(base_message):
             self.generic_trap = pMod.apiTrapPDU.getGenericTrap(snmp_pdu)
             self.specific_trap = pMod.apiTrapPDU.getSpecificTrap(snmp_pdu)
             self.uptime = pMod.apiTrapPDU.getTimeStamp(snmp_pdu)    
-        
+            varBinds = pMod.apiTrapPDU.getVarBindList(snmp_pdu)
+        else:
+            varBinds = pMod.apiPDU.getVarBindList(snmp_pdu)
+        for oid, val in varBinds:
+            self.oid[oid._value] = val
+            
 class xet_message(base_message):
     """Class to represent SNMP GET/SET message
 
@@ -136,7 +132,10 @@ class xet_message(base_message):
     def unpack_xet_pdu(self, snmp_pdu):
         """Unpack a SNMP GET/SET PDU
         """
-        base_message.unpack_pdu(self, snmp_pdu)
+        pMod = api.protoModules[int(self.version)]
+        self.oid = {}
+        for oid, val in pMod.apiPDU.getVarBinds(snmp_pdu):
+            self.oid[oid._value] = val
 
     def __pack_pdu(self, reqPDU, pMod=V2c_PROTO_MOD):
         """Pack generic get/set PDU
@@ -224,10 +223,10 @@ class message(xet_message, trap_message, ucomm.message):
         """Unpack a SNMP message
         """
         (snmp_msg, snmp_pdu, snmp_error) = base_message.unpack_msg(self, msg)
-        if (not snmp_error):
-            if (self.isTrap):
-                self.unpack_trap_pdu(snmp_pdu)
-            else:
+        if (self.isTrap):
+            self.unpack_trap_pdu(snmp_pdu)
+        else:
+            if (not snmp_error):
                 self.unpack_xet_pdu(snmp_pdu)
             
         return (snmp_msg, snmp_pdu, snmp_error)

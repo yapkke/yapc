@@ -26,13 +26,13 @@ class print_snmp(yapc.component):
                     output.dbg(str(event.response.address), self.__class__.__name__)
                     output.dbg(str(event.response.community), self.__class__.__name__)           
                     for oid, val in event.response.oid.items():
-                        output.dbg(oid.prettyPrint()+" = "+val.prettyPrint(),
+                        output.dbg(str(oid)+" = "+val.prettyPrint(),
                                    self.__class__.__name__)
                 else:
                     m = event.next_walk_msg()
                     if (m != None):
                         for oid, val in event.response.oid.items():
-                            output.dbg(oid.prettyPrint()+" = "+val.prettyPrint(),
+                            output.dbg(str(oid)+" = "+val.prettyPrint(),
                                        self.__class__.__name__)
                         self.expectedCount += 1
                         snmpget.send(m, ('localhost', 161), snmpget.WALK)
