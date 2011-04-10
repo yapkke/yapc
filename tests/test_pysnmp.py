@@ -54,7 +54,7 @@ snmps = snmpcomm.snmp_udp_server(server, 5000)
 ps = print_snmp(server)
 server.run(runbg=True)
 
-m1 = snmpcomm.message(
+m1 = snmpcomm.xet_message(
     {(1,3,6,1,2,1,1,1,0): None,
      (1,3,6,1,2,1,1,2,0): None})
 
@@ -68,7 +68,7 @@ while (ps.count < 2):
 print
 print
     
-m2 = snmpcomm.message(
+m2 = snmpcomm.xet_message(
     {(1,3,6,1,2,1,1,1,0): snmpcomm.V2c_PROTO_MOD.OctetString('KK is stupid')})
 snmpget.send(m2, ('localhost', 161), snmpget.SET)
 output.dbg("Sent set message")
@@ -78,7 +78,7 @@ while (ps.count < 3):
 print
 print
 
-m3 = snmpcomm.message(
+m3 = snmpcomm.xet_message(
     {snmpcomm.V2c_PROTO_MOD.ObjectIdentifier((1,3,6)): None})
 ps.walking = True
 snmpget.send(m3, ('localhost', 161), snmpget.WALK)

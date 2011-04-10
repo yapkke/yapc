@@ -35,8 +35,8 @@ class response(yapc.event):
         if (self.action != reliable_snmp.WALK):
             return None
         
-        varTab =  snmpcomm.V2c_PROTO_MOD.apiPDU.getVarBindTable(self.request.pack_walk_pdu(),
-                                                                self.response.recv_pdu)
+        varTab = snmpcomm.V2c_PROTO_MOD.apiPDU.getVarBindTable(
+            self.request.pack_walk_pdu(), self.response.recv_pdu)
         for oid, val in varTab[-1]:
             if (val == None):
                 return None
@@ -51,7 +51,7 @@ class response(yapc.event):
 
         nwo = self.next_walk_obj()
         if (nwo != None):
-            return snmpcomm.message({nwo:None})
+            return snmpcomm.xet_message({nwo:None})
         return None
 
 class reliable_snmp(yapc.component):
@@ -77,7 +77,7 @@ class reliable_snmp(yapc.component):
         if (self.client == None):
             self.client = snmpcomm.snmp_udp_client(server)
 
-        server.register_event_handler(snmpcomm.recv_message.name, self)
+        server.register_event_handler(snmpcomm.message.name, self)
 
     def processevent(self, event):
         """Process events
@@ -87,7 +87,7 @@ class reliable_snmp(yapc.component):
 
         @param event events to process
         """
-        if (isinstance(event, snmpcomm.recv_message)):
+        if (isinstance(event, snmpcomm.message)):
             ##Got response
             rspId = event.get_req_id(event.recv_pdu)
             self.server.post_event(response(self.messages[rspId],
