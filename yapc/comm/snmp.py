@@ -5,8 +5,78 @@ import yapc.output as output
 
 V2c_PROTO_MOD = api.protoModules[api.protoVersion2c]
 
-class message:
-    """Class to represent SNMP message
+class base_message:
+    """Class to represent basic SNMP message
+
+    @author ykk
+    @date Apr 2011
+    """
+    def __init__(self, community="public", isTrap=False):
+        """Initialize
+
+        @param community community string
+        """
+        #Version
+        self.version = api.protoVersion2c
+        #Community string
+        self.community = community
+        #Message is trap or not
+        self.isTrap = isTrap
+
+    def unpack_msg(self, msg):
+        """Unpack a SNMP message
+        """
+        self.version = api.decodeMessageVersion(msg)
+        pMod = api.protoModules[int(self.version)]
+
+        snmp_msg, m = decoder.decode(msg,
+                                     asn1Spec=pMod.Message())
+        snmp_pdu = pMod.apiMessage.getPDU(snmp_msg)
+        snmp_error = pMod.apiPDU.getErrorStatus(snmp_pdu)
+
+        self.community = pMod.apiMessage.getCommunity(snmp_msg)
+        if (snmp_pdu.isSameTypeWith(pMod.TrapPDU())):
+            self.isTrap = True
+            
+        return (snmp_msg, snmp_pdu, snmp_error)
+
+class trap_message(base_message):
+    """Class to represent SNMP trap message
+
+    @author ykk
+    @date Apr 2011
+    """
+    def __init__(self, community="public"):
+        """Initialize
+
+        @param community community string
+        """
+        base_message.__init__(self, community, True)
+        #Uptime
+        self.uptime = None
+        #Enterprise
+        self.enterprise = None
+        #Agent address
+        self.agent_addr = None
+        #Generic trap
+        self.generic_trap = None
+        #Specific trap
+        self.specific_trap = None
+
+    def unpack_trap_pdu(self, snmp_pdu):
+        """Unpack a SNMP Trap message
+        """
+        pMod = api.protoModules[int(self.version)]
+        #Decode trap
+        if (self.version == api.protoVersion1):
+            self.enterprise = pMod.apiTrapPDU.getEnterprise(snmp_pdu)
+            self.agent_addr = pMod.apiTrapPDU.getAgentAddr(snmp_pdu)
+            self.generic_trap = pMod.apiTrapPDU.getGenericTrap(snmp_pdu)
+            self.specific_trap = pMod.apiTrapPDU.getSpecificTrap(snmp_pdu)
+            self.uptime = pMod.apiTrapPDU.getTimeStamp(snmp_pdu)    
+        
+class xet_message(base_message):
+    """Class to represent SNMP GET/SET message
 
     @author ykk
     @date Mar 2011
@@ -17,10 +87,7 @@ class message:
         @param oid dictionary of oid
         @param community community string
         """
-        #Version
-        self.version = api.protoVersion2c
-        #Community string
-        self.community = community
+        base_message.__init__(self, community)
         #List of oid
         self.oid = oid
         if (self.oid == None):
@@ -33,34 +100,14 @@ class message:
         """
         return pMod.apiPDU.getRequestID(pdu)
 
-    def unpack_msg(self, msg):
-        """Unpack a SNMP message
+    def unpack_xet_pdu(self, snmp_pdu):
+        """Unpack a SNMP GET/SET PDU
         """
-        self.version = api.decodeMessageVersion(msg)
         pMod = api.protoModules[int(self.version)]
-        
-        snmp_msg, m = decoder.decode(msg,
-                                     asn1Spec=pMod.Message())
-        snmp_pdu = pMod.apiMessage.getPDU(snmp_msg)
-        snmp_error = pMod.apiPDU.getErrorStatus(snmp_pdu)
-
-        #Decode common values
-        self.community = pMod.apiMessage.getCommunity(snmp_msg)
         self.oid = {}
         if (not snmp_error):
             for oid, val in pMod.apiPDU.getVarBinds(snmp_pdu):
                 self.oid[oid] = val
-
-        #Decode trap
-        if (snmp_pdu.isSameTypeWith(pMod.TrapPDU())):
-            if (self.vesion === api.protoVersion1):
-                self.trap["enterprise"] = pMod.apiTrapPDU.getEnterprise(snmp_pdu)
-                self.trap["agent addr"] = pMod.apiTrapPDU.getAgentAddr(snmp_pdu)
-                self.trap["generic trap"] = pMod.apiTrapPDU.getGenericTrap(snmp_pdu)
-                self.trap["specific trap"] = pMod.apiTrapPDU.getSpecificTrap(snmp_pdu)
-                self.trap["uptime"] = pMod.apiTrapPDU.getTimeStamp(snmp_pdu)
-            
-        return (snmp_msg, snmp_pdu, snmp_error)
 
     def __pack_pdu(self, reqPDU, pMod=V2c_PROTO_MOD):
         """Pack generic get/set PDU
@@ -127,8 +174,8 @@ class message:
         pMod.apiMessage.setPDU(msg, pdu)
         return msg
 
-class recv_message(message, ucomm.message):
-    """SNMP message received
+class message(xet_message, trap_message, ucomm.message):
+    """SNMP message
 
     @author ykk
     @date Mar 2011
@@ -137,10 +184,25 @@ class recv_message(message, ucomm.message):
     def __init__(self, sock, msg, addr):
         """Initialize with message
         """
-        message.__init__(self)
+        base_message.__init__(self)
+        xet_message.__init__(self)
+        trap_message.__init__(self)
         ucomm.message.__init__(self, sock, msg, addr)
         self.recv_msg, self.recv_pdu, self.recv_error = \
                        self.unpack_msg(self.message)
+
+    def unpack_msg(self, msg):
+        """Unpack a SNMP message
+        """
+        (snmp_msg, snmp_pdu, snmp_error) = base_message.unpack_msg(self, msg)
+        
+        #Decode trap
+        if (self.isTrap):
+            self.unpack_trap_pdu(snmp_pdu)
+        else:
+            self.unpack_xet_pdu(snmp_pdu)
+            
+        return (snmp_msg, snmp_pdu, snmp_error)
 
     def reply(self, msg):
         """Reply with message
@@ -200,5 +262,5 @@ class snmpsocket(ucomm.udpsocket):
         output.vvdbg("Receiving SNMP packet on UDP socket "+str(sock),
                     self.__class__.__name__)        
         data, addr = sock.recvfrom(self.maxlen)
-        self.scheduler.post_event(recv_message(sock, data, addr))
+        self.scheduler.post_event(message(sock, data, addr))
        
