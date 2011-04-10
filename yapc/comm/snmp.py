@@ -1,6 +1,5 @@
-from pysnmp.proto import api
+from pysnmp.proto import api, rfc1902
 from pyasn1.codec.ber import encoder, decoder
-from pyasn1.type import univ
 import yapc.interface as yapc
 import yapc.comm.udp as ucomm
 import yapc.output as output
@@ -8,6 +7,7 @@ import socket
 import time
 
 V2c_PROTO_MOD = api.protoModules[api.protoVersion2c]
+V1_PROTO_MOD = api.protoModules[api.protoVersion1]
 
 class base_message:
     """Class to represent basic SNMP message
@@ -30,6 +30,17 @@ class base_message:
             self.oid = {}
         #Message is trap or not
         self.isTrap = isTrap
+
+    def get_proto_mod(self):
+        """Get protocol module for version specified
+        """
+        return api.protoModules[self.version]
+
+    def set_version1(self):
+        self.version = api.protoVersion1
+
+    def set_version2c(self):
+        self.version = api.protoVersion2c
 
     def unpack_msg(self, msg):
         """Unpack a SNMP message
@@ -55,17 +66,14 @@ class base_message:
         """
         self.oid[oid] = value
 
-    def encode_oid(oid):
-        return univ.ObjectIdentifier(oid)
-    encode_oid = yapc.static_callable(encode_oid)
-
-    def encode_int(int):
-        return univ.Integer(int)
-    encode_int = yapc.static_callable(encode_int)
-
-    def encode_string(string):
-        return univ.OctetString(string)
-    encode_string = yapc.static_callable(encode_string)
+    def pack_msg(self, pdu, pMod=V2c_PROTO_MOD):
+        """Pack and return request message
+        """
+        msg = pMod.Message()
+        pMod.apiMessage.setDefaults(msg)
+        pMod.apiMessage.setCommunity(msg, self.community)
+        pMod.apiMessage.setPDU(msg, pdu)
+        return msg
 
 class trap_message(base_message):
     """Class to represent SNMP trap message
@@ -79,20 +87,46 @@ class trap_message(base_message):
         @param community community string
         """
         base_message.__init__(self, oid, community, True)
+        self.set_version1()
         #Uptime
         self.uptime = None
+        self.set_uptime()
         #Enterprise
-        self.enterprise = None
+        self.enterprise = (0,0,0,0,0)
         #Agent address
-        self.agent_addr = socket.gethostbyname(socket.gethostname())
+        self.agent_addr = None
+        self.set_agent_ip_addr()
         #Generic trap
         self.generic_trap = None
         #Specific trap
         self.specific_trap = None
 
-    def pack_trap_msg(self):
-        pass
+    def set_agent_ip_addr(self, ipaddr='127.0.0.1'):
+        self.agent_addr = rfc1902.IpAddress(ipaddr)
 
+    def set_uptime(self, t=time.time()):
+        self.uptime = rfc1902.TimeTicks(t)
+            
+    def pack_trap_msg(self, pMod=V1_PROTO_MOD):
+        """Shortcut to pack trap message
+        """
+        return self.pack_msg(self.pack_trap_pdu(pMod), pMod)
+
+    def pack_trap_pdu(self, pMod=V1_PROTO_MOD):
+        trapPDU = pMod.TrapPDU()
+        pMod.apiTrapPDU.setDefaults(trapPDU)
+        varBinds = pMod.VarBindList()
+        
+        if (pMod == V1_PROTO_MOD):
+            pMod.apiTrapPDU.setEnterprise(trapPDU, self.enterprise)
+            pMod.apiTrapPDU.setAgentAddr(trapPDU, self.agent_addr)
+            pMod.apiTrapPDU.setGenericTrap(trapPDU, self.generic_trap)
+            pMod.apiTrapPDU.setSpecificTrap(trapPDU, self.specific_trap)
+            pMod.apiTrapPDU.setTimeStamp(trapPDU, self.uptime)
+            pMod.apiTrapPDU.setVarBindList(trapPDU, varBinds)
+            
+        return trapPDU
+            
     def unpack_trap_pdu(self, snmp_pdu):
         """Unpack a SNMP Trap message
         """
@@ -192,15 +226,6 @@ class xet_message(base_message):
         """Shortcut to pack GET message
         """
         return self.pack_msg(self.pack_get_pdu(pMod), pMod)
-
-    def pack_msg(self, pdu, pMod=V2c_PROTO_MOD):
-        """Pack and return request message
-        """
-        msg = pMod.Message()
-        pMod.apiMessage.setDefaults(msg)
-        pMod.apiMessage.setCommunity(msg, self.community)
-        pMod.apiMessage.setPDU(msg, pdu)
-        return msg
 
 class message(xet_message, trap_message, ucomm.message):
     """SNMP message
