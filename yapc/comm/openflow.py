@@ -71,8 +71,8 @@ class connection:
             self.handshake = True
             
         else:
-            output.warn("Handshake should not handle message type"+\
-                            ofp_type[msg.header.type],
+            output.warn("Handshake should not handle message type "+\
+                            pyopenflow.ofp_type[msg.header.type],
                         self.__class__.__name__)
 
     def replyecho(self, msg):
