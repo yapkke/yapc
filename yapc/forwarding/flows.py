@@ -241,6 +241,24 @@ class flow_entry(actions):
 
         return True
 
+    def _set_flow_mod_flag(self, mask, set_flag):
+        """Set flow mod flag
+        
+        @param mask to use for flag
+        @param set_flag set flag to true or false
+        """
+        if (set_flag):
+            self.flags = self.flags | mask
+        else:           
+            self.flags = self.flags & (~mask)
+
+    def set_flow_removed_flag(self, send_flow_removed=True):
+        """Set flow removed flags
+        
+        @param send_flow_removed set or not
+        """
+        self._set_flow_mod_flag(pyof.OFPFF_SEND_FLOW_REM, send_flow_removed)
+
     def get_packet_out(self, set_unbuffered=False):
         """Function to return flow_entry in terms of packet out
 
