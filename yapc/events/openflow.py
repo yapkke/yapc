@@ -33,7 +33,11 @@ class parser(yapc.component):
         @param event event to handle
         """
         if (isinstance(event, ofcomm.message)):
-            if (event.header.type == pyof.OFPT_PACKET_IN):
+            if (event.header.type == pyof.OFPT_FLOW_REMOVED):
+                self.scheduler.post_event(flow_removed(event.sock,
+                                                       event.message))
+
+            elif (event.header.type == pyof.OFPT_PACKET_IN):
                 self.scheduler.post_event(pktin(event.sock,
                                                 event.message))
 
@@ -160,6 +164,28 @@ class features_reply(ofcomm.message):
             output.dbg("Received switch features:\n"+\
                            self.features.show("\t"),
                        self.__class__.__name__)
+
+class flow_removed(ofcomm.message):
+    """Flow removed event in OpenFlow
+    
+    @author ykk
+    @date May 2011
+    """
+    name = "OpenFlow Flow Removed"
+    def __init__(self, sock, msg):
+        """Initialize
+
+        @param sock reference to socket
+        @param msg message
+        """
+        ofcomm.message.__init__(self, sock, msg)
+
+        ##Flow removed 
+        self.flowrm = None
+
+        if (self.header.type == pyof.OFPT_FLOW_REMOVED):
+            self.flowrm = pyof.ofp_flow_removed()
+            self.flowrm.unpack(msg)
 
 class pktin(ofcomm.message):
     """Packet in event in OpenFlow

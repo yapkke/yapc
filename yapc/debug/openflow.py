@@ -6,6 +6,32 @@
 import yapc.interface as yapc
 import yapc.comm.openflow as ofcomm
 import yapc.output as output
+import yapc.events.openflow as ofevents
+
+class show_flow_removed(yapc.component):
+    """Component to print flow removed
+
+    @author ykk
+    @date May 2011
+    """
+    def __init__(self, server):
+        """Initialize
+
+        @param server yapc core
+        """
+        server.register_event_handler(ofevents.flow_removed.name, self)
+
+    def processevent(self, event):
+        """Event handler
+
+        @param event event to handle
+        @return false if flow can be installed, else true
+        """
+        if (isinstance(event, ofevents.flow_removed)):
+            output.info("Received flow removed:\n"+event.flowrm.show("\t"),
+                        self.__class__.__name__);
+        
+        return True
 
 class of_msg_count(yapc.component):
     """Component to count number of OpenFlow messages in a second

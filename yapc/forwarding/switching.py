@@ -22,17 +22,21 @@ class learningswitch(yapc.component):
     @author ykk
     @date Feb 2011
     """
-    def __init__(self, server, ofconn):
+    def __init__(self, server, ofconn, sfr=False):
         """Initialize
 
         @param server yapc core
         @param conn reference to connections
+        @param sfr send flow removed or not
         """
         ##Reference to connections
         self.conn = ofconn
+        ##Send flow removed of not
+        self.send_flow_removed = sfr
 
         mc.get_client()
         server.register_event_handler(ofevents.pktin.name, self)
+        server.register_event_handler(ofevents.flow_removed.name, self)
 
     def processevent(self, event):
         """Event handler
@@ -55,7 +59,7 @@ class learningswitch(yapc.component):
                 output.dbg("No binding found for mac %x"  % pu.array2val(event.match.dl_dst),
                            self.__class__.__name__)
             
-            return True     
+        return True     
 
     def installflow(self, event, port):
         """Install flow
@@ -64,6 +68,8 @@ class learningswitch(yapc.component):
         @param port port to send flow to
         """
         flow = flows.exact_entry(event.match)
+        if (self.send_flow_removed):
+            flow.set_flow_removed_flag()
         flow.set_buffer(event.pktin.buffer_id)
         flow.add_output(port)
         

@@ -22,6 +22,8 @@ class flow_switch(yapc.daemon):
         self.debug = "INFO"
         ##Port
         self.port = 6633
+        ##Send flow removed or not
+        self.fpr = False
         
     def run(self):
         """Run server
@@ -41,7 +43,10 @@ class flow_switch(yapc.daemon):
         #Switch-host binding
         swhost = switchhost.mac2sw_binding(server)
         #Flow switch
-        fsw = fswitch.learningswitch(server, ofconn.connections)
+        fsw = fswitch.learningswitch(server, ofconn.connections,
+                                     self.fpr)
+        if (self.fpr):
+            pfr = ofdbg.show_flow_removed(server)
         #Drop unhandled flows
         fp = default.floodpkt(server, ofconn.connections)
 
@@ -57,6 +62,7 @@ def usage():
     print "\tyapc's flow switch"
     print  "Options:"
     print "-h/--help\n\tPrint this usage guide"
+    print "--flow-removed\n\tPrint flow removed"
     print "-v/--verbose\n\tVerbose output"
     print "--very-verbose\n\tVery verbose output"
     print "-d/--daemon\n\tRun as daemon"
@@ -68,7 +74,7 @@ fs = flow_switch()
 try:
     opts, args = getopt.getopt(sys.argv[1:], "hvdp:",
                                ["help","verbose","daemon", 
-                                "very-verbose", "port="])
+                                "very-verbose", "port=", "flow-removed"])
 except getopt.GetoptError:
     print "Option error!"
     usage()
@@ -85,6 +91,8 @@ for opt,arg in opts:
         fs.debug="DBG"
     elif (opt in ("--very-verbose")):
         fs.debug="VDBG"
+    elif (opt in ("--flow-removed")):
+        fs.fpr = True
     elif (opt in ("-d","--daemon")):
         fs.daemon=True
     else:
