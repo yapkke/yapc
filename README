@@ -2,9 +2,9 @@ YAPC: Yet Another Python Controller
 @author ykk
 @date October 2010
 
-The YAPC controller is created as an extremely simple event processing engine written in pure Python.  The
-structure of the engine is make as simple as possible to allow
-easy extension and deployment.
+The YAPC controller is created as an extremely simple event processing
+engine written in pure Python.  The structure of the engine is make as
+simple as possible to allow easy extension and deployment.
 
 
 Installation
@@ -21,14 +21,13 @@ Dependencies:
 
 YAPC also depends on other external packages to generate some of the
 libraries used.  They are listed as follows, though you dun really
-have to worry about it most of the time. 
+have to worry about it most of the time.
 
 * pylibopenflow: to generate pyopenflow.py library
 
 Acknowledgment
 ==============
 
-As you might have noticed, my family name is Yap.  And the
-project is named YAPC.  I would like to dedicate the controller to my
-son Cayden Yap, who have less attention from Dad as I writes this
-piece of code.
+As you might have noticed, my family name is Yap.  And the project is
+named YAPC.  I would like to dedicate the controller to my son Cayden
+Yap, who have less attention from Dad as I writes this piece of code.
