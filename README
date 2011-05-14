@@ -2,24 +2,10 @@ YAPC: Yet Another Python Controller
 @author ykk
 @date October 2010
 
-The YAPC controller is created as an extremely simple controller for
-OpenFlow in a high level scripting language like Python.  The
-structure of the controller is make as simple as possible to allow
+The YAPC controller is created as an extremely simple event processing engine written in pure Python.  The
+structure of the engine is make as simple as possible to allow
 easy extension and deployment.
 
-Background 
-========== 
-
-There is a few OpenFlow controllers out there now.  Currently,
-NOX, Onix and Beacon are the significantly complete controllers.
-However, none of them are simple to install and use.  Swig is a pain
-and OSGI is not small either.  As a bid for simplicity, YAPC is
-created.
-
-Finally, as you noticed by now, my family name is Yap.  And the
-project is named YAPC.  I would like to dedicate the controller to my
-son Cayden Yap, who have less attention from Dad as I writes this
-piece of code.
 
 Installation
 ============
@@ -38,3 +24,11 @@ libraries used.  They are listed as follows, though you dun really
 have to worry about it most of the time. 
 
 * pylibopenflow: to generate pyopenflow.py library
+
+Acknowledgment
+==============
+
+As you might have noticed, my family name is Yap.  And the
+project is named YAPC.  I would like to dedicate the controller to my
+son Cayden Yap, who have less attention from Dad as I writes this
+piece of code.
