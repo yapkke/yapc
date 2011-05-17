@@ -100,12 +100,28 @@ class flow_entry(actions):
         elif (action == flow_entry.FLOOD):
             self.add_output(pyof.OFPP_FLOOD)
 
+    def set_dl_src(self, src_mac):
+        """Set source mac address in match
+
+        @param src_mac value of Ethernet address
+        """
+        self.match.wildcards = self.match.wildcards & ~pyof.OFPFW_DL_SRC
+        self.match.dl_src = src_mac
+
+    def set_dl_dst(self, dst_mac):
+        """Set destination mac address in match
+        
+        @param dst_mac value of Ethernet address
+        """
+        self.match.wildcards = self.match.wildcards & ~pyof.OFPFW_DL_DST
+        self.match.dl_dst = dst_mac
+
     def set_nw_src(self, src_ip):
         """Set source IP in match
 
         @param src_ip value of IP address
         """
-        self.match.wildcards = self.match.wildcards | pyof.OFPFW_NW_SRC_ALL
+        self.match.wildcards = self.match.wildcards & ~pyof.OFPFW_NW_SRC_ALL
         self.match.nw_src = src_ip
 
     def set_nw_dst(self, dst_ip):
@@ -113,7 +129,7 @@ class flow_entry(actions):
         
         @param dst_ip value of IP address
         """
-        self.match.wildcards = self.match.wildcards | pyof.OFPFW_NW_DST_ALL
+        self.match.wildcards = self.match.wildcards & ~pyof.OFPFW_NW_DST_ALL
         self.match.nw_dst = dst_ip
 
     def set_tp_src(self, tp_src):
@@ -121,7 +137,7 @@ class flow_entry(actions):
         
         @param tp_src source transport port
         """
-        self.match.wildcards = self.match.wildcards | pyof.OFPFW_TP_SRC
+        self.match.wildcards = self.match.wildcards & ~pyof.OFPFW_TP_SRC
         self.match.tp_src = tp_src
 
     def set_tp_dst(self, tp_dst):
@@ -129,7 +145,7 @@ class flow_entry(actions):
         
         @param tp_dst destination transport port
         """
-        self.match.wildcards = self.match.wildcards | pyof.OFPFW_TP_DST
+        self.match.wildcards = self.match.wildcards & ~pyof.OFPFW_TP_DST
         self.match.tp_dst = tp_dst
 
     def reverse(self, in_port):
