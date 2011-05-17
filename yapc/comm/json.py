@@ -5,7 +5,7 @@
 #
 import yapc.interface as yapc
 import yapc.comm.core as comm
-import yapc.output as output
+import yapc.log.output as output
 import socket
 import simplejson
 import os

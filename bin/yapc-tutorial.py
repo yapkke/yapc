@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import yapc.output as output
+import yapc.log.output as output
 import yapc.core as core
 import yapc.interface as yapc
 import yapc.comm.openflow as ofcomm

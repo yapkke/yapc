@@ -6,7 +6,7 @@
 # @date Feb 2011
 #
 import os
-import yapc.output as output
+import yapc.log.output as output
 
 SCREEN = "screen"
 

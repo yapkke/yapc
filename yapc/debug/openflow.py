@@ -5,7 +5,7 @@
 #
 import yapc.interface as yapc
 import yapc.comm.openflow as ofcomm
-import yapc.output as output
+import yapc.log.output as output
 import yapc.events.openflow as ofevents
 
 class show_flow_removed(yapc.component):

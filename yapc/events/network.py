@@ -4,7 +4,7 @@
 # @date Feb 2011
 #
 import yapc.interface as yapc
-import yapc.output as output
+import yapc.log.output as output
 
 class link_event(yapc.event):
     """Event to indicate link up

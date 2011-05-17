@@ -1,6 +1,6 @@
 import yapc.comm.snmp as snmpcomm
 import yapc.interface as yapc
-import yapc.output as output
+import yapc.log.output as output
 
 class response(yapc.event):
     """Class of reliable SNMP GET and RESPONSE

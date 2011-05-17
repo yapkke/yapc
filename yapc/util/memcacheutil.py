@@ -6,7 +6,7 @@
 # @date Feb 2011
 #
 import time
-import yapc.output as output
+import yapc.log.output as output
 
 ##Global memcache client
 global memcache_client

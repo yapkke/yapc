@@ -5,7 +5,7 @@
 #
 import yapc.coin.core as coin
 import yapc.comm.json as jsoncomm
-import yapc.output as output
+import yapc.log.output as output
 import simplejson
 import sys
 import getopt

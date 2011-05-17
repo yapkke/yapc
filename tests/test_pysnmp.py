@@ -3,7 +3,7 @@ import yapc.core as core
 import yapc.interface as yapc
 import yapc.comm.snmp as snmpcomm
 import yapc.util.snmp as snmp
-import yapc.output as output
+import yapc.log.output as output
 import time
 import sys
 

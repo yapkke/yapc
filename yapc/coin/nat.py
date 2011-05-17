@@ -4,7 +4,7 @@
 # @author ykk
 # @date Feb 2011
 #
-import yapc.output as output
+import yapc.log.output as output
 
 class natmgr:
     """Class to manage COIN's NAT module

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import yapc.output as output
+import yapc.log.output as output
 import yapc.util.openflow as ofutil
 import pcap
 import dpkt

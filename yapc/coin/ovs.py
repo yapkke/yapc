@@ -8,7 +8,7 @@
 import yapc.local.ovs as ovs
 import yapc.interface as yapc
 import yapc.comm.json as jsoncomm
-import yapc.output as output
+import yapc.log.output as output
 import yapc.netstate.switches as swstate
 import yapc.util.memcacheutil as mc
 import simplejson

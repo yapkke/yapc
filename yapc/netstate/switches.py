@@ -8,7 +8,7 @@
 import yapc.interface as yapc
 import yapc.events.openflow as ofevents
 import yapc.comm.core as comm
-import yapc.output as output
+import yapc.log.output as output
 import yapc.pyopenflow as pyof
 import yapc.util.memcacheutil as mc
 

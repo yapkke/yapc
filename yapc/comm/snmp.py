@@ -2,7 +2,7 @@ from pysnmp.proto import api, rfc1902
 from pyasn1.codec.ber import encoder, decoder
 import yapc.interface as yapc
 import yapc.comm.udp as ucomm
-import yapc.output as output
+import yapc.log.output as output
 import socket
 import time
 

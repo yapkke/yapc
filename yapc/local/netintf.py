@@ -7,7 +7,7 @@
 #
 import yapc.interface as yapc
 import yapc.commands as cmd
-import yapc.output as output
+import yapc.log.output as output
 import netifaces
 import os
 import time

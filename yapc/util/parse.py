@@ -3,7 +3,7 @@
 # @author ykk
 # @date Oct 2010
 #
-import yapc.output as output
+import yapc.log.output as output
 import struct
 import socket
 import os

@@ -14,7 +14,7 @@ import threading
 import traceback
 import yapc.comm.core as comm
 import yapc.comm.openflow as ofcomm
-import yapc.output as output
+import yapc.log.output as output
 import yapc.interface as yapc
 
 class eventqueue:

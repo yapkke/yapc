@@ -6,7 +6,7 @@
 import dpkt
 import socket
 import yapc.interface as yapc
-import yapc.output as output
+import yapc.log.output as output
 import yapc.util.memcacheutil as mc
 import yapc.util.parse as pu
 import yapc.events.openflow as ofevents

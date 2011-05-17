@@ -9,7 +9,7 @@ import yapc.interface as yapc
 import yapc.util.parse as pu
 import yapc.events.openflow as ofevents
 import yapc.netstate.swhost as swhost
-import yapc.output as output
+import yapc.log.output as output
 import yapc.pyopenflow as pyof
 import yapc.util.memcacheutil as mc
 import yapc.forwarding.flows as flows

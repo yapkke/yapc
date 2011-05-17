@@ -9,7 +9,7 @@ import dpkt
 import struct
 import socket
 import yapc.pyopenflow as pyof
-import yapc.output as output
+import yapc.log.output as output
 import yapc.util.parse as pu
 
 ##Next transaction id to use

@@ -7,7 +7,7 @@ import yapc.interface as yapc
 import yapc.util.memcacheutil as mc
 import yapc.util.parse as pu
 import yapc.events.openflow as ofevents
-import yapc.output as output
+import yapc.log.output as output
 import time
 
 class mac2sw_binding(yapc.component):

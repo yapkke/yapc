@@ -8,7 +8,7 @@
 import dpkt
 import yapc.util.openflow as ofutil
 import yapc.pyopenflow as pyof
-import yapc.output as output
+import yapc.log.output as output
 
 UDP_BOOTPS = 67
 UDP_BOOTPC = 68

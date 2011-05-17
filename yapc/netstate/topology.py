@@ -15,7 +15,7 @@ import yapc.util.memcacheutil as mc
 import yapc.pyopenflow as pyof
 import yapc.util.openflow as ofutil
 import yapc.util.parse as parseutil
-import yapc.output as output
+import yapc.log.output as output
 
 class link_maintain:
     """Class that maintain link and timeout

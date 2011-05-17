@@ -5,7 +5,7 @@
 #
 import os
 import sys
-import yapc.output as output
+import yapc.log.output as output
 
 class event:
     """Base class for events

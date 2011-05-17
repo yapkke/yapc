@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import yapc.core as core
 import yapc.interface as yapc
-import yapc.output as output
+import yapc.log.output as output
 import yapc.comm.snmp as snmp
 import time
 import commands

@@ -2,7 +2,7 @@
 
 import yapc.core as core
 import yapc.interface as yapc
-import yapc.output as output
+import yapc.log.output as output
 class comp(yapc.component):
     def __init__(self, server):
         server.register_event_handler(yapc.priv_callback.name,

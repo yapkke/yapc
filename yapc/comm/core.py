@@ -8,7 +8,7 @@ import socket
 import threading
 import time
 import yapc.interface as yapc
-import yapc.output as output
+import yapc.log.output as output
 
 BLOCKING = False
 

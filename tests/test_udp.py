@@ -2,7 +2,7 @@
 import yapc.comm.udp as ucomm
 import yapc.core as core
 import yapc.interface as yapc
-import yapc.output as output
+import yapc.log.output as output
 import time
 
 class print_udp(yapc.component):
