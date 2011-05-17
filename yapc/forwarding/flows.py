@@ -157,17 +157,27 @@ class flow_entry(actions):
         @return reverse flow
         """
         fe = flow_entry()
+
         fe.match.wildcards = pyof.OFPFW_ALL - pyof.OFPFW_IN_PORT - \
-            pyof.OFPFW_DL_SRC - pyof.OFPFW_DL_DST - \
-            pyof.OFPFW_NW_SRC_ALL - pyof.OFPFW_NW_DST_ALL - \
-            pyof.OFPFW_TP_SRC - pyof.OFPFW_TP_DST
+            pyof.OFPFW_DL_SRC - pyof.OFPFW_DL_DST
         fe.match.in_port = in_port
         fe.match.dl_src = self.match.dl_dst
-        fe.match.dl_dst = self.match.dl_src
-        fe.match.nw_src = self.match.nw_dst
-        fe.match.nw_dst = self.match.nw_src
-        fe.match.tp_src = self.match.tp_dst
-        fe.match.tp_dst = self.match.tp_src
+        fe.match.dl_dst = self.match.dl_src       
+
+        if (self.match.dl_type == dpkt.ethernet.ETH_TYPE_IP):
+            fe.match.wildcards = fe.match.wildcards - pyof.OFPFW_DL_TYPE - \
+                pyof.OFPFW_NW_SRC_ALL - pyof.OFPFW_NW_DST_ALL
+            fe.match.dl_type = self.match.dl_type
+            fe.match.nw_src = self.match.nw_dst
+            fe.match.nw_dst = self.match.nw_src
+            
+        if (self.match.nw_proto == dpkt.ip.IP_PROTO_TCP or 
+            self.match.nw_proto == dpkt.ip.IP_PROTO_UDP):
+            fe.match.wildcards = fe.match.wildcards - pyof.OFPFW_NW_PROTO -\
+                pyof.OFPFW_TP_SRC - pyof.OFPFW_TP_DST
+            fe.match.nw_proto = self.match.nw_proto
+            fe.match.tp_src = self.match.tp_dst
+            fe.match.tp_dst = self.match.tp_src
 
         fe.idle_timeout = self.idle_timeout
         fe.hard_timeout = self.hard_timeout
