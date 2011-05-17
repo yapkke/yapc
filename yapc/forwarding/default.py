@@ -43,10 +43,14 @@ class floodpkt(yapc.component):
                 output.vdbg("Flood unbuffered packet with match "+\
                                 event.match.show().replace('\n',';'))
             else:
-                self.conn.db[event.sock].send(flow.get_packet_out().pack())
-                output.vdbg("Flood buffered packet with match "+\
-                                event.match.show().replace('\n',';'))
-
+                try:
+                    self.conn.db[event.sock].send(flow.get_packet_out().pack())
+                    output.vdbg("Flood buffered packet with match "+\
+                                event.match.show().replace('\n',';'),
+                                self.__class__.__name__)
+                except KeyError:
+                    output.warn("Packet dropped because originating socket is missing",
+                                self.__class__.__name__)
         return True
 
 class default_entries(yapc.component):
