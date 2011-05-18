@@ -1,5 +1,5 @@
 import sqlite3
-import inspect
+import yapc.interface as yapc
 import yapc.log.output as output
 
 class Database:
@@ -167,3 +167,18 @@ class Table:
         @param where where condition
         """
         return self.db.execute(self.select_stmt(selection, where))
+
+class DB(Database, yapc.cleanup):
+    """SQLite database with proper cleanup
+
+    @author ykk
+    @date May 2011
+    """
+    def __init__(self, server, filename):
+        Database.__init__(self, filename)
+        server.register_cleanup(self)
+
+    def cleanup(self):
+        """Clean up
+        """
+        self.close()

@@ -1,8 +1,11 @@
 #!/usr/bin/env python
+import yapc.core as core
 import yapc.log.output as output
 import yapc.log.sqlite as sqlite
 import os
+import time
 
+server = core.core()
 output.set_mode("VDBG")
 
 filename="testing.sqlite"
@@ -11,7 +14,9 @@ try:
 except OSError:
     pass
 
-db = sqlite.Database(filename)
+db = sqlite.DB(server, filename)
+server.run(runbg=True)
+
 db.add_table(sqlite.Table("Test1", ["col1", "col2"]))
 db.add_table(sqlite.Table("Test2", ["col12", "col22"]))
 db.create_tables()
@@ -26,4 +31,5 @@ for row in db.tables["Test1"].select():
 for row in db.tables["Test2"].select():
     print row
 
-db.close()
+time.sleep(1)
+server.cleanup()
