@@ -168,22 +168,54 @@ class Table:
         """
         return self.db.execute(self.select_stmt(selection, where))
 
-class DB(Database, yapc.cleanup):
+class SqliteDB(Database, yapc.cleanup):
     """SQLite database with proper cleanup
 
     @author ykk
     @date May 2011
     """
     def __init__(self, server, filename):
+        """Initialize
+        """
         Database.__init__(self, filename)
         server.register_cleanup(self)
+        self.started = False
 
     def start(self):
         """Start/setup the database
         """
         self.create_tables()
+        self.started = True
 
     def cleanup(self):
         """Clean up
         """
         self.close()
+
+class SqliteLogger:
+    """Base class for loggers using SQLite database
+    
+    @author ykk
+    @date May 2011
+    """
+    def __init__(self, db, name):
+        """Initialize
+        """
+        self.name = name
+        self.table = None
+
+        if (db.started):
+            output.err("Database "+str(db)+" is already started."+\
+                           " Logger cannot be initialized!",
+                       self.__class__.__name__)
+        else:
+            db.add_table(name, 
+                         self.get_column_names())
+            self.table = db.tables[name]
+
+    def get_col_names(self):
+        """Get names of columns
+        """
+        output.warn("get_col_names should overloaded",
+                    self.__class__.__name__)
+        return []

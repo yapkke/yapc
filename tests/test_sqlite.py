@@ -14,7 +14,7 @@ try:
 except OSError:
     pass
 
-db = sqlite.DB(server, filename)
+db = sqlite.SqliteDB(server, filename)
 db.add_table(sqlite.Table("Test1", ["col1", "col2"]))
 db.add_table(sqlite.Table("Test2", ["col12", "col22"]))
 db.start()
