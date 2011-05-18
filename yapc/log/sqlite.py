@@ -1,3 +1,8 @@
+##Module to handle SQLite3 interaction
+#
+# @uathor ykk
+# @date May 2011
+#
 import sqlite3
 import yapc.interface as yapc
 import yapc.log.output as output
@@ -16,19 +21,27 @@ class Database:
         ##Filename
         self.filename = filename
         ##Connection
-        self.connection = sqlite3.connect(self.filename)
-        output.dbg("Opening database "+self.filename)
-        self.connection.row_factory = sqlite3.Row
+        self.connection = None
         ##List of tables
         self.tables = {}
 
-    def close(self):
-        """Finalize
+    def open(self):
+        """Open database
         """
-        output.dbg("Closing database")
-        self.flush()
-        self.connection.commit()
-        self.connection.close()
+        if (self.connection == None):
+            self.connection = sqlite3.connect(self.filename)
+            output.dbg("Opening database "+self.filename)
+            self.connection.row_factory = sqlite3.Row
+        
+    def close(self):
+        """Close database
+        """
+        if (self.connection != None):
+            output.dbg("Closing database")
+            self.flush()
+            self.connection.commit()
+            self.connection.close()
+            self.connection = None
 
     def add_table(self, table):
         """Add table
@@ -38,6 +51,7 @@ class Database:
     def create_tables(self):
         """Create tables in database
         """
+        self.open()
         for tname,tab in self.tables.items():
             tab.create(self)
         self.connection.commit()
@@ -45,12 +59,14 @@ class Database:
     def execute(self, stmt):
         """Execute statement
         """
+        self.open()
         output.vdbg(stmt, self.__class__.__name__)
         return self.connection.execute(stmt)
 
     def executemany(self, stmt, data):
         """Execute many statements
         """
+        self.open()
         return self.connection.executemany(stmt, data)
 
     def commit(self):
@@ -181,11 +197,15 @@ class SqliteDB(Database, yapc.cleanup):
         server.register_cleanup(self)
         self.started = False
 
-    def start(self):
+    def start(self, close=True):
         """Start/setup the database
+
+        @oaram close close connection after creating tables
         """
         self.create_tables()
         self.started = True
+        if (close):
+            self.close()
 
     def cleanup(self):
         """Clean up
