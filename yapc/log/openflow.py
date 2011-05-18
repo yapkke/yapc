@@ -1,4 +1,5 @@
 import yapc.interface as yapc
+import yapc.pyopenflow as pyof
 import yapc.log.sqlite as sqlite
 import yapc.events.openflow as ofevents
 import yapc.util.parse as pu
@@ -24,12 +25,17 @@ class flowlogger(sqlite.SqliteLogger, yapc.component):
                 "dl_src", "dl_dst", "dl_type", "dl_vlan", "dl_vlan_pcp",
                 "nw_src", "nw_dst", "nw_proto", "nw_tos",
                 "tp_src", "tp_dst",
-                "duration_sec", "duration_nsec", "packet_count", "byte_count"]
+                "duration_sec", "duration_nsec", "duration",
+                "packet_count", "byte_count"]
 
     def processevent(self, event):
         """Process event
         """
         if (isinstance(event, ofevents.flow_removed)):
+            duration = event.flowrm.duration_sec + (float(event.flowrm.duration_nsec)/1e9)
+            if (event.flowrm.reason == pyof.OFPRR_IDLE_TIMEOUT):
+                duration -= event.flowrm.idle_timeout
+                
             i = [time.time(),
                  event.flowrm.cookie, 
                  event.flowrm.priority,
@@ -48,7 +54,7 @@ class flowlogger(sqlite.SqliteLogger, yapc.component):
                  event.flowrm.match.tp_src,
                  event.flowrm.match.tp_dst,
                  event.flowrm.duration_sec,
-                 event.flowrm.duration_nsec,
+                 event.flowrm.duration_nsec, duration,
                  event.flowrm.packet_count,
                  event.flowrm.byte_count]
             self.table.add_row(tuple(i))
