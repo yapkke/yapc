@@ -178,6 +178,11 @@ class DB(Database, yapc.cleanup):
         Database.__init__(self, filename)
         server.register_cleanup(self)
 
+    def start(self):
+        """Start/setup the database
+        """
+        self.create_tables()
+
     def cleanup(self):
         """Clean up
         """

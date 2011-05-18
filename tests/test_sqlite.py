@@ -15,11 +15,12 @@ except OSError:
     pass
 
 db = sqlite.DB(server, filename)
-server.run(runbg=True)
-
 db.add_table(sqlite.Table("Test1", ["col1", "col2"]))
 db.add_table(sqlite.Table("Test2", ["col12", "col22"]))
-db.create_tables()
+db.start()
+
+server.run(runbg=True)
+
 db.tables["Test1"].add_row((1.0,2.0))
 db.tables["Test1"].add_row((2.0,2.0))
 db.tables["Test1"].add_row((3.0,2.0))
