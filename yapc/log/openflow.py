@@ -1,6 +1,8 @@
 import yapc.interface as yapc
 import yapc.log.sqlite as sqlite
 import yapc.events.openflow as ofevents
+import yapc.util.parse as pu
+import time
 
 class flowlogger(sqlite.SqliteLogger, yapc.component):
     """Class to log flow removed
@@ -17,7 +19,8 @@ class flowlogger(sqlite.SqliteLogger, yapc.component):
     def get_col_names(self):
         """Get column names
         """
-        return ["cookie", "priority", "reason", "idle_timeout", "in_port",
+        return ["time_received",
+                "cookie", "priority", "reason", "idle_timeout", "in_port",
                 "dl_src", "dl_dst", "dl_type", "dl_vlan", "dl_vlan_pcp",
                 "nw_src", "nw_dst", "nw_proto", "nw_tos",
                 "tp_src", "tp_dst",
@@ -27,16 +30,17 @@ class flowlogger(sqlite.SqliteLogger, yapc.component):
         """Process event
         """
         if (isinstance(event, ofevents.flow_removed)):
-            i = [event.flowrm.cookie, 
+            i = [time.time(),
+                 event.flowrm.cookie, 
                  event.flowrm.priority,
                  event.flowrm.reason,
                  event.flowrm.idle_timeout,
                  event.flowrm.match.in_port,
-                 event.flowrm.match.dl_src,
-                 event.flowrm.match.dl_dst,
+                 pu.array2hex_str(event.flowrm.match.dl_src),
+                 pu.array2hex_str(event.flowrm.match.dl_dst),
                  event.flowrm.match.dl_type,
                  event.flowrm.match.dl_vlan,
-                 event.flowrm.match.dl_vlan_pcap,
+                 event.flowrm.match.dl_vlan_pcp,
                  event.flowrm.match.nw_src,
                  event.flowrm.match.nw_dst,
                  event.flowrm.match.nw_proto,
@@ -48,3 +52,5 @@ class flowlogger(sqlite.SqliteLogger, yapc.component):
                  event.flowrm.packet_count,
                  event.flowrm.byte_count]
             self.table.add_row(tuple(i))
+
+        return True
