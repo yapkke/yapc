@@ -60,13 +60,27 @@ class Database:
         """
         self.open()
         output.vdbg(stmt, self.__class__.__name__)
-        return self.connection.execute(stmt)
+        r = None
+        try:
+            r = self.connection.execute(stmt)
+        except sqlite3.ProgrammingError:
+            self.close()
+            self.open()
+            r = self.connection.execute(stmt)
+        return r
 
     def executemany(self, stmt, data):
         """Execute many statements
         """
         self.open()
-        return self.connection.executemany(stmt, data)
+        r = None
+        try:
+            r = self.connection.executemany(stmt, data)
+        except sqlite3.ProgrammingError:
+            self.close()
+            self.open()
+            r = self.connection.executemany(stmt, data)
+        return r
 
     def commit(self):
         """Commit commands
