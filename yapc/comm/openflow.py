@@ -124,7 +124,16 @@ class connections:
             return self.dpid_conn[dpid]
         except KeyError:
             return None
-        
+
+    def send(self, sock, msg):
+        """Send message on socket
+        """
+        try:
+            self.db[sock].send(msg)
+        except KeyError:
+            output.warn("Message dropped because socket is already closed",
+                        self.__class__.__name__)
+
     def add(self, sock):
         """Add connection
         """

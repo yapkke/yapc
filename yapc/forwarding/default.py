@@ -39,18 +39,14 @@ class floodpkt(yapc.component):
             flow.add_output(pyof.OFPP_FLOOD)
            
             if (event.pktin.buffer_id == flows.UNBUFFERED_ID):
-                self.conn.db[event.sock].send(flow.get_packet_out().pack()+event.pkt)
+                self.conn.send(event.sock, flow.get_packet_out().pack()+event.pkt)
                 output.vdbg("Flood unbuffered packet with match "+\
                                 event.match.show().replace('\n',';'))
             else:
-                try:
-                    self.conn.db[event.sock].send(flow.get_packet_out().pack())
-                    output.vdbg("Flood buffered packet with match "+\
+                self.conn.send(event.sock,flow.get_packet_out().pack())
+                output.vdbg("Flood buffered packet with match "+\
                                 event.match.show().replace('\n',';'),
-                                self.__class__.__name__)
-                except KeyError:
-                    output.warn("Packet dropped because originating socket is missing",
-                                self.__class__.__name__)
+                            self.__class__.__name__)
         return True
 
 class default_entries(yapc.component):
@@ -84,7 +80,7 @@ class default_entries(yapc.component):
         """
         if (isinstance(event, ofevents.features_reply)):
             for fm in self.entries:
-                self.conn.db[event.sock].send(fm.get_flow_mod(pyof.OFPFC_ADD).pack())
+                self.conn.send(event.sock,fm.get_flow_mod(pyof.OFPFC_ADD).pack())
 
         return True
 
@@ -113,7 +109,7 @@ class dropflow(yapc.component):
         if (isinstance(event, ofevents.pktin)):
             flow = flows.exact_entry(event.match)
             flow.set_buffer(event.pktin.buffer_id)
-            self.conn.db[event.sock].send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+            self.conn.send(event.sock,flow.get_flow_mod(pyof.OFPFC_ADD).pack())
             output.vdbg("Dropping flow with match "+\
                             event.match.show().replace('\n',';'))
 

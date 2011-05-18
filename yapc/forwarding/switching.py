@@ -74,14 +74,14 @@ class learningswitch(yapc.component):
         flow.add_output(port)
         
         #Install dropping flow
-        self.conn.db[event.sock].send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+        self.conn.send(event.sock,flow.get_flow_mod(pyof.OFPFC_ADD).pack())
         output.vdbg("Install flow to port "+str(port)+\
                         " for packet with match "+\
                         event.match.show().replace('\n',';'))
 
         #Packet out if packet is not buffered
         if (event.pktin.buffer_id == flows.UNBUFFERED_ID):
-            self.conn.db[event.sock].send(flow.get_packet_out().pack()+event.pkt)
+            self.conn.send(event.sock,flow.get_packet_out().pack()+event.pkt)
             output.vdbg("Output unbuffered packet to port "+str(port)+\
                             " with match "+\
                             event.match.show().replace('\n',';'))

@@ -44,13 +44,13 @@ class tutorial(yapc.component):
             
             if (event.pktin.buffer_id == flows.UNBUFFERED_ID):
                 ##Not buffered
-                self.conn.db[event.sock].send(flow.get_packet_out().pack()+event.pkt)
+                self.conn.send(event.sock, flow.get_packet_out().pack()+event.pkt)
                 output.vdbg("Flood unbuffered packet with match "+\
                                 event.match.show().replace('\n',';'))
           
             else:
                 ##Buffered packet
-                self.conn.db[event.sock].send(flow.get_packet_out().pack())
+                self.conn.send(event.sock,flow.get_packet_out().pack())
                 output.vdbg("Flood buffered packet with match "+\
                                 event.match.show().replace('\n',';'))
 

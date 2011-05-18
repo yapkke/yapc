@@ -68,7 +68,7 @@ class dp_config(yapc.component):
             #Get config
             getconfig = pyof.ofp_header()
             getconfig.type = pyof.OFPT_GET_CONFIG_REQUEST
-            self.conn.db[event.sock].send(getconfig.pack())
+            self.conn.send(event.sock,getconfig.pack())
         
         elif isinstance(event, ofevents.config_reply):
             #Check if I should set config
@@ -88,12 +88,12 @@ class dp_config(yapc.component):
                 setconfig.header.type = pyof.OFPT_SET_CONFIG
                 setconfig.flags = desired_flags
                 setconfig.miss_send_len = desired_miss_send_len
-                self.conn.db[event.sock].send(setconfig.pack())
+                self.conn.send(event.sock,setconfig.pack())
             
                 #Get config again after set
                 getconfig = pyof.ofp_header()
                 getconfig.type = pyof.OFPT_GET_CONFIG_REQUEST
-                self.conn.db[event.sock].send(getconfig.pack())
+                self.conn.send(event.sock,getconfig.pack())
             else:
                 #Remember config
                 key = self.get_key(event.sock)
