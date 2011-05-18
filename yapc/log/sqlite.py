@@ -209,8 +209,7 @@ class SqliteLogger:
                            " Logger cannot be initialized!",
                        self.__class__.__name__)
         else:
-            db.add_table(name, 
-                         self.get_column_names())
+            db.add_table(Table(name, self.get_col_names()))
             self.table = db.tables[name]
 
     def get_col_names(self):

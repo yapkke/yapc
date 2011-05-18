@@ -1,3 +1,4 @@
+import yapc.interface as yapc
 import yapc.log.sqlite as sqlite
 import yapc.events.openflow as ofevents
 
