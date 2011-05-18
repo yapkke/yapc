@@ -38,7 +38,6 @@ class Database:
         """
         if (self.connection != None):
             output.dbg("Closing database")
-            self.flush()
             self.connection.commit()
             self.connection.close()
             self.connection = None
@@ -210,6 +209,9 @@ class SqliteDB(Database, yapc.cleanup):
     def cleanup(self):
         """Clean up
         """
+        output.dbg("Cleaning up database",
+                   self.__class__.__name__)
+        self.flush()
         self.close()
 
 class SqliteLogger:
