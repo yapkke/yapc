@@ -26,6 +26,7 @@ class Database:
         """Finalize
         """
         output.dbg("Closing database")
+        self.flush()
         self.connection.commit()
         self.connection.close()
 
