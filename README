@@ -18,6 +18,7 @@ Dependencies:
 * dpkt: for parsing packets
 * memcache: for storage of information
 * pysnmp: for parsing SNMP packets
+* pysqlite1.1: for SQLite 3 support
 
 YAPC also depends on other external packages to generate some of the
 libraries used.  They are listed as follows, though you dun really
