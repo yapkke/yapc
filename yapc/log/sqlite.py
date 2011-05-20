@@ -47,39 +47,30 @@ class Database:
         """
         self.tables[table.name] = table
 
-    def create_tables(self):
+    def create_tables(self, close=True):
         """Create tables in database
         """
-        self.open()
         for tname,tab in self.tables.items():
             tab.create(self)
-        self.connection.commit()
+        self.close()
 
-    def execute(self, stmt):
+    def execute(self, stmt, close=True):
         """Execute statement
         """
         self.open()
         output.vdbg(stmt, self.__class__.__name__)
-        r = None
-        try:
-            r = self.connection.execute(stmt)
-        except sqlite3.ProgrammingError:
+        r = self.connection.execute(stmt)
+        if (close):
             self.close()
-            self.open()
-            r = self.connection.execute(stmt)
         return r
 
-    def executemany(self, stmt, data):
+    def executemany(self, stmt, data, close=True):
         """Execute many statements
         """
         self.open()
-        r = None
-        try:
-            r = self.connection.executemany(stmt, data)
-        except sqlite3.ProgrammingError:
+        r = self.connection.executemany(stmt, data)
+        if (close):
             self.close()
-            self.open()
-            r = self.connection.executemany(stmt, data)
         return r
 
     def commit(self):
@@ -173,7 +164,6 @@ class Table:
         self.db.executemany("INSERT INTO "+self.name+\
                                 " VALUES ("+stmt[:-1]+")",
                             self.data_cache)
-        self.db.commit()
         self.data_cache = []
 
     def select_stmt(self, selection="*", where=None):
@@ -215,18 +205,17 @@ class SqliteDB(Database, yapc.cleanup):
 
         @oaram close close connection after creating tables
         """
-        self.create_tables()
+        self.create_tables(close)
         self.started = True
-        if (close):
-            self.close()
 
     def cleanup(self):
         """Clean up
         """
         output.dbg("Cleaning up database",
                    self.__class__.__name__)
-        self.flush()
-        self.close()
+        if (self.connection != None):
+            self.flush()
+            self.close()
 
 class SqliteLogger:
     """Base class for loggers using SQLite database
