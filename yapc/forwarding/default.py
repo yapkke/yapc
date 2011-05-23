@@ -73,6 +73,13 @@ class default_entries(yapc.component):
         """
         self.entries.append(flowentry)
 
+    def add_perm(self, flowentry):
+        """Add permanent flow entry to install
+        """
+        flowentry.idle_timeout = pyof.OFP_FLOW_PERMANENT
+        flowentry.hard_timeout = pyof.OFP_FLOW_PERMANENT
+        self.entries.append(flowentry)
+
     def processevent(self, event):
         """Event handler
 
