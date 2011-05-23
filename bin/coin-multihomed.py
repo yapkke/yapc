@@ -55,9 +55,18 @@ class coin_server(yapc.daemon):
                                          ofutil.PRIORITY['LOWEST'],
                                          pyof.OFP_FLOW_PERMANENT,
                                          pyof.OFP_FLOW_PERMANENT))
-        defaultentry.add(flows.tcp_entry(action=flows.flow_entry.GET))
-        defaultentry.add(flows.udp_entry(action=flows.flow_entry.GET))
-        defaultentry.add(flows.icmp_entry(action=flows.flow_entry.GET))
+        defaultentry.add(flows.tcp_entry(action=flows.flow_entry.GET,
+                                         priority=ofutil.PRIORITY['LOWER'],
+                                         idle_timeout=pyof.OFP_FLOW_PERMANENT,
+                                         hard_timeout=pyof.OFP_FLOW_PERMANENT))
+        defaultentry.add(flows.udp_entry(action=flows.flow_entry.GET,
+                                         priority=ofutil.PRIORITY['LOWER'],
+                                         idle_timeout=pyof.OFP_FLOW_PERMANENT,
+                                         hard_timeout=pyof.OFP_FLOW_PERMANENT))
+        defaultentry.add(flows.icmp_entry(action=flows.flow_entry.GET,
+                                         priority=ofutil.PRIORITY['LOWER'],
+                                         idle_timeout=pyof.OFP_FLOW_PERMANENT,
+                                         hard_timeout=pyof.OFP_FLOW_PERMANENT))
 
         #Network status
         sw = switches.dp_features(server)
@@ -73,7 +82,8 @@ class coin_server(yapc.daemon):
         #Add interfaces
         for i in self.interfaces:
             ovs.add_if(i)
-       
+        coinserver.add_nat("local")
+
         server.run()       
         sys.exit(0)
         
