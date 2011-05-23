@@ -13,6 +13,10 @@ import yapc.commands as cmd
 import yapc.local.netintf as loifaces
 import yapc.coin.local as coinlo
 import yapc.coin.ovs as ovs
+import yapc.forwarding.default as default
+import yapc.forwarding.flows as flows
+import yapc.util.openflow as ofutil
+import yapc.pyopenflow as pyof
 import simplejson
 
 SOCK_NAME = "/etc/coin.sock"
@@ -155,3 +159,23 @@ class server(yapc.component):
             return None
 
         return reply
+
+class default_entries(default.default_entries):
+    def __init__(self, server, ofconn):
+        """Initialize
+        
+        @param server yapc core
+        @param ofconn refrence to connections
+        """
+        default.default_entries.__init__(self, server, ofconn)
+
+        self.add(flows.all_entry(flows.flow_entry.DROP,
+                                 ofutil.PRIORITY['LOWEST'],
+                                 pyof.OFP_FLOW_PERMANENT,
+                                 pyof.OFP_FLOW_PERMANENT))
+        self.add_perm(flows.tcp_entry(action=flows.flow_entry.GET,
+                                      priority=ofutil.PRIORITY['LOWER']))
+        self.add_perm(flows.udp_entry(action=flows.flow_entry.GET,
+                                      priority=ofutil.PRIORITY['LOWER']))
+        self.add_perm(flows.icmp_entry(action=flows.flow_entry.GET,
+                                       priority=ofutil.PRIORITY['LOWER']))

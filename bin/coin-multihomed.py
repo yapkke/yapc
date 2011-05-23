@@ -14,10 +14,7 @@ import yapc.coin.ovs as coinovs
 import yapc.netstate.switches as switches
 import yapc.netstate.swhost as switchhost
 import yapc.forwarding.default as default
-import yapc.forwarding.flows as flows
 import yapc.debug.openflow as ofdbg
-import yapc.util.openflow as ofutil
-import yapc.pyopenflow as pyof
 import sys
 import getopt
 
@@ -50,23 +47,7 @@ class coin_server(yapc.daemon):
                                  jsonconn.connections)
 
         #Default flows
-        defaultentry = default.default_entries(server, ofconn.connections)
-        defaultentry.add(flows.all_entry(flows.flow_entry.DROP,
-                                         ofutil.PRIORITY['LOWEST'],
-                                         pyof.OFP_FLOW_PERMANENT,
-                                         pyof.OFP_FLOW_PERMANENT))
-        defaultentry.add(flows.tcp_entry(action=flows.flow_entry.GET,
-                                         priority=ofutil.PRIORITY['LOWER'],
-                                         idle_timeout=pyof.OFP_FLOW_PERMANENT,
-                                         hard_timeout=pyof.OFP_FLOW_PERMANENT))
-        defaultentry.add(flows.udp_entry(action=flows.flow_entry.GET,
-                                         priority=ofutil.PRIORITY['LOWER'],
-                                         idle_timeout=pyof.OFP_FLOW_PERMANENT,
-                                         hard_timeout=pyof.OFP_FLOW_PERMANENT))
-        defaultentry.add(flows.icmp_entry(action=flows.flow_entry.GET,
-                                         priority=ofutil.PRIORITY['LOWER'],
-                                         idle_timeout=pyof.OFP_FLOW_PERMANENT,
-                                         hard_timeout=pyof.OFP_FLOW_PERMANENT))
+        defaultentry = coin.default_entries(server, ofconn.connections)
 
         #Network status
         sw = switches.dp_features(server)
