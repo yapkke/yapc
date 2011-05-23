@@ -82,7 +82,7 @@ class coin_server(yapc.daemon):
         #Add interfaces
         for i in self.interfaces:
             ovs.add_if(i)
-        coinserver.add_nat("local")
+        coinserver.add_loif("local")
 
         server.run()       
         sys.exit(0)

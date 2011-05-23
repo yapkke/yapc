@@ -11,7 +11,7 @@ import yapc.comm.json as jsoncomm
 import yapc.log.output as output
 import yapc.commands as cmd
 import yapc.local.netintf as loifaces
-import yapc.coin.nat as cnat
+import yapc.coin.local as coinlo
 import yapc.coin.ovs as ovs
 import simplejson
 
@@ -37,8 +37,8 @@ class server(yapc.component):
         self.config["mode"] = None
         ##Interface Manager
         self.ifmgr = loifaces.interfacemgr(server)
-        ##NAT Manager
-        self.natmgr = cnat.natmgr(self.ifmgr)
+        ##Local interface Manager
+        self.loifmgr = coinlo.loifmgr(self.ifmgr)
         ##Reference to switch fabric
         self.switch = None
 
@@ -103,7 +103,7 @@ class server(yapc.component):
             if (reply != None):
                 self.jsonconnections.db[event.sock].send(reply)
         elif (event.message["type"] == "coin" and
-            event.message["subtype"] == "nat"):
+            event.message["subtype"] == "loif"):
             reply = self.__processnat(event)
             if (reply != None):
                 self.jsonconnections.db[event.sock].send(reply)
@@ -111,24 +111,29 @@ class server(yapc.component):
             output.dbg("Receive JSON message "+simplejson.dumps(event.message),
                        self.__class__.__name__)
 
-    def __processnat(self, event):
-        """Process NAT related JSON messages
+    def __processloif(self, event):
+        """Process local interfaces related JSON messages
         
         @param event yapc.jsoncomm.message event
         """
         reply = {}
         reply["type"] = "coin"
-        reply["subtype"] = "nat"
+        reply["subtype"] = "loif"
 
-        if (event.message["command"] == "create_nat"):
-            nat = self.natmgr.add(event.message["name"])
-            self.switch.datapaths[ovs.COIN_DP_NAME].add_if(nat.client_intf)
+        if (event.message["command"] == "create_lo_intf"):
+            self.add_loif(event.message["name"])
         else:
             output.dbg("Receive message "+str(event.message),
                        self.__class__.__name__)
             return None
 
         return reply
+
+    def add_loif(self, name):
+        """Add local interface
+        """
+        loif = self.loifmgr.add(name)
+        self.switch.datapaths[ovs.COIN_DP_NAME].add_if(loif.switch_intf)
 
     def __processglobal(self, event):
         """Process mode related JSON messages

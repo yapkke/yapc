@@ -1,13 +1,13 @@
-##COIN NAT mode
+##COIN local interfaces
 #
-# Handles interfaces in NAT
+# Handles interfaces for local user
 # @author ykk
 # @date Feb 2011
 #
 import yapc.log.output as output
 
-class natmgr:
-    """Class to manage COIN's NAT module
+class loifmgr:
+    """Class to manage COIN's local interface
     
     @author ykk
     @date Feb 2011
@@ -17,25 +17,25 @@ class natmgr:
 
         @param ifmgr reference to interface manager
         """
-        ##Dictionary of NAT (indexed by name)
-        self.nats = {}
+        ##Dictionary of local interfaces (indexed by name)
+        self.intfs= {}
         ##Reference to interface manager
         self.ifmgr = ifmgr
 
     def add(self, name):
-        """Add a new NAT
+        """Add a new local interface
         """       
-        self.nats[name] = nat(self.ifmgr.add_veth())        
-        return self.nats[name]
+        self.intfs[name] = loif(self.ifmgr.add_veth())        
+        return self.intfs[name]
 
-class nat:
-    """Class to implement NAT over ports in OVS
+class loif:
+    """Class to implement loif with OVS
 
     @author ykk
     @date Feb 2011
     """
     def __init__(self, veth):
-        """Initialize NAT
+        """Initialize local interface
 
         @param ifmgr reference to interface manager
         """

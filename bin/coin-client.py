@@ -26,7 +26,7 @@ def usage():
     print "get_eth_interfaces\n\tGet current Ethernet interfaces of device"
     print "add_if [name]\n\tAdd interface to COIN"
     print "del_if [name]\n\tDelete interface from COIN"
-    print "create_nat [name]\n\tCreate a new NAT interface in COIN"
+    print "create_lo_intf [name]\n\tCreate a new local interface in COIN"
 
 #Parse options and arguments
 try:
@@ -57,13 +57,13 @@ for opt,arg in opts:
 if (len(args) < 1 or
     args[0] not in ["add_if","del_if","get_interfaces",
                     "get_eth_interfaces", "get_mode",
-                    "create_nat"]):
+                    "create_lo_intf"]):
     print "Missing or unknown command!"
     usage()
     sys.exit(2)
 
 if (args[0] == "add_if" or args[0] == "del_if" or
-    args[0] == "create_nat"):
+    args[0] == "create_lo_intf"):
     if not (len(args) >= 2):
         print "Missing name for interface"
         usage()
@@ -82,8 +82,8 @@ msg["command"] = args[0]
 if (args[0] == "add_if" or args[0] == "del_if" or
     args[0] == "get_interfaces"):
     msg["subtype"] = "ovs"
-elif (args[0] == "create_nat"):
-    msg["subtype"] = "nat"
+elif (args[0] == "create_lo_intf"):
+    msg["subtype"] = "loif"
 else:
     msg["subtype"] = "global"
 
