@@ -49,6 +49,9 @@ class coin_server(yapc.daemon):
 
         #Default flows
         defaultentry = coin.default_entries(server, ofconn.connections)
+        
+        #Protocol handlers
+        dhcp = nwproto.dhcp(server, ofconn.connections)
 
         #Network status
         sw = switches.dp_features(server)
