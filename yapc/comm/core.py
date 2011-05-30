@@ -126,6 +126,16 @@ class receivethread(threading.Thread):
             output.dbg("Removing "+str(sock)+" to select list",
                        self.__class__.__name__)
 
+    def remove_stale_connection(self):
+        """Remove any stale connection
+        """
+        for s in self.__sockets:
+            try:
+                inputready, outputready, exceptready = \
+                    select.select([s], [], [], 0)
+            except:
+                self.removeconnection(s)
+
     def run(self):
         """Main loop for polling receiving messages
         """
@@ -133,8 +143,11 @@ class receivethread(threading.Thread):
         while self.running:
             #Poll if any socket
             if (len(self.__sockets) != 0):
-                inputready, outputready, exceptready = \
-                    select.select(self.__sockets, [], [], self.timeout)
+                try:
+                    inputready, outputready, exceptready = \
+                        select.select(self.__sockets, [], [], self.timeout)
+                except:
+                    self.remove_stale_connection()
             else:
                 time.sleep(self.timeout)
 
