@@ -213,8 +213,7 @@ class nat(coin_server):
         ##Reference to wifi manager
         self.wifimgr = loifaces.wifi_mgr()
 
-    def setup(self, interfaces, networks,
-              inner_addr='192.168.0.1'):
+    def setup(self, interfaces, inner_addr='192.168.1.1'):
         """Add interfaces
         
         @param interfaces list of interfaces
@@ -225,8 +224,6 @@ class nat(coin_server):
 
         #Get IP addresses on the interfaces
         self.ifmgr.set_ipv4_addr(self.loif.client_intf, inner_addr)
-        #for i in range(0, len(networks)):
-        #    self.ifmgr.up(interfaces[i])
-        #    self.wifimgr.associate(interfaces[i], networks[i])
-        #   self.ifmgr.invoke_dhcp(interfaces[i])
+        for i in range(0, len(interfaces)):
+            self.ifmgr.up(interfaces[i])
         

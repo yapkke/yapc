@@ -14,6 +14,7 @@ import yapc.coin.ovs as coinovs
 import yapc.netstate.switches as switches
 import yapc.netstate.swhost as switchhost
 import yapc.forwarding.default as default
+import yapc.local.nwprotocol as nwproto
 import yapc.debug.openflow as ofdbg
 import sys
 import getopt
@@ -61,7 +62,7 @@ class coin_server(yapc.daemon):
         floodpkt = default.floodpkt(server, ofconn.connections)
 
         #Add interfaces
-        coinserver.setup(self.interfaces, ["Stanford", "ofwifi"])
+        coinserver.setup(self.interfaces)
 
         server.run()       
         sys.exit(0)
