@@ -21,7 +21,7 @@ import simplejson
 
 SOCK_NAME = "/etc/coin.sock"
 
-class server(yapc.component):
+class coin_server(yapc.component):
     """Class to handle connections and configuration for COIN
 
     @author ykk
@@ -31,6 +31,8 @@ class server(yapc.component):
         """Initialize
 
         @param server yapc core server/scheduler
+        @param ofconn OpenFlow connections
+        @param jsonconn JSON connections
         """
         ##OpenFlow connections
         self.ofconnections = ofconn
@@ -135,9 +137,13 @@ class server(yapc.component):
 
     def add_loif(self, name):
         """Add local interface
+        
+        @param name name of interface pair
+        @return interface pair
         """
         loif = self.loifmgr.add(name)
         self.switch.datapaths[ovs.COIN_DP_NAME].add_if(loif.switch_intf)
+        return loif
 
     def __processglobal(self, event):
         """Process mode related JSON messages
@@ -160,6 +166,14 @@ class server(yapc.component):
 
         return reply
 
+    def add_interfaces(self, interfaces):
+        """Add interfaces
+        
+        @param interfaces list of interfaces
+        """
+        for i in interfaces:
+            self.switch.add_if(i)
+
 class default_entries(default.default_entries):
     def __init__(self, server, ofconn):
         """Initialize
@@ -179,3 +193,40 @@ class default_entries(default.default_entries):
                                       priority=ofutil.PRIORITY['LOWER']))
         self.add_perm(flows.icmp_entry(action=flows.flow_entry.GET,
                                        priority=ofutil.PRIORITY['LOWER']))
+
+class nat(coin_server):
+    """Class to handle connections and configuration for COIN in NAT mode
+
+    @author ykk
+    @date May 2011
+    """
+    def __init__(self, server, ofconn, jsonconn):
+        """Initialize
+
+        @param server yapc core server/scheduler
+        @param ofconn OpenFlow connections
+        @param jsonconn JSON connections
+        """
+        coin_server.__init__(self, server, ofconn, jsonconn)
+        ##Reference to local interface
+        self.loif = None
+        ##Reference to wifi manager
+        self.wifimgr = loifaces.wifi_mgr()
+
+    def setup(self, interfaces, networks,
+              inner_addr='192.168.0.1'):
+        """Add interfaces
+        
+        @param interfaces list of interfaces
+        """
+        #Set up interfaces
+        self.loif = self.add_loif("local")
+        self.add_interfaces(interfaces)
+
+        #Get IP addresses on the interfaces
+        self.ifmgr.set_ipv4_addr(self.loif.client_intf, inner_addr)
+        #for i in range(0, len(networks)):
+        #    self.ifmgr.up(interfaces[i])
+        #    self.wifimgr.associate(interfaces[i], networks[i])
+        #   self.ifmgr.invoke_dhcp(interfaces[i])
+        

@@ -43,8 +43,8 @@ class coin_server(yapc.daemon):
         #OpenFlow Parser
         ofparse = ofevents.parser(server)
         #COIN main server, maintaining connections
-        coinserver = coin.server(server, ofconn.connections,
-                                 jsonconn.connections)
+        coinserver = coin.nat(server, ofconn.connections,
+                              jsonconn.connections)
 
         #Default flows
         defaultentry = coin.default_entries(server, ofconn.connections)
@@ -61,9 +61,7 @@ class coin_server(yapc.daemon):
         floodpkt = default.floodpkt(server, ofconn.connections)
 
         #Add interfaces
-        for i in self.interfaces:
-            ovs.add_if(i)
-        coinserver.add_loif("local")
+        coinserver.setup(self.interfaces, ["Stanford", "ofwifi"])
 
         server.run()       
         sys.exit(0)

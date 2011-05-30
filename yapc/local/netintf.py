@@ -460,6 +460,7 @@ class interfacemgr(eth_ipv4_addr_mgr, route_mgr, wifi_mgr, yapc.cleanup):
         @param server yapc core
         """
         route_mgr.__init__(self)
+        self.veth_init_clean()
         ##List of veth
         self.veth = []
 
@@ -485,6 +486,14 @@ class interfacemgr(eth_ipv4_addr_mgr, route_mgr, wifi_mgr, yapc.cleanup):
         """
         self.veth.remove(veth)
         del veth
+
+    def veth_init_clean(self):
+        """Initial veth cleanup
+        """
+        for i in self.interfaces():
+            output.info("ip link del "+str(i),
+                        self.__class__.__name__)
+            
 
     def interfaces(self):
         """Return interfaces
