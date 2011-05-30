@@ -78,12 +78,11 @@ class Database:
         """
         self.connection.commit()
 
-    def flush(self):
+    def flush(self, close=True):
         """Flush cache of all tables
         """
         for tname,tab in self.tables.items():
-            tab.flush_cache()
-        self.connection.commit()
+            tab.flush_cache(close)
 
 class Table:
     """SQLite table
@@ -152,7 +151,7 @@ class Table:
                             " when there is "+len(self.columns)+" columns",
                         self.__class__.__name__)
 
-    def flush_cache(self):
+    def flush_cache(self, close=True):
         """Flush data in cache in database
         """
         if (self.db == None):
@@ -160,10 +159,12 @@ class Table:
                         self.__class__.__name__)
             return
 
+        output.dbg("Flush cache of "+str(len(self.data_cache))+" items",
+                   self.__class__.__name__)
         stmt = "?,"*len(self.columns)
         self.db.executemany("INSERT INTO "+self.name+\
                                 " VALUES ("+stmt[:-1]+")",
-                            self.data_cache)
+                            self.data_cache, close)
         self.data_cache = []
 
     def select_stmt(self, selection="*", where=None):
@@ -213,9 +214,8 @@ class SqliteDB(Database, yapc.cleanup):
         """
         output.dbg("Cleaning up database",
                    self.__class__.__name__)
-        if (self.connection != None):
-            self.flush()
-            self.close()
+        self.flush()
+        self.close()
 
 class SqliteLogger:
     """Base class for loggers using SQLite database
