@@ -92,6 +92,17 @@ class datapath:
         cmd.run_cmd(DPCTL+" del-dp "+self.name,
                     self.__class__.__name__)
         
+    def get_ports(self):
+        """Return dictionary of ports
+        """
+        r = cmd.run_cmd(DPCTL+" show "+self.name,
+                        self.__class__.__name__)
+        d = {}
+        for l in r[1][2:]:
+            pn = l.strip().split(":")
+            d[pn[1].strip()] = int(pn[0][4:].strip())
+        return d
+
     def add_if(self, intf):
         """Add interface to datapath
 
