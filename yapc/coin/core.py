@@ -22,6 +22,26 @@ import simplejson
 
 SOCK_NAME = "/etc/coin.sock"
 
+class default_entries(default.default_entries):
+    def __init__(self, server, ofconn):
+        """Initialize
+        
+        @param server yapc core
+        @param ofconn refrence to connections
+        """
+        default.default_entries.__init__(self, server, ofconn)
+
+        self.add(flows.all_entry(flows.flow_entry.DROP,
+                                 ofutil.PRIORITY['LOWEST'],
+                                 pyof.OFP_FLOW_PERMANENT,
+                                 pyof.OFP_FLOW_PERMANENT))
+        self.add_perm(flows.tcp_entry(action=flows.flow_entry.GET,
+                                      priority=ofutil.PRIORITY['LOWER']))
+        self.add_perm(flows.udp_entry(action=flows.flow_entry.GET,
+                                      priority=ofutil.PRIORITY['LOWER']))
+        self.add_perm(flows.icmp_entry(action=flows.flow_entry.GET,
+                                       priority=ofutil.PRIORITY['LOWER']))
+
 class coin_server(yapc.component):
     """Class to handle connections and configuration for COIN
 
@@ -48,6 +68,8 @@ class coin_server(yapc.component):
         self.loifmgr = coinlo.loifmgr(self.ifmgr)
         ##Reference to wifi manager
         self.wifimgr = loifaces.wifi_mgr()        
+        ##Reference to default entries
+        self.default = default_entries(server, ofconn)
         ##Reference to switch fabric
         self.switch = None
 
@@ -180,25 +202,6 @@ class coin_server(yapc.component):
         for i in interfaces:
             self.switch.add_if(i)        
 
-class default_entries(default.default_entries):
-    def __init__(self, server, ofconn):
-        """Initialize
-        
-        @param server yapc core
-        @param ofconn refrence to connections
-        """
-        default.default_entries.__init__(self, server, ofconn)
-
-        self.add(flows.all_entry(flows.flow_entry.DROP,
-                                 ofutil.PRIORITY['LOWEST'],
-                                 pyof.OFP_FLOW_PERMANENT,
-                                 pyof.OFP_FLOW_PERMANENT))
-        self.add_perm(flows.tcp_entry(action=flows.flow_entry.GET,
-                                      priority=ofutil.PRIORITY['LOWER']))
-        self.add_perm(flows.udp_entry(action=flows.flow_entry.GET,
-                                      priority=ofutil.PRIORITY['LOWER']))
-        self.add_perm(flows.icmp_entry(action=flows.flow_entry.GET,
-                                       priority=ofutil.PRIORITY['LOWER']))
 
 class nat(coin_server):
     """Class to handle connections and configuration for COIN in NAT mode
@@ -250,5 +253,31 @@ class nat(coin_server):
             self.mirror[i] = self.add_loif(i)
             self.ifmgr.set_eth_addr(self.mirror[i].client_intf,
                                     self.ifmgr.ethernet_addr(i))
+            np = self.switch.get_ports()
+            port1 = np[i]
+            port2 = np[self.mirror[i].switch_intf]
+
+            #Set perm ARP rules for mirror
+            ae1 = flows.arp_entry(priority=ofutil.PRIORITY['LOW'])
+            ae1.set_in_port(port1)
+            ae1.add_output(port2, 65535)
+            self.default.add_perm(ae1)
+            ae2 = flows.arp_entry(priority=ofutil.PRIORITY['LOW'])
+            ae2.set_in_port(port2)
+            ae2.add_output(port1, 65535)
+            self.default.add_perm(ae2)
+            #Set perm DHCP rules for mirror
+            dreq = flows.udp_entry(portno=68,
+                                   priority=ofutil.PRIORITY['LOW'])
+            dreq.set_in_port(port1)
+            dreq.add_output(port2, 65535)
+            self.default.add_perm(dreq)
+            drep = flows.udp_entry(portno=67,
+                                   priority=ofutil.PRIORITY['LOW'])
+            drep.set_in_port(port2)
+            drep.add_output(port1, 65535)
+            self.default.add_perm(drep)           
+            
             output.dbg("Set "+self.mirror[i].client_intf+" to "+self.ifmgr.ethernet_addr(i),
                        self.__class__.__name__)
+            

@@ -45,10 +45,7 @@ class coin_server(yapc.daemon):
         #COIN main server, maintaining connections
         coinserver = coin.nat(server, ofconn.connections,
                               jsonconn.connections)
-
-        #Default flows
-        defaultentry = coin.default_entries(server, ofconn.connections)
-        
+       
         #Network status
         sw = switches.dp_features(server)
         swhost = switchhost.mac2sw_binding(server)

@@ -66,6 +66,13 @@ class switch(yapc.component, ovs.switch):
             output.dbg("Receive JSON message "+simplejson.dumps(event.message),
                        self.__class__.__name__)
 
+    def get_ports(self):
+        """Get ports of the switch
+
+        @return dictionary of port name and number
+        """
+        return self.datapaths[COIN_DP_NAME].get_ports()
+
     def add_if(self, name):
         """Add interfaces to COIN switch fabric
 

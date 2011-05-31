@@ -42,11 +42,12 @@ class actions:
         """
         self.actions.append(action)
 
-    def add_output(self, port=pyof.OFPP_CONTROLLER):
+    def add_output(self, port=pyof.OFPP_CONTROLLER, 
+                   max_len=pyof.OFP_DEFAULT_MISS_SEND_LEN):
         """Add output action to list
         """
         oao = pyof.ofp_action_output()
-        oao.max_len = pyof.OFP_DEFAULT_MISS_SEND_LEN
+        oao.max_len = max_len
         oao.port = port
         self.add(oao)
 
@@ -99,6 +100,14 @@ class flow_entry(actions):
             self.add_output(pyof.OFPP_CONTROLLER)
         elif (action == flow_entry.FLOOD):
             self.add_output(pyof.OFPP_FLOOD)
+
+    def set_in_port(self, in_port):
+        """Set in_port in match
+
+        @param in_port value of in_port
+        """
+        self.match.wildcards = self.match.wildcards & ~pyof.OFPFW_IN_PORT
+        self.match.in_port = in_port
 
     def set_dl_src(self, src_mac):
         """Set source mac address in match
