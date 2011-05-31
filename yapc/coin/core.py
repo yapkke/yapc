@@ -17,6 +17,7 @@ import yapc.coin.ovs as ovs
 import yapc.forwarding.default as default
 import yapc.forwarding.flows as flows
 import yapc.util.openflow as ofutil
+import yapc.util.parse as pu
 import yapc.pyopenflow as pyof
 import simplejson
 
@@ -132,8 +133,8 @@ class coin_server(yapc.component):
         if (event.message["command"] == "create_lo_intf"):
             self.add_loif(event.message["name"])
         elif (event.message["command"] == "dhclient"):
-            (dpid, port) = self.switch.if_name2port(event.message["name"])
-            self.dhcp.dhclient(dpid, port)
+            (dpid, port, mac) = self.switch.if_name2dpid_port_mac(event.message["name"])
+            self.dhcp.dhclient(dpid, port, pu.array2byte_str(mac))
             reply["command"] = "dhclient"
             reply["datapath id"] = "%x" % dpid
             reply["port"] = str(port)
