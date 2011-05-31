@@ -73,6 +73,32 @@ class switch(yapc.component, ovs.switch):
         """
         self.datapaths[COIN_DP_NAME].add_if(name)
 
+    def if_name2port(self, name):
+        """Translate name to dpid and port
+
+        @param name name of port
+        @return tuple of (dpid, port)
+        """
+        dpid = None
+        port = None
+
+        dpidsl = mc.get(swstate.dp_features.DP_SOCK_LIST)
+        if (dpidsl != None):
+            if (len(dpidsl) > 1):
+                output.warn(str(len(dpidsl))+" datapaths connected to COIN",
+                            self.__class__.__name__)
+            f = mc.get(dpidsl[0])
+            dpid = f.datapath_id
+            for p in f.ports:
+                if (p.name == name):
+                    port = p.port_no
+                    break
+        else:
+            output.warn("No datapaths connected to COIN",
+                        self.__class__.__name__)
+
+        return (dpid, port)
+
     def __process_switch_json(self, event):
         """Process JSON messages for switch
 

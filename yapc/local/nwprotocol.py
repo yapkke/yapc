@@ -28,7 +28,7 @@ class dhcp(yapc.component):
         @param ofconn OpenFlow connections
         """
         #Start memcache
-        mc.get_client()
+        mcutil.get_client()
         ##OpenFlow connections
         self.ofconnections = ofconn
         

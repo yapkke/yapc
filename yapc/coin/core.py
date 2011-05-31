@@ -132,8 +132,11 @@ class coin_server(yapc.component):
         if (event.message["command"] == "create_lo_intf"):
             self.add_loif(event.message["name"])
         elif (event.message["command"] == "dhclient"):
-            output.dbg("dhclient on "+event.message["name"],
-                       self.__class__.__name__)
+            (dpid, port) = self.switch.if_name2port(event.message["name"])
+            reply["command"] = "dhclient"
+            reply["datapath id"] = "%x" % dpid
+            reply["port"] = str(port)
+            reply["status"] = "executed"
         else:
             output.dbg("Receive message "+str(event.message),
                        self.__class__.__name__)
@@ -178,7 +181,7 @@ class coin_server(yapc.component):
         @param interfaces list of interfaces
         """
         for i in interfaces:
-            self.switch.add_if(i)
+            self.switch.add_if(i)        
 
 class default_entries(default.default_entries):
     def __init__(self, server, ofconn):
