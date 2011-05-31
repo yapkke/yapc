@@ -133,6 +133,7 @@ class coin_server(yapc.component):
             self.add_loif(event.message["name"])
         elif (event.message["command"] == "dhclient"):
             (dpid, port) = self.switch.if_name2port(event.message["name"])
+            self.dhcp.dhclient(dpid, port)
             reply["command"] = "dhclient"
             reply["datapath id"] = "%x" % dpid
             reply["port"] = str(port)

@@ -35,6 +35,12 @@ class dhcp(yapc.component):
         server.register_event_handler(ofevents.pktin.name,
                                       self)
 
+    def dhclient(self, dpid, port):
+        """Invoke dhclient on dpid and port given
+        """
+        output.dbg("dhclient on %x" % dpid + ":"+str(port),
+                   self.__class__.__name__)
+
     def get_key(dpid, port):
         """Get key for IP address and gateway IP
 
