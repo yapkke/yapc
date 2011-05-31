@@ -11,7 +11,6 @@ import yapc.comm.json as jsoncomm
 import yapc.log.output as output
 import yapc.commands as cmd
 import yapc.local.netintf as loifaces
-import yapc.local.nwprotocol as nwproto
 import yapc.coin.local as coinlo
 import yapc.coin.ovs as ovs
 import yapc.forwarding.default as default
@@ -47,8 +46,6 @@ class coin_server(yapc.component):
         self.ifmgr = loifaces.interfacemgr(server)
         ##Local interface Manager
         self.loifmgr = coinlo.loifmgr(self.ifmgr)
-        ##Reference to DHCP manager
-        self.dhcp = nwproto.dhcp(server, ofconn)
         ##Reference to switch fabric
         self.switch = None
 
@@ -133,11 +130,7 @@ class coin_server(yapc.component):
         if (event.message["command"] == "create_lo_intf"):
             self.add_loif(event.message["name"])
         elif (event.message["command"] == "dhclient"):
-            (dpid, port, mac) = self.switch.if_name2dpid_port_mac(event.message["name"])
-            self.dhcp.dhclient(dpid, port, pu.array2byte_str(mac))
             reply["command"] = "dhclient"
-            reply["datapath id"] = "%x" % dpid
-            reply["port"] = str(port)
             reply["status"] = "executed"
         else:
             output.dbg("Receive message "+str(event.message),
