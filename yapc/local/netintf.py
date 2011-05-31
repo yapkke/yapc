@@ -24,6 +24,13 @@ class eth_ipv4_addr_mgr:
     @author ykk
     @date Mar 2011
     """    
+    def ethernet_addr(self, intf):
+        """Return Ethernet address of interface
+        
+        @return Ethernet address as a string (00:00:00:00:00:00)
+        """
+        return self.ethernet_ipv4_addresses(intf)[netifaces.AF_PACKET][0]['addr']
+
     def ethernet_ipv4_addresses(self, intf=None):
         """Return Ethernet + IPv4 addresses for specified interface or all interfaces
         
@@ -60,7 +67,7 @@ class eth_ipv4_addr_mgr:
         
         @param intf interface name
         """
-        return cmd.run_cmd(IFCONFIG+" up",
+        return cmd.run_cmd(IFCONFIG+" "+intf+" up",
                            self.__class__.__name__)
 
     def down(self, intf):
@@ -68,7 +75,7 @@ class eth_ipv4_addr_mgr:
         
         @param intf interface name
         """
-        return cmd.run_cmd(IFCONFIG+" down",
+        return cmd.run_cmd(IFCONFIG+" "+intf+" down",
                            self.__class__.__name__)
 
     def set_eth_addr(self, intf, addr):

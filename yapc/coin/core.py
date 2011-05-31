@@ -46,6 +46,8 @@ class coin_server(yapc.component):
         self.ifmgr = loifaces.interfacemgr(server)
         ##Local interface Manager
         self.loifmgr = coinlo.loifmgr(self.ifmgr)
+        ##Reference to wifi manager
+        self.wifimgr = loifaces.wifi_mgr()        
         ##Reference to switch fabric
         self.switch = None
 
@@ -201,6 +203,8 @@ class default_entries(default.default_entries):
 class nat(coin_server):
     """Class to handle connections and configuration for COIN in NAT mode
 
+    Mirror interfaces for DHCP and ARP.
+
     @author ykk
     @date May 2011
     """
@@ -212,12 +216,12 @@ class nat(coin_server):
         @param jsonconn JSON connections
         """
         coin_server.__init__(self, server, ofconn, jsonconn)
-        ##Reference to local interface
-        self.loif = None
         ##Mode
         self.config["mode"] = "Multi-Homed (NATed)"
-        ##Reference to wifi manager
-        self.wifimgr = loifaces.wifi_mgr()        
+        ##Reference to local interface
+        self.loif = None
+        ##Mirror interfaces (indexed by primary interface)
+        self.mirror = {}
 
     def setup(self, interfaces, inner_addr='192.168.1.1'):
         """Add interfaces
@@ -234,3 +238,17 @@ class nat(coin_server):
         for i in range(0, len(interfaces)):
             self.ifmgr.up(interfaces[i])
         
+    def add_interfaces(self, interfaces):
+        """Add interfaces (plus mirror port)
+        
+        @param interfaces list of interfaces
+        """
+        for i in interfaces:
+            self.switch.add_if(i)
+            self.ifmgr.set_ipv4_addr(i, '0.0.0.0')
+            #Add mirror interface
+            self.mirror[i] = self.add_loif(i)
+            self.ifmgr.set_eth_addr(self.mirror[i].client_intf,
+                                    self.ifmgr.ethernet_addr(i))
+            output.dbg("Set "+self.mirror[i].client_intf+" to "+self.ifmgr.ethernet_addr(i),
+                       self.__class__.__name__)
