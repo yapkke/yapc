@@ -15,7 +15,7 @@ def usage():
     """Display usage
     """
     print "Usage "+sys.argv[0]+" [options] command <parameters>"
-    print "\tCreate bonding driver using COIN"
+    print "\tControl COIN switch fabric in host"
     print  "Options:"
     print "-h/--help\n\tPrint this usage guide"
     print "-v/--verbose\n\tVerbose output"
@@ -27,6 +27,7 @@ def usage():
     print "add_if [name]\n\tAdd interface to COIN"
     print "del_if [name]\n\tDelete interface from COIN"
     print "create_lo_intf [name]\n\tCreate a new local interface in COIN"
+    print "dhclient [name]\n\tExecute dhclient on interface in COIN"
 
 #Parse options and arguments
 try:
@@ -54,21 +55,24 @@ for opt,arg in opts:
         print "Unhandled option :"+opt
         sys.exit(2)
 
+zero_arg_cmds = ["get_interfaces",
+                 "get_eth_interfaces", "get_mode"]
+one_arg_cmds = ["add_if","del_if",
+                "create_lo_intf", "dhclient"]
+
 if (len(args) < 1 or
-    args[0] not in ["add_if","del_if","get_interfaces",
-                    "get_eth_interfaces", "get_mode",
-                    "create_lo_intf"]):
+    ((args[0] not in zero_arg_cmds) and 
+     (args[0] not in one_arg_cmds))):
     print "Missing or unknown command!"
     usage()
     sys.exit(2)
 
-if (args[0] == "add_if" or args[0] == "del_if" or
-    args[0] == "create_lo_intf"):
+if (args[0] in one_arg_cmds):
     if not (len(args) >= 2):
         print "Missing name for interface"
         usage()
         sys.exit(2)
-
+    
 #Set output mode
 if (debug):
     output.set_mode("DBG")
@@ -82,13 +86,12 @@ msg["command"] = args[0]
 if (args[0] == "add_if" or args[0] == "del_if" or
     args[0] == "get_interfaces"):
     msg["subtype"] = "ovs"
-elif (args[0] == "create_lo_intf"):
+elif (args[0] == "create_lo_intf" or args[0] == "dhclient"):
     msg["subtype"] = "loif"
 else:
     msg["subtype"] = "global"
 
-if (args[0] == "add_if" or args[0] == "del_if" or
-    args[0] == "create_nat"):
+if (args[0] in one_arg_cmds):
     msg["name"] = args[1]
 
 sock = jsoncomm.client(sock)

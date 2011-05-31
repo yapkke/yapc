@@ -13,7 +13,7 @@ import dpkt
 class dhcp(yapc.component):
     """Component that sends and interprets DHCP packets from interfaces on switch
 
-    Record of interface's IP address and gateway saved in memcache
+    Record of IP address and gateway saved in memcache
     
     @author ykk
     @date May 2011

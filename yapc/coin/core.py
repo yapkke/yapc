@@ -11,6 +11,7 @@ import yapc.comm.json as jsoncomm
 import yapc.log.output as output
 import yapc.commands as cmd
 import yapc.local.netintf as loifaces
+import yapc.local.nwprotocol as nwproto
 import yapc.coin.local as coinlo
 import yapc.coin.ovs as ovs
 import yapc.forwarding.default as default
@@ -45,6 +46,8 @@ class coin_server(yapc.component):
         self.ifmgr = loifaces.interfacemgr(server)
         ##Local interface Manager
         self.loifmgr = coinlo.loifmgr(self.ifmgr)
+        ##Reference to DHCP manager
+        self.dhcp = nwproto.dhcp(server, ofconn)
         ##Reference to switch fabric
         self.switch = None
 
@@ -110,7 +113,7 @@ class coin_server(yapc.component):
                 self.jsonconnections.db[event.sock].send(reply)
         elif (event.message["type"] == "coin" and
             event.message["subtype"] == "loif"):
-            reply = self.__processnat(event)
+            reply = self.__processloif(event)
             if (reply != None):
                 self.jsonconnections.db[event.sock].send(reply)
         else:
@@ -128,6 +131,9 @@ class coin_server(yapc.component):
 
         if (event.message["command"] == "create_lo_intf"):
             self.add_loif(event.message["name"])
+        elif (event.message["command"] == "dhclient"):
+            output.dbg("dhclient on "+event.message["name"],
+                       self.__class__.__name__)
         else:
             output.dbg("Receive message "+str(event.message),
                        self.__class__.__name__)
@@ -210,14 +216,17 @@ class nat(coin_server):
         coin_server.__init__(self, server, ofconn, jsonconn)
         ##Reference to local interface
         self.loif = None
+        ##Mode
+        self.config["mode"] = "Multi-Homed (NATed)"
         ##Reference to wifi manager
-        self.wifimgr = loifaces.wifi_mgr()
+        self.wifimgr = loifaces.wifi_mgr()        
 
     def setup(self, interfaces, inner_addr='192.168.1.1'):
         """Add interfaces
         
         @param interfaces list of interfaces
         """
+
         #Set up interfaces
         self.loif = self.add_loif("local")
         self.add_interfaces(interfaces)

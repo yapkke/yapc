@@ -14,7 +14,6 @@ import yapc.coin.ovs as coinovs
 import yapc.netstate.switches as switches
 import yapc.netstate.swhost as switchhost
 import yapc.forwarding.default as default
-import yapc.local.nwprotocol as nwproto
 import yapc.debug.openflow as ofdbg
 import sys
 import getopt
@@ -50,9 +49,6 @@ class coin_server(yapc.daemon):
         #Default flows
         defaultentry = coin.default_entries(server, ofconn.connections)
         
-        #Protocol handlers
-        dhcp = nwproto.dhcp(server, ofconn.connections)
-
         #Network status
         sw = switches.dp_features(server)
         swhost = switchhost.mac2sw_binding(server)
