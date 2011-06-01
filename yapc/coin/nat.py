@@ -15,6 +15,7 @@ import yapc.comm.json as jsoncomm
 
 LOCAL_IP = "192.168.4.1"
 LOCAL_GW = "192.168.4.254"
+MAX_RETRY = 7
 
 class nat(core.coin_server):
     """Class to handle connections and configuration for COIN in NAT mode
@@ -182,7 +183,7 @@ class nat(core.coin_server):
         mac = self.get_ip_mac(o["ip"], o["if"])
         if (mac == None):
             o["tried"] += 1
-            if (o["tried"] < 5):
+            if (o["tried"] < MAX_RETRY):
                 rc = yapc.priv_callback(self, o)
                 self.server.post_event(rc, 1)
         else:
@@ -220,7 +221,7 @@ class nat(core.coin_server):
         gw = self.get_if_route(mif=o["mif"])
         if (gw == None):
             o["tried"] += 1
-            if (o["tried"] < 5):
+            if (o["tried"] < MAX_RETRY):
                 rc = yapc.priv_callback(self, o)
                 self.server.post_event(rc, 1)
         else:
