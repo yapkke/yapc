@@ -74,9 +74,14 @@ class connection:
     def send(self, msg):
         """Send dictionary as JSON message
         """
-        self.sock.send(simplejson.dumps(msg))
-        output.dbg("Send message "+simplejson.dumps(msg),
-                   self.__class__.__name__)
+        try:
+            self.sock.send(simplejson.dumps(msg))
+            output.dbg("Send message "+simplejson.dumps(msg),
+                       self.__class__.__name__)
+        except socket.error:
+            output.warn(str(self.sock)+" is broken, message is dropped!",
+                        self.__class__.__name__)
+            
 
     def getpeerid(self):
         """Get peer pid, uid and gid of socket
