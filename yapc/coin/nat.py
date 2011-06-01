@@ -161,7 +161,7 @@ class nat(core.coin_server):
         """        
         if (event.message["type"] == "coin" and
             event.message["subtype"] == "global"):
-            reply = self.__processglobal(event)
+            reply = self._processglobal(event)
             if (reply != None):
                 self.jsonconnections.db[event.sock].send(reply)
         elif (event.message["type"] == "coin" and

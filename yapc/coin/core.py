@@ -135,7 +135,7 @@ class coin_server(yapc.component):
         """        
         if (event.message["type"] == "coin" and
             event.message["subtype"] == "global"):
-            reply = self.__processglobal(event)
+            reply = self._processglobal(event)
             if (reply != None):
                 self.jsonconnections.db[event.sock].send(reply)
         elif (event.message["type"] == "coin" and
@@ -203,7 +203,7 @@ class coin_server(yapc.component):
         self.switch.datapaths[ovs.COIN_DP_NAME].add_if(loif.switch_intf)
         return loif
 
-    def __processglobal(self, event):
+    def _processglobal(self, event):
         """Process mode related JSON messages
         
         @param event yapc.jsoncomm.message event
