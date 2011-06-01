@@ -18,7 +18,7 @@ IWLIST = "iwlist"
 DHCP = "dhclient"
 ROUTE = "route"
 ARP = "arp"
-ARPSCAN = "arp-scan"
+PING = "ping"
 
 class eth_ipv4_addr_mgr:
     """Interface manager class to manage addresses for IPv4
@@ -313,7 +313,9 @@ class arp_entry:
         """Parse line
         """
         i = entry_line.split()
-        if (len(i) != 5):
+        if (len(i) == 3):
+            pass #Incomplete entry
+        elif (len(i) != 5):
             output.warn("ARP entry line should have 5 items but "+str(len(i))+" found",
                         self.__class__.__name__)
         else:
@@ -334,10 +336,10 @@ class arp_mgr:
         self.query_arp()
 
     def arp_probe(self, iface, ip):
-        """Send ARP probe for IP on iface
+        """Resolve ARP for IP on iface
         """
-        c = ARPSCAN+" --interface="+iface+" "+ip
-        cmd.run_cmd(c, self.__class__.__name__)
+        c = PING+" -c 1 "+ip
+        cmd.run_cmd_screen("ping_for_arp", c, self.__class__.__name__)
 
     def get_arp(self, ip=None):
         """Get cached ARP entries for IP specified, else all entries
