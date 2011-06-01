@@ -12,6 +12,7 @@ import yapc.util.openflow as ofutil
 import yapc.log.output as output
 import yapc.events.openflow as ofevents
 import yapc.comm.json as jsoncomm
+import yapc.util.memcacheutil as mc
 
 LOCAL_IP = "192.168.4.1"
 LOCAL_GW = "192.168.4.254"
@@ -25,6 +26,10 @@ class nat(core.coin_server):
     @author ykk
     @date May 2011
     """
+    ##Prefix for gateway for interface
+    GW_KEY_PREFIX="COIN_GW_"
+    ##Prefix for mac for gateway
+    GW_MAC_KEY_PREFIX="COIN_GW_MAC_"
     def __init__(self, server, ofconn, jsonconn):
         """Initialize
 
@@ -39,15 +44,28 @@ class nat(core.coin_server):
         self.loif = None
         ##Mirror interfaces (indexed by primary interface)
         self.mirror = {}
-        ##Record of gateway (indexed by primary interface)
-        self.gateway = {}
-        ##Record of gateway mac (indexed by primary interface)
-        self.gw_mac = {}
         
+        mc.get_client()
         server.register_event_handler(ofevents.error.name,
                                       self)
         server.register_event_handler(jsoncomm.message.name,
                                       self)
+
+    def get_gw_key(intf):
+        """Get memcache key for gw address for interface
+
+        @param intf interface name
+        """
+        return nat.GW_KEY_PREFIX+str(intf).replace(" ","_")
+    get_gw_key = yapc.static_callable(get_gw_key)
+
+    def get_gw_mac_key(ip):
+        """Get memcache key for mac address for gateway
+        
+        @param ip ip address of gateway
+        """
+        return nat.GW_MAC_KEY_PREFIX+str(ip).replace(" ","_").replace(".","-")
+    get_gw_mac_key = yapc.static_callable(get_gw_mac_key)        
 
     def processevent(self, event):
         """Process OpenFlow and JSON messages
@@ -187,7 +205,7 @@ class nat(core.coin_server):
                 rc = yapc.priv_callback(self, o)
                 self.server.post_event(rc, 1)
         else:
-            self.gw_mac[o["ip"]] = mac.mac
+            mc.set(nat.get_gw_mac_key(o["ip"]), mac.mac)
             output.info("ARP of "+o["ip"]+" is "+str(mac.mac),
                         self.__class__.__name__)
             self.check_default_route()
@@ -225,7 +243,7 @@ class nat(core.coin_server):
                 rc = yapc.priv_callback(self, o)
                 self.server.post_event(rc, 1)
         else:
-            self.gateway[o["if"]] = gw
+            mc.set(nat.get_gw_key(o["if"]), gw)
             output.info("Gateway of "+o["if"]+" is "+gw,
                         self.__class__.__name__)
             #Call for ARP
