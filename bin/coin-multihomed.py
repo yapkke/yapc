@@ -60,6 +60,8 @@ class coin_server(yapc.daemon):
         #Add interfaces
         coinserver.setup(self.interfaces)
 
+        server.order_cleanup(ofconn, ovs)
+
         server.run()       
         sys.exit(0)
         
