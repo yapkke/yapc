@@ -13,6 +13,9 @@ import yapc.log.output as output
 import yapc.events.openflow as ofevents
 import yapc.comm.json as jsoncomm
 
+LOCAL_IP = "192.168.4.1"
+LOCAL_GW = "192.168.4.254"
+
 class nat(core.coin_server):
     """Class to handle connections and configuration for COIN in NAT mode
 
@@ -67,12 +70,13 @@ class nat(core.coin_server):
             
         return True
 
-    def setup(self, interfaces, inner_addr='192.168.1.1'):
+    def setup(self, interfaces, inner_addr=LOCAL_IP, gw=LOCAL_GW):
         """Add interfaces
         
         @param interfaces list of interfaces
+        @param inner_addr IP to give COIN's client side interface
+        @param gw gateway to use for COIN's interface
         """
-
         #Set up interfaces
         self.loif = self.add_loif("local")
         self.add_interfaces(interfaces)
@@ -81,6 +85,10 @@ class nat(core.coin_server):
         self.ifmgr.set_ipv4_addr(self.loif.client_intf, inner_addr)
         for i in range(0, len(interfaces)):
             self.ifmgr.up(interfaces[i])
+
+        #Setup route
+        self.ifmgr.add_route("default", gw=gw, 
+                             iface=self.loif.client_intf)    
         
     def add_interfaces(self, interfaces):
         """Add interfaces (plus mirror port)
@@ -177,6 +185,27 @@ class nat(core.coin_server):
             output.info("ARP of "+o["ip"]+" is "+str(mac.mac),
                         self.__class__.__name__)
 
+    def check_default_route(self):
+        """Check default route and set it right
+        """
+        addlo = True
+        self.ifmgr.query_route()
+        routes = self.ifmgr.get_route()
+        for r in routes:
+            if (r.destination == "0.0.0.0"):
+                if (r.iface == self.loif.client_intf):
+                    addlo = False
+                else:
+                    self.ifmgr.del_route("default", iface=r.iface)
+                    output.dbg("Deleting route:\n\t"+str(r),
+                               self.__class__.__name__)
+
+        if (addlo):
+            self.ifmgr.add_route("default", iface=self.loif.client_intf)
+            output.dbg("Add default route for COIN",
+                       self.__class__.__name__)
+        
+
     def __route_check(self, o):
         """Check route
         
@@ -192,6 +221,7 @@ class nat(core.coin_server):
             self.gateway[o["if"]] = gw
             output.info("Gateway of "+o["if"]+" is "+gw,
                         self.__class__.__name__)
+            self.check_default_route()
             #Call for ARP
             rc = yapc.priv_callback(self, 
                                     {"type":"arp","tried":0, "ip":gw, "if":o["mif"]})
