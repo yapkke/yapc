@@ -216,6 +216,11 @@ class nat(core.coin_server):
         addlo = True
         self.ifmgr.query_route()
         routes = self.ifmgr.get_route()
+        intfs = []
+        for p,m in self.mirror.items():
+            intfs.append(p)
+            intfs.append(m.client_intf)
+
         for r in routes:
             if (r.destination == "0.0.0.0"):
                 if (r.iface == self.loif.client_intf):
@@ -224,6 +229,9 @@ class nat(core.coin_server):
                     self.ifmgr.del_route("default", iface=r.iface)
                     output.dbg("Deleting route:\n\t"+str(r),
                                self.__class__.__name__)
+            elif (r.iface in intfs):
+                self.ifmgr.del_route("-net "+r.destination,
+                                     netmask=r.mask, iface=r.iface)
 
         if (addlo):
             self.ifmgr.add_route("default", iface=self.loif.client_intf)
