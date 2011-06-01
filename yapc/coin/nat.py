@@ -70,12 +70,14 @@ class nat(core.coin_server):
             
         return True
 
-    def setup(self, interfaces, inner_addr=LOCAL_IP, gw=LOCAL_GW):
+    def setup(self, interfaces, inner_addr=LOCAL_IP, gw=LOCAL_GW,
+              gw_mac=None):
         """Add interfaces
         
         @param interfaces list of interfaces
         @param inner_addr IP to give COIN's client side interface
         @param gw gateway to use for COIN's interface
+        @param gw_mac gateway mac address
         """
         #Set up interfaces
         self.loif = self.add_loif("local")
@@ -88,8 +90,11 @@ class nat(core.coin_server):
 
         #Setup route
         self.ifmgr.add_route("default", gw=gw, 
-                             iface=self.loif.client_intf)    
-        
+                             iface=self.loif.client_intf)
+        if (gw_mac == None):
+            gw_mac = self.ifmgr.ethernet_addr(self.loif.switch_intf)
+        self.ifmgr.set_ip_mac(gw, gw_mac)
+ 
     def add_interfaces(self, interfaces):
         """Add interfaces (plus mirror port)
         

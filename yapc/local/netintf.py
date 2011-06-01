@@ -394,6 +394,15 @@ class arp_mgr:
                     r = a
         return r    
 
+    def set_ip_mac(self, ip, mac):
+        """Set mac address for IP address
+        
+        @param ip IP address
+        @param mac Ethernet address
+        """
+        c = ARP+" -s "+ip+" "+mac
+        (ret, out) = cmd.run_cmd(c, self.__class__.__name__)
+
     def query_arp(self):
         """Query arp table
         """
