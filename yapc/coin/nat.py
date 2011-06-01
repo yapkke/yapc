@@ -9,6 +9,7 @@ import yapc.interface as yapc
 import yapc.coin.core as core
 import yapc.forwarding.flows as flows
 import yapc.util.openflow as ofutil
+import yapc.util.parse as pu
 import yapc.log.output as output
 import yapc.events.openflow as ofevents
 import yapc.comm.json as jsoncomm
@@ -26,10 +27,12 @@ class nat(core.coin_server):
     @author ykk
     @date May 2011
     """
+    ##Prefix for gateway for interface   
+    IP_RANGE_KEY_PREFIX = "COIN_IP_RANGE_"
     ##Prefix for gateway for interface
-    GW_KEY_PREFIX="COIN_GW_"
+    GW_KEY_PREFIX = "COIN_GW_"
     ##Prefix for mac for gateway
-    GW_MAC_KEY_PREFIX="COIN_GW_MAC_"
+    GW_MAC_KEY_PREFIX = "COIN_GW_MAC_"
     def __init__(self, server, ofconn, jsonconn):
         """Initialize
 
@@ -66,6 +69,14 @@ class nat(core.coin_server):
         """
         return nat.GW_MAC_KEY_PREFIX+str(ip).replace(" ","_").replace(".","-")
     get_gw_mac_key = yapc.static_callable(get_gw_mac_key)        
+
+    def get_ip_range_key(intf):
+        """Get memcache key for IP address range for a particular interface
+        
+        @param int interface name
+        """
+        return nat.IP_RANGE_KEY_PREFIX+str(intf).replace(" ","_")
+    get_ip_range_key = yapc.static_callable(get_ip_range_key)
 
     def processevent(self, event):
         """Process OpenFlow and JSON messages
@@ -258,6 +269,13 @@ class nat(core.coin_server):
             rc = yapc.priv_callback(self, 
                                     {"type":"arp","tried":0, "ip":gw, "if":o["mif"]})
             self.server.post_event(rc, 0)
+            #Register ip range
+            ipv4addr = self.ifmgr.ipv4_addr_n_mask(o["mif"])
+            ipr = (pu.ip_string2val(ipv4addr["addr"]),
+                   pu.ip_string2val(ipv4addr["netmask"]))
+            mc.set(nat.get_ip_range_key(o["if"]), ipr)
+            output.info(o["if"]+" has IP address %x and netmask %x" % ipr,
+                        self.__class__.__name__)
             
     def dhclient_mirror(self, intf):
         """Perform dhclient on mirror interface
