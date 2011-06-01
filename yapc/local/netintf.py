@@ -290,6 +290,44 @@ class route_mgr:
                     g.append(r.gateway)
         return g
 
+    def del_route(self, target, gw=None, netmask=None, iface=None):
+        """Delete route
+
+        @param target target, e.g., -net or -host or default
+        @param gw gateway
+        @param netmask network mask
+        @param iface interface
+        """
+        self.change_route("del", target, gw, netmask, iface)
+
+    def add_route(self, target, gw=None, netmask=None, iface=None):
+        """Add route
+
+        @param target target, e.g., -net or -host or default
+        @param gw gateway
+        @param netmask network mask
+        @param iface interface
+        """
+        self.change_route("add", target, gw, netmask, iface)
+
+    def change_route(self, command, target, gw=None, netmask=None, iface=None):
+        """Change route
+
+        @param cmd add or del
+        @param target target, e.g., -net or -host or default
+        @param gw gateway
+        @param netmask network mask
+        @param iface interface
+        """
+        c = ROUTE+" "+command+" "+target
+        if (gw != None):
+            c += " gw "+gw
+        if (netmask != None):
+            c += " netmask "+netmask
+        if (iface != None):
+            c += " dev "+iface
+        (ret, out) = cmd.run_cmd(c, self.__class__.__name__)
+
 class arp_entry:
     """ARP entry in table
 
