@@ -369,6 +369,36 @@ class core:
         signal.signal(signal.SIGINT, self.signalhandler)
         signal.signal(signal.SIGTERM, self.signalhandler)
 
+    def order_cleanup(self, earlier_handler, later_handler):
+        """Order handler for cleanup
+
+        Do so by moving earlier handler to be just before the later handler
+
+        @param earlier_handler handler that should process event earlier
+        @param later_handler handler that should process event later
+        """
+        eindex = -1
+        if (earlier_handler in self.cleanups):
+            eindex = self.cleanups.index(earlier_handler)
+        else:
+            output.warn(earlier_handler.__class__.__name__+\
+                        " did not register for a cleanup".
+                        self.__class__.__name__)
+            return
+
+        lindex = -1
+        if (later_handler in self.cleanups):
+            lindex = self.cleanups.index(later_handler)
+        else:
+            output.warn(laterr_handler.__class__.__name__+\
+                        " did not register for a cleanup",
+                        self.__class__.__name__)
+            return
+
+        #Reorder
+        if (lindex < eindex):
+            self.cleanups.insert(lindex, self.cleanups.pop(eindex))
+
     def register_event_handler(self, eventname, handler):
         """Register handler for event
         
