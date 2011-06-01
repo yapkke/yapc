@@ -33,11 +33,18 @@ class eth_ipv4_addr_mgr:
         """
         return self.ethernet_ipv4_addresses(intf)[netifaces.AF_PACKET][0]['addr']
 
+    def ipv4_addr_n_mask(self, intf):
+        """Return IP address and mask of interface
+        
+        @return dictionary of IP address and mask
+        """
+        return self.ethernet_ipv4_addresses(intf)[netifaces.AF_INET][0]
+
     def ethernet_ipv4_addresses(self, intf=None):
         """Return Ethernet + IPv4 addresses for specified interface or all interfaces
         
-        @param intf interface
-        @return Ethernet and IPv4  addresses
+        @param intf interface 
+       @return Ethernet and IPv4  addresses
         """
         ifaddr = self.ifaddresses(intf)
         if (intf == None):
@@ -624,7 +631,7 @@ class interfacemgr(eth_ipv4_addr_mgr, route_mgr, wifi_mgr, arp_mgr,
         """Initial veth cleanup
         """
         for i in self.interfaces():
-            output.info("ip link del "+str(i),
+            cmd.run_cmd("ip link del "+str(i),
                         self.__class__.__name__)
             
 
