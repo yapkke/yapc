@@ -114,7 +114,7 @@ class eth_ipv4_addr_mgr:
         c = DHCP
         if (intf != None):
             c += " "+intf
-        return cmd.run_cmd(c, self.__class__.__name__)
+        return cmd.run_cmd_screen("dhclient", c, self.__class__.__name__)
 
 class route_entry_flags:
     """Route entry flags

@@ -55,6 +55,8 @@ class coin_server(yapc.component):
         @param ofconn OpenFlow connections
         @param jsonconn JSON connections
         """
+        ##Reference to core
+        self.server = server
         ##OpenFlow connections
         self.ofconnections = ofconn
         ##JSON connections
@@ -62,14 +64,16 @@ class coin_server(yapc.component):
         ##Global COIN dictionary
         self.config = {}
         self.config["mode"] = None
+        
         ##Interface Manager
         self.ifmgr = loifaces.interfacemgr(server)
         ##Local interface Manager
         self.loifmgr = coinlo.loifmgr(self.ifmgr)
-        ##Reference to wifi manager
+       ##Reference to wifi manager
         self.wifimgr = loifaces.wifi_mgr()        
         ##Reference to default entries
         self.default = default_entries(server, ofconn)
+        
         ##Reference to switch fabric
         self.switch = None
 
@@ -120,6 +124,8 @@ class coin_server(yapc.component):
         elif isinstance(event, jsoncomm.message):
             #JSON messages
             self.__processjson(event)
+        elif isinstance(event, yapc.priv_callback):
+            self.__route_check(event.magic)
             
         return True
 
@@ -154,14 +160,60 @@ class coin_server(yapc.component):
         if (event.message["command"] == "create_lo_intf"):
             self.add_loif(event.message["name"])
         elif (event.message["command"] == "dhclient"):
-            reply["command"] = "dhclient"
-            reply["status"] = "executed"
+            reply["dhclient result"] = self.dhclient_mirror(event.message["name"])
         else:
             output.dbg("Receive message "+str(event.message),
                        self.__class__.__name__)
             return None
 
         return reply
+
+    def get_if_route(self, intf=None, mif=None):
+        """Get route for interface
+        
+        @param intf interface name
+        @param mif mirror interface name (else will resolve)
+        """
+        if (intf== None and mif == None):
+            return None
+
+        if (mif == None):
+            mif = self.mirror[intf].client_intf
+
+        self.ifmgr.query_route()
+        gw = self.ifmgr.get_gateways([mif])
+        if (len(gw) == 0):
+            return None
+        else:
+            return gw[0]
+
+    def __route_check(self, o):
+        """Check route
+        
+        @param o route check object (dictionary)
+        """
+        gw = self.get_if_route(mif=o["mif"])
+        if (gw == None):
+            o["tried"] += 1
+            if (o["tried"] < 5):
+                rc = yapc.priv_callback(self, o)
+                self.server.post_event(rc, 1)
+        else:
+            self.gateway[o["if"]] = gw
+            output.info("Gateway of "+o["if"]+" is "+gw,
+                        self.__class__.__name__)
+
+    def dhclient_mirror(self, intf):
+        """Perform dhclient on mirror interface
+       
+        @param intf interface (primary)
+        """
+        mif = self.mirror[intf].client_intf
+        self.ifmgr.invoke_dhcp(mif)
+        rc = yapc.priv_callback(self, {"tried":0, "if":intf, "mif":mif})
+        self.server.post_event(rc, 0)
+
+        return "executed"
 
     def add_loif(self, name):
         """Add local interface
@@ -225,6 +277,8 @@ class nat(coin_server):
         self.loif = None
         ##Mirror interfaces (indexed by primary interface)
         self.mirror = {}
+        ##Record of gateway (indexed by primary interface)
+        self.gateway = {}
 
     def setup(self, interfaces, inner_addr='192.168.1.1'):
         """Add interfaces
