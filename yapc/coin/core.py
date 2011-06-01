@@ -125,7 +125,10 @@ class coin_server(yapc.component):
             #JSON messages
             self.__processjson(event)
         elif isinstance(event, yapc.priv_callback):
-            self.__route_check(event.magic)
+            if (event.magic["type"] == "route"):
+                self.__route_check(event.magic)
+            else:
+                self.__arp_check(event.magic)
             
         return True
 
@@ -187,6 +190,31 @@ class coin_server(yapc.component):
         else:
             return gw[0]
 
+    def get_ip_mac(self, ip, iface):
+        """Get mac address of IP
+
+        @param ip IP address to get mac for
+        """
+        self.ifmgr.arp_probe(iface, ip)
+        self.ifmgr.query_arp()
+        return self.ifmgr.get_arp(ip)
+ 
+    def __arp_check(self, o):
+        """Check ARP
+        
+        @param o arp check object (dictionary)
+        """
+        mac = self.get_ip_mac(o["ip"], o["if"])
+        if (mac == None):
+            o["tried"] += 1
+            if (o["tried"] < 5):
+                rc = yapc.priv_callback(self, o)
+                self.server.post_event(rc, 1)
+        else:
+            self.gw_mac[o["ip"]] = mac.mac
+            output.info("ARP of "+o["ip"]+" is "+str(mac.mac),
+                        self.__class__.__name__)
+
     def __route_check(self, o):
         """Check route
         
@@ -202,7 +230,11 @@ class coin_server(yapc.component):
             self.gateway[o["if"]] = gw
             output.info("Gateway of "+o["if"]+" is "+gw,
                         self.__class__.__name__)
-
+            #Call for ARP
+            rc = yapc.priv_callback(self, 
+                                    {"type":"arp","tried":0, "ip":gw, "if":o["mif"]})
+            self.server.post_event(rc, 0)
+            
     def dhclient_mirror(self, intf):
         """Perform dhclient on mirror interface
        
@@ -210,7 +242,8 @@ class coin_server(yapc.component):
         """
         mif = self.mirror[intf].client_intf
         self.ifmgr.invoke_dhcp(mif)
-        rc = yapc.priv_callback(self, {"tried":0, "if":intf, "mif":mif})
+        rc = yapc.priv_callback(self, 
+                                {"type":"route","tried":0, "if":intf, "mif":mif})
         self.server.post_event(rc, 0)
 
         return "executed"
@@ -279,6 +312,8 @@ class nat(coin_server):
         self.mirror = {}
         ##Record of gateway (indexed by primary interface)
         self.gateway = {}
+        ##Record of gateway mac (indexed by primary interface)
+        self.gw_mac = {}
 
     def setup(self, interfaces, inner_addr='192.168.1.1'):
         """Add interfaces
