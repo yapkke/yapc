@@ -184,6 +184,7 @@ class nat(core.coin_server):
             self.gw_mac[o["ip"]] = mac.mac
             output.info("ARP of "+o["ip"]+" is "+str(mac.mac),
                         self.__class__.__name__)
+            self.check_default_route()
 
     def check_default_route(self):
         """Check default route and set it right
@@ -221,7 +222,6 @@ class nat(core.coin_server):
             self.gateway[o["if"]] = gw
             output.info("Gateway of "+o["if"]+" is "+gw,
                         self.__class__.__name__)
-            self.check_default_route()
             #Call for ARP
             rc = yapc.priv_callback(self, 
                                     {"type":"arp","tried":0, "ip":gw, "if":o["mif"]})
