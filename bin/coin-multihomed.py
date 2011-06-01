@@ -10,6 +10,7 @@ import yapc.comm.json as jsoncomm
 import yapc.events.openflow as ofevents
 import yapc.log.output as output
 import yapc.coin.core as coin
+import yapc.coin.nat as coinnat
 import yapc.coin.ovs as coinovs
 import yapc.netstate.switches as switches
 import yapc.netstate.swhost as switchhost
@@ -43,8 +44,8 @@ class coin_server(yapc.daemon):
         #OpenFlow Parser
         ofparse = ofevents.parser(server)
         #COIN main server, maintaining connections
-        coinserver = coin.nat(server, ofconn.connections,
-                              jsonconn.connections)
+        coinserver = coinnat.nat(server, ofconn.connections,
+                                 jsonconn.connections)
        
         #Network status
         sw = switches.dp_features(server)

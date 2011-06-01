@@ -48,7 +48,7 @@ class coin_server(yapc.component):
     @author ykk
     @date Oct 2010
     """
-    def __init__(self, server, ofconn, jsonconn):
+    def __init__(self, server, ofconn, jsonconn, regEvent=True):
         """Initialize
 
         @param server yapc core server/scheduler
@@ -77,10 +77,11 @@ class coin_server(yapc.component):
         ##Reference to switch fabric
         self.switch = None
 
-        server.register_event_handler(ofevents.error.name,
-                                      self)
-        server.register_event_handler(jsoncomm.message.name,
-                                      self)
+        if (regEvent):
+            server.register_event_handler(ofevents.error.name,
+                                          self)
+            server.register_event_handler(jsoncomm.message.name,
+                                          self)
 
     def set_config(self, name, val):
         """Set config
@@ -124,11 +125,6 @@ class coin_server(yapc.component):
         elif isinstance(event, jsoncomm.message):
             #JSON messages
             self.__processjson(event)
-        elif isinstance(event, yapc.priv_callback):
-            if (event.magic["type"] == "route"):
-                self.__route_check(event.magic)
-            else:
-                self.__arp_check(event.magic)
             
         return True
 
@@ -162,8 +158,6 @@ class coin_server(yapc.component):
 
         if (event.message["command"] == "create_lo_intf"):
             self.add_loif(event.message["name"])
-        elif (event.message["command"] == "dhclient"):
-            reply["dhclient result"] = self.dhclient_mirror(event.message["name"])
         else:
             output.dbg("Receive message "+str(event.message),
                        self.__class__.__name__)
@@ -199,55 +193,6 @@ class coin_server(yapc.component):
         self.ifmgr.query_arp()
         return self.ifmgr.get_arp(ip)
  
-    def __arp_check(self, o):
-        """Check ARP
-        
-        @param o arp check object (dictionary)
-        """
-        mac = self.get_ip_mac(o["ip"], o["if"])
-        if (mac == None):
-            o["tried"] += 1
-            if (o["tried"] < 5):
-                rc = yapc.priv_callback(self, o)
-                self.server.post_event(rc, 1)
-        else:
-            self.gw_mac[o["ip"]] = mac.mac
-            output.info("ARP of "+o["ip"]+" is "+str(mac.mac),
-                        self.__class__.__name__)
-
-    def __route_check(self, o):
-        """Check route
-        
-        @param o route check object (dictionary)
-        """
-        gw = self.get_if_route(mif=o["mif"])
-        if (gw == None):
-            o["tried"] += 1
-            if (o["tried"] < 5):
-                rc = yapc.priv_callback(self, o)
-                self.server.post_event(rc, 1)
-        else:
-            self.gateway[o["if"]] = gw
-            output.info("Gateway of "+o["if"]+" is "+gw,
-                        self.__class__.__name__)
-            #Call for ARP
-            rc = yapc.priv_callback(self, 
-                                    {"type":"arp","tried":0, "ip":gw, "if":o["mif"]})
-            self.server.post_event(rc, 0)
-            
-    def dhclient_mirror(self, intf):
-        """Perform dhclient on mirror interface
-       
-        @param intf interface (primary)
-        """
-        mif = self.mirror[intf].client_intf
-        self.ifmgr.invoke_dhcp(mif)
-        rc = yapc.priv_callback(self, 
-                                {"type":"route","tried":0, "if":intf, "mif":mif})
-        self.server.post_event(rc, 0)
-
-        return "executed"
-
     def add_loif(self, name):
         """Add local interface
         
@@ -287,86 +232,3 @@ class coin_server(yapc.component):
         for i in interfaces:
             self.switch.add_if(i)        
 
-
-class nat(coin_server):
-    """Class to handle connections and configuration for COIN in NAT mode
-
-    Mirror interfaces for DHCP and ARP.
-
-    @author ykk
-    @date May 2011
-    """
-    def __init__(self, server, ofconn, jsonconn):
-        """Initialize
-
-        @param server yapc core server/scheduler
-        @param ofconn OpenFlow connections
-        @param jsonconn JSON connections
-        """
-        coin_server.__init__(self, server, ofconn, jsonconn)
-        ##Mode
-        self.config["mode"] = "Multi-Homed (NATed)"
-        ##Reference to local interface
-        self.loif = None
-        ##Mirror interfaces (indexed by primary interface)
-        self.mirror = {}
-        ##Record of gateway (indexed by primary interface)
-        self.gateway = {}
-        ##Record of gateway mac (indexed by primary interface)
-        self.gw_mac = {}
-
-    def setup(self, interfaces, inner_addr='192.168.1.1'):
-        """Add interfaces
-        
-        @param interfaces list of interfaces
-        """
-
-        #Set up interfaces
-        self.loif = self.add_loif("local")
-        self.add_interfaces(interfaces)
-
-        #Get IP addresses on the interfaces
-        self.ifmgr.set_ipv4_addr(self.loif.client_intf, inner_addr)
-        for i in range(0, len(interfaces)):
-            self.ifmgr.up(interfaces[i])
-        
-    def add_interfaces(self, interfaces):
-        """Add interfaces (plus mirror port)
-        
-        @param interfaces list of interfaces
-        """
-        for i in interfaces:
-            self.switch.add_if(i)
-            self.ifmgr.set_ipv4_addr(i, '0.0.0.0')
-            #Add mirror interface
-            self.mirror[i] = self.add_loif(i)
-            self.ifmgr.set_eth_addr(self.mirror[i].client_intf,
-                                    self.ifmgr.ethernet_addr(i))
-            np = self.switch.get_ports()
-            port1 = np[i]
-            port2 = np[self.mirror[i].switch_intf]
-
-            #Set perm ARP rules for mirror
-            ae1 = flows.arp_entry(priority=ofutil.PRIORITY['LOW'])
-            ae1.set_in_port(port1)
-            ae1.add_output(port2, 65535)
-            self.default.add_perm(ae1)
-            ae2 = flows.arp_entry(priority=ofutil.PRIORITY['LOW'])
-            ae2.set_in_port(port2)
-            ae2.add_output(port1, 65535)
-            self.default.add_perm(ae2)
-            #Set perm DHCP rules for mirror
-            dreq = flows.udp_entry(portno=68,
-                                   priority=ofutil.PRIORITY['LOW'])
-            dreq.set_in_port(port1)
-            dreq.add_output(port2, 65535)
-            self.default.add_perm(dreq)
-            drep = flows.udp_entry(portno=67,
-                                   priority=ofutil.PRIORITY['LOW'])
-            drep.set_in_port(port2)
-            drep.add_output(port1, 65535)
-            self.default.add_perm(drep)           
-            
-            output.dbg("Set "+self.mirror[i].client_intf+" to "+self.ifmgr.ethernet_addr(i),
-                       self.__class__.__name__)
-            
