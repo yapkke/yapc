@@ -17,6 +17,8 @@ IWCONFIG = "iwconfig"
 IWLIST = "iwlist"
 DHCP = "dhclient"
 ROUTE = "route"
+ARP = "arp"
+ARPSCAN = "arp-scan"
 
 class eth_ipv4_addr_mgr:
     """Interface manager class to manage addresses for IPv4
@@ -288,6 +290,79 @@ class route_mgr:
                     g.append(r.gateway)
         return g
 
+class arp_entry:
+    """ARP entry in table
+
+    @author ykk
+    @date May 2011
+    """
+    def __init__(self, entry_line=""):
+        """Initalize
+        """
+        ##IP Address
+        self.ip = "0.0.0.0"
+        ##Hw Adddress
+        self.mac = "00:00:00:00:00:00"
+        ##Interface
+        self.iface = ""
+        
+        if (entry_line != ""):
+            self.parse(entry_line)
+            
+    def parse(self, entry_line):
+        """Parse line
+        """
+        i = entry_line.split()
+        if (len(i) != 5):
+            output.warn("ARP entry line should have 5 items but "+str(len(i))+" found",
+                        self.__class__.__name__)
+        else:
+            self.ip = i[0]
+            self.mac = i[2]
+            self.iface = i[4]
+
+class arp_mgr:
+    """Manager for arp on device
+    
+    @author ykk
+    @date May 2011
+    """
+    def __init__(self):
+        """Initialize
+        """
+        self.__arp = []
+        self.query_arp()
+
+    def arp_probe(self, iface, ip):
+        """Send ARP probe for IP on iface
+        """
+        c = ARPSCAN+" --interface="+iface+" "+ip
+        cmd.run_cmd(c, self.__class__.__name__)
+
+    def get_arp(self, ip=None):
+        """Get cached ARP entries for IP specified, else all entries
+
+        @param ip IP address to get mac addr for
+        @return list of ARP entries/entry for ip addr specified/None
+        """
+        r = None
+        if (ip == None):
+            r = self.__arp[:]
+        else:
+            for a in self.__arp:
+                if (a.ip == ip):
+                    r = a
+        return r    
+
+    def query_arp(self):
+        """Query arp table
+        """
+        c = ARP+ " -n"
+        (ret, out) = cmd.run_cmd(c, self.__class__.__name__)
+        self.__arp = []
+        for l in out[1:]:
+            self.__arp.append(arp_entry(l))
+    
 class wifi_mgr:
     """WiFi interface manager
 
@@ -455,7 +530,8 @@ class wifi_mgr:
 
         return (okay, count)
 
-class interfacemgr(eth_ipv4_addr_mgr, route_mgr, wifi_mgr, yapc.cleanup):
+class interfacemgr(eth_ipv4_addr_mgr, route_mgr, wifi_mgr, arp_mgr,
+                   yapc.cleanup):
     """Interface manager class to manage interfaces
 
     @author ykk
@@ -467,6 +543,7 @@ class interfacemgr(eth_ipv4_addr_mgr, route_mgr, wifi_mgr, yapc.cleanup):
         @param server yapc core
         """
         route_mgr.__init__(self)
+        arp_mgr.__init__(self)
         self.veth_init_clean()
         ##List of veth
         self.veth = []
