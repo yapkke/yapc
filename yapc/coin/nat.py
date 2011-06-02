@@ -243,6 +243,8 @@ class nat(core.coin_server):
             elif (r.iface in intfs):
                 self.ifmgr.del_route("-net "+r.destination,
                                      netmask=r.mask, iface=r.iface)
+                self.ifmgr.add_route("-net "+r.destination,
+                                     netmask=r.mask, iface=self.loif.client_intf)
 
         if (addlo):
             self.ifmgr.add_route("default", iface=self.loif.client_intf)
