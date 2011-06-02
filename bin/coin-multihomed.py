@@ -55,8 +55,8 @@ class coin_server(yapc.daemon):
         ovs = coinovs.switch(server, jsonconn.connections)
         coinserver.switch = ovs
 
-        #Default flow flood
-        floodpkt = default.floodpkt(server, ofconn.connections)
+        #Flow management
+        
 
         #Add interfaces
         coinserver.setup(self.interfaces)
