@@ -52,9 +52,10 @@ class actions:
         self.add(oao)
 
     def add_nw_rewrite(self, rewrite_src, addr):
-        """Add rewrite for IP destination
+        """Add rewrite for IP address
 
         @param rewrite_src boolean for indicated rewrite src or dst
+        @param addr address to rewrite to
         """
         oanw = pyof.ofp_action_nw_addr()
         if (rewrite_src):
@@ -63,6 +64,20 @@ class actions:
             oanw.type = pyof.OFPAT_SET_NW_DST
         oanw.nw_addr = addr
         self.add(oanw)
+
+    def add_dl_rewrite(self, rewrite_src, addr):
+        """Add rewrite for Ethernet addr
+
+        @param rewrite_src boolean for indicated rewrite src or dst
+        @param addr address to rewrite to
+        """
+        oadl = pyof.ofp_action_dl_addr()
+        if (rewrite_src):
+            oadl.type = pyof.OFPAT_SET_DL_SRC
+        else:
+            oadl.type = pyof.OFPAT_SET_DL_DST
+        oadl.dl_addr = addr
+        self.add(oadl)
 
     def set_buffer(self, buffer_id):
         """Set buffer id
