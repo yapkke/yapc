@@ -80,6 +80,21 @@ class switch(yapc.component, ovs.switch):
         """
         self.datapaths[COIN_DP_NAME].add_if(name)
 
+    def get_sw_feature(self):
+        """Get switch description
+        
+        @return switch features else None
+        """
+        dpidsl = mc.get(swstate.dp_features.DP_SOCK_LIST)
+        if (dpidsl != None):
+            if (len(dpidsl) > 1):
+                output.warn(str(len(dpidsl))+" datapaths connected to COIN",
+                            self.__class__.__name__)
+            f = mc.get(dpidsl[0])
+            return f
+        else:
+            return None
+
     def if_name2dpid_port_mac(self, name):
         """Translate name to dpid, port and mac addr
 
@@ -90,12 +105,8 @@ class switch(yapc.component, ovs.switch):
         port = None
         mac = None
 
-        dpidsl = mc.get(swstate.dp_features.DP_SOCK_LIST)
-        if (dpidsl != None):
-            if (len(dpidsl) > 1):
-                output.warn(str(len(dpidsl))+" datapaths connected to COIN",
-                            self.__class__.__name__)
-            f = mc.get(dpidsl[0])
+        f = self.get_sw_feature()
+        if (f != None):
             dpid = f.datapath_id
             for p in f.ports:
                 if (p.name == name):
