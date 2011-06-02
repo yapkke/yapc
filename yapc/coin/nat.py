@@ -14,10 +14,11 @@ import yapc.log.output as output
 import yapc.events.openflow as ofevents
 import yapc.comm.json as jsoncomm
 import yapc.util.memcacheutil as mc
+import dpkt
 
 LOCAL_IP = "192.168.4.1"
 LOCAL_GW = "192.168.4.254"
-MAX_RETRY = 7
+MAX_RETRY = 10
 
 class nat(core.coin_server):
     """Class to handle connections and configuration for COIN in NAT mode
@@ -27,6 +28,8 @@ class nat(core.coin_server):
     @author ykk
     @date May 2011
     """
+    ##Key for switch feature
+    SW_FEATURE = "COIN_SW_FEATURE_"
     ##Prefix for gateway for interface   
     IP_RANGE_KEY_PREFIX = "COIN_IP_RANGE_"
     ##Prefix for gateway for interface
@@ -51,6 +54,10 @@ class nat(core.coin_server):
         mc.get_client()
         server.register_event_handler(ofevents.error.name,
                                       self)
+        server.register_event_handler(ofevents.features_reply.name,
+                                      self)
+        server.register_event_handler(ofevents.port_status.name,
+                                      self)
         server.register_event_handler(jsoncomm.message.name,
                                       self)
 
@@ -70,12 +77,12 @@ class nat(core.coin_server):
         return nat.GW_MAC_KEY_PREFIX+str(ip).replace(" ","_").replace(".","-")
     get_gw_mac_key = yapc.static_callable(get_gw_mac_key)        
 
-    def get_ip_range_key(intf):
+    def get_ip_range_key(portno):
         """Get memcache key for IP address range for a particular interface
         
         @param int interface name
         """
-        return nat.IP_RANGE_KEY_PREFIX+str(intf).replace(" ","_")
+        return nat.IP_RANGE_KEY_PREFIX+str(portno).strip()
     get_ip_range_key = yapc.static_callable(get_ip_range_key)
 
     def processevent(self, event):
@@ -84,7 +91,10 @@ class nat(core.coin_server):
         @param event event to handle
         @return True
         """
-        if isinstance(event, ofevents.error):
+        if (isinstance(event, ofevents.features_reply) or
+            isinstance(event, ofevents.port_status)):
+            self.update_sw_feature()
+        elif isinstance(event, ofevents.error):
             #OpenFlow error
             output.warn("Error of type "+str(event.error.type)+\
                             " code "+str(event.error.code),
@@ -124,6 +134,20 @@ class nat(core.coin_server):
         if (gw_mac == None):
             gw_mac = self.ifmgr.ethernet_addr(self.loif.switch_intf)
         self.ifmgr.set_ip_mac(gw, gw_mac)
+
+        self.check_default_route()
+
+    def update_sw_feature(self):
+        """Update switch feature in memcache
+        """
+        sf = self.switch.get_sw_feature()
+        if (sf == None):
+            output.warn("No switch features!!!",
+                        self.__class__.__name__)
+        else:
+            output.dbg("Set switch feature as "+sf.show(),
+                       self.__class__.__name__)
+        mc.set(nat.SW_FEATURE, sf)
  
     def add_interfaces(self, interfaces):
         """Add interfaces (plus mirror port)
@@ -135,8 +159,8 @@ class nat(core.coin_server):
             self.ifmgr.set_ipv4_addr(i, '0.0.0.0')
             #Add mirror interface
             self.mirror[i] = self.add_loif(i)
-            self.ifmgr.set_eth_addr(self.mirror[i].client_intf,
-                                    self.ifmgr.ethernet_addr(i))
+            ieth = self.ifmgr.ethernet_addr(i)
+            self.ifmgr.set_eth_addr(self.mirror[i].client_intf, ieth)
             np = self.switch.get_ports()
             port1 = np[i]
             port2 = np[self.mirror[i].switch_intf]
@@ -144,6 +168,7 @@ class nat(core.coin_server):
             #Set perm ARP rules for mirror
             ae1 = flows.arp_entry(priority=ofutil.PRIORITY['LOW'])
             ae1.set_in_port(port1)
+            ae1.set_dl_dst(pu.hex_str2array(ieth))
             ae1.add_output(port2, 65535)
             self.default.add_perm(ae1)
             ae2 = flows.arp_entry(priority=ofutil.PRIORITY['LOW'])
@@ -238,8 +263,6 @@ class nat(core.coin_server):
                     addlo = False
                 else:
                     self.ifmgr.del_route("default", iface=r.iface)
-                    output.dbg("Deleting route:\n\t"+str(r),
-                               self.__class__.__name__)
             elif (r.iface in intfs):
                 self.ifmgr.del_route("-net "+r.destination,
                                      netmask=r.mask, iface=r.iface)
@@ -275,8 +298,9 @@ class nat(core.coin_server):
             ipv4addr = self.ifmgr.ipv4_addr_n_mask(o["mif"])
             ipr = (pu.ip_string2val(ipv4addr["addr"]),
                    pu.ip_string2val(ipv4addr["netmask"]))
-            mc.set(nat.get_ip_range_key(o["if"]), ipr)
-            output.info(o["if"]+" has IP address %x and netmask %x" % ipr,
+            no = self.switch.if_name2dpid_port_mac(o["if"])[1]
+            mc.set(nat.get_ip_range_key(no), ipr)
+            output.info(o["if"]+"("+str(no)+") has IP address %x and netmask %x" % ipr,
                         self.__class__.__name__)
             
     def dhclient_mirror(self, intf):
@@ -291,3 +315,48 @@ class nat(core.coin_server):
         self.server.post_event(rc, 0)
 
         return "executed"
+
+class arp_handler(yapc.component):
+    """Class to handle arp in COIN
+
+    Note that ARP 
+
+    @author ykk
+    @date Jun 2011
+    """
+    def __init__(self, server, ofconn):
+        """Initialize
+
+        @param server yapc core
+        @param conn reference to connections
+        @param sfr send flow removed or not
+        """
+        ##Reference to connections
+        self.conn = ofconn
+
+        mc.get_client()
+        server.register_event_handler(ofevents.pktin.name, self)
+        
+    def processevent(self, event):
+        """Event handler
+
+        @param event event to handle
+        @return true
+        """
+        if (isinstance(event, ofevents.pktin) and
+            (event.match.dl_type==dpkt.ethernet.ETH_TYPE_ARP)):
+            ##Handles ARP
+            sf = mc.get(nat.SW_FEATURE)
+            for p in sf.ports:
+                ipr  = mc.get(nat.get_ip_range_key(p.port_no))
+                if ((ipr != None) and
+                    ((ipr[0] & ipr[1]) == (event.match.nw_dst & ipr[1]))):
+                    output.dbg("match at port"+str(p.port_no), self.__class__.__name__)
+                    return False
+
+            output.warn("ARP for IP address %x has no destination!" % event.match.nw_dst,
+                        self.__class__.__name__)
+            return False
+            
+        return True     
+

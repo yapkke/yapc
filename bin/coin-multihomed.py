@@ -56,11 +56,13 @@ class coin_server(yapc.daemon):
         coinserver.switch = ovs
 
         #Flow management
-        
+        arph = coinnat.arp_handler(server, ofconn.connections)
 
         #Add interfaces
         coinserver.setup(self.interfaces)
 
+        server.order_handler(ofevents.features_reply.name,
+                             sw, coinserver)
         server.order_cleanup(ofconn, ovs)
 
         server.run()       

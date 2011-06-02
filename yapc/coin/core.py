@@ -41,6 +41,8 @@ class default_entries(default.default_entries):
                                       priority=ofutil.PRIORITY['LOWER']))
         self.add_perm(flows.icmp_entry(action=flows.flow_entry.GET,
                                        priority=ofutil.PRIORITY['LOWER']))
+        self.add_perm(flows.arp_entry(action=flows.flow_entry.GET,
+                                      priority=ofutil.PRIORITY['LOWER']))
 
 class coin_server(yapc.component):
     """Class to handle connections and configuration for COIN
