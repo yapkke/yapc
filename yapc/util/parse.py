@@ -105,6 +105,12 @@ def array2hex_str(array,separator=":",minlen=2):
         r += ("%0"+str(minlen)+"x") % array[i]+separator
     return r[:-1]
 
+def hex_str2array(hexstr, separator=":"):
+    r = []
+    for i in hexstr.split(separator):
+        r.append(int(i, 16))
+    return r
+
 def array2val(array):
     """Convert array to value
 
