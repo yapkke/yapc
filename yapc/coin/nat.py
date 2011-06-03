@@ -28,8 +28,10 @@ class nat(core.coin_server):
     @author ykk
     @date May 2011
     """
+    ##Key for inner port
+    SW_INNER_PORT = "COIN_SW_INNER_PORT"
     ##Key for switch feature
-    SW_FEATURE = "COIN_SW_FEATURE_"
+    SW_FEATURE = "COIN_SW_FEATURE"
     ##Prefix for gateway for interface   
     IP_RANGE_KEY_PREFIX = "COIN_IP_RANGE_"
     ##Prefix for gateway for interface
@@ -147,7 +149,16 @@ class nat(core.coin_server):
         else:
             output.dbg("Set switch feature as "+sf.show(),
                        self.__class__.__name__)
-        mc.set(nat.SW_FEATURE, sf)
+            mc.set(nat.SW_FEATURE, sf)
+        
+        iport = self.switch.if_name2dpid_port_mac(self.loif.switch_intf)[1]
+        if (iport == None):
+            output.warn("No inner port!!!",
+                        self.__class__.__name__)
+        else:
+            output.dbg("Set inner port as "+str(iport),
+                       self.__class__.__name__)
+            mc.set(nat.SW_INNER_PORT, iport)
  
     def add_interfaces(self, interfaces):
         """Add interfaces (plus mirror port)
@@ -273,7 +284,7 @@ class nat(core.coin_server):
             self.ifmgr.add_route("default", iface=self.loif.client_intf)
             output.dbg("Add default route for COIN",
                        self.__class__.__name__)
-        
+       
 
     def __route_check(self, o):
         """Check route
@@ -319,8 +330,6 @@ class nat(core.coin_server):
 class arp_handler(yapc.component):
     """Class to handle arp in COIN
 
-    Note that ARP 
-
     @author ykk
     @date Jun 2011
     """
@@ -343,20 +352,52 @@ class arp_handler(yapc.component):
         @param event event to handle
         @return true
         """
-        if (isinstance(event, ofevents.pktin) and
-            (event.match.dl_type==dpkt.ethernet.ETH_TYPE_ARP)):
-            ##Handles ARP
-            sf = mc.get(nat.SW_FEATURE)
-            for p in sf.ports:
-                ipr  = mc.get(nat.get_ip_range_key(p.port_no))
-                if ((ipr != None) and
-                    ((ipr[0] & ipr[1]) == (event.match.nw_dst & ipr[1]))):
-                    output.dbg("match at port"+str(p.port_no), self.__class__.__name__)
-                    return False
+        if (isinstance(event, ofevents.pktin)):
+            iport = mc.get(nat.SW_INNER_PORT)
+            intfs = self.get_intf_n_range()
+            if (iport == None):
+                output.err("No inner port recorded!  Are we connected?",
+                           self.__class__.__name__)
+                return True
+            else:
+                output.dbg("Good",
+                           self.__class__.__name__)
 
-            output.warn("ARP for IP address %x has no destination!" % event.match.nw_dst,
-                        self.__class__.__name__)
-            return False
-            
+            if (event.match.in_port == iport):
+                return self._process_self_initiated(event, intfs)
+            else:
+                return self._process_peer_initiated(event, intfs)
+
         return True     
+
+    def get_intf_n_range(self):
+        """Retrieve dictionary of interface and their ip range
+        """
+        r = {}
+        sf = mc.get(nat.SW_FEATURE)
+        for p in sf.ports:
+            ipr = mc.get(nat.get_ip_range_key(p.port_no))
+            if (ipr != None):
+                r[p.port_no] = ipr
+        return r
+
+    def _process_self_initiated(self, pktin, intfs):
+        """Event handler for self_initiated packet
+
+        @param pktin packet in event to handle
+        @param intfs dictionary of interfaces (with ip range)
+        @return true
+        """
+        
+
+        return True
+
+    def _process_peer_initiated(self, pktin, intfs):
+        """Event handler for peer_initiated packet
+
+        @param pktin packet in event to handle
+        @param intfs dictionary of interfaces (with ip range)
+        @return true
+        """
+        return True
 
