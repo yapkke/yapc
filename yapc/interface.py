@@ -5,6 +5,7 @@
 #
 import os
 import sys
+import threading
 import yapc.log.output as output
 
 class event:
@@ -71,6 +72,42 @@ class static_callable:
         """Initialize
         """
         self.__call__ = function
+
+class async_task(threading.Thread):
+    """Class that generates a thread for an async task
+
+    @author ykk
+    @date June 2011
+    """
+    def __init__(self):
+        """Initialize
+        """
+        threading.Thread.__init__(self)
+        self.server = None
+        self.event = None
+
+    def set_end_event(self, server, event):
+        """Set event to be sent when the task is done executing
+
+        @param server yapc core
+        @param event event to be posted
+        """
+        self.server = server
+        self.event = event
+
+    def run(self):
+        """Main tasks for execution
+        """
+        self.task()
+        if ((self.server != None) and (self.event != None)):
+            self.server.post_event(self.event)
+    
+    def task (self):
+        """Main function for task
+        
+        Dummy function that should be over written
+        """
+        pass
 
 class daemon:
     """Class that can be daemonized
