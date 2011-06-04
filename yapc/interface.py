@@ -76,6 +76,9 @@ class static_callable:
 class async_task(threading.Thread):
     """Class that generates a thread for an async task
 
+    Note that each object can only be run once 
+    (i.e., you can only call start() once)
+
     @author ykk
     @date June 2011
     """
@@ -83,8 +86,19 @@ class async_task(threading.Thread):
         """Initialize
         """
         threading.Thread.__init__(self)
+        ##Reference to yapc core
         self.server = None
+        ##Reference to event to post at end of execution
         self.event = None
+        ##Reference to executing state
+        self.__running = None
+
+    def is_running(self):
+        """Return current running state of task
+
+        @return current running task
+        """
+        return self.__running
 
     def set_end_event(self, server, event):
         """Set event to be sent when the task is done executing
@@ -98,10 +112,12 @@ class async_task(threading.Thread):
     def run(self):
         """Main tasks for execution
         """
+        self.__running = True
         self.task()
+        self.__running = False
         if ((self.server != None) and (self.event != None)):
             self.server.post_event(self.event)
-    
+
     def task (self):
         """Main function for task
         
