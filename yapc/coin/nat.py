@@ -31,6 +31,8 @@ class nat(core.coin_server):
     """
     ##Key for inner port
     SW_INNER_PORT = "COIN_SW_INNER_PORT"
+    ##Key for inner ip and mac
+    SW_INNER_PORT_ADDR = "COIN_SW_INNER_PORT_ADDR"
     ##Key for switch feature
     SW_FEATURE = "COIN_SW_FEATURE"
     ##Prefix for gateway for interface   
@@ -128,6 +130,9 @@ class nat(core.coin_server):
 
         #Get IP addresses on the interfaces
         self.ifmgr.set_ipv4_addr(self.loif.client_intf, inner_addr)
+        mc.set(nat.SW_INNER_PORT_ADDR, 
+               (pu.ip_string2val(inner_addr), 
+                pu.hex_str2array(self.ifmgr.ethernet_addr(self.loif.client_intf))))
         for i in range(0, len(interfaces)):
             self.ifmgr.up(interfaces[i])
 
@@ -176,17 +181,7 @@ class nat(core.coin_server):
             np = self.switch.get_ports()
             port1 = np[i]
             port2 = np[self.mirror[i].switch_intf]
-
-            #Set perm ARP rules for mirror
-            ae1 = flows.arp_entry(priority=ofutil.PRIORITY['LOW'])
-            ae1.set_in_port(port1)
-            ae1.set_dl_dst(pu.hex_str2array(ieth))
-            ae1.add_output(port2, 65535)
-            self.default.add_perm(ae1)
-            ae2 = flows.arp_entry(priority=ofutil.PRIORITY['LOW'])
-            ae2.set_in_port(port2)
-            ae2.add_output(port1, 65535)
-            self.default.add_perm(ae2)
+            
             #Set perm DHCP rules for mirror
             dreq = flows.udp_entry(portno=68,
                                    priority=ofutil.PRIORITY['LOW'])
@@ -246,7 +241,7 @@ class nat(core.coin_server):
         
         @param o arp check object (dictionary)
         """
-        mac = self.get_ip_mac(o["ip"], o["if"])
+        mac = self.get_ip_mac(o["ip"], self.loif.client_intf)
         if (mac == None):
             o["tried"] += 1
             if (o["tried"] < MAX_RETRY):
@@ -256,7 +251,6 @@ class nat(core.coin_server):
             mc.set(nat.get_gw_mac_key(o["ip"]), mac.mac)
             output.info("ARP of "+o["ip"]+" is "+str(mac.mac),
                         self.__class__.__name__)
-            self.check_default_route()
 
     def check_default_route(self):
         """Check default route and set it right
@@ -302,11 +296,9 @@ class nat(core.coin_server):
             mc.set(nat.get_gw_key(o["if"]), gw)
             output.info("Gateway of "+o["if"]+" is "+gw,
                         self.__class__.__name__)
-            #Call for ARP
-            rc = yapc.priv_callback(self, 
-                                    {"type":"arp","tried":0, "ip":gw, "if":o["mif"]})
-            self.server.post_event(rc, 0)
-            #Register ip range
+            #Check for route
+            self.check_default_route()
+             #Register ip range
             ipv4addr = self.ifmgr.ipv4_addr_n_mask(o["mif"])
             ipr = (pu.ip_string2val(ipv4addr["addr"]),
                    pu.ip_string2val(ipv4addr["netmask"]),
@@ -315,6 +307,10 @@ class nat(core.coin_server):
             mc.set(nat.get_ip_range_key(no), ipr)
             output.info(o["if"]+"("+str(no)+") has IP address %x and netmask %x" % (ipr[0], ipr[1]),
                         self.__class__.__name__)
+            #Call for ARP
+            rc = yapc.priv_callback(self, 
+                                    {"type":"arp","tried":0, "ip":gw, "if":o["mif"]})
+            self.server.post_event(rc, 0)
             
     def dhclient_mirror(self, intf):
         """Perform dhclient on mirror interface
@@ -357,15 +353,16 @@ class arp_handler(core.component):
             event.match.dl_type == dpkt.ethernet.ETH_TYPE_ARP):
             iport = mc.get(nat.SW_INNER_PORT)
             intfs = self.get_intf_n_range()
+            lointf = mc.get(nat.SW_INNER_PORT_ADDR)
             if (iport == None):
                 output.err("No inner port recorded!  Are we connected?",
                            self.__class__.__name__)
                 return True
 
             if (event.match.in_port == iport):
-                return self._process_self_initiated(event, intfs)
+                return self._process_self_initiated(event, intfs, iport, lointf)
             else:
-                return self._process_peer_initiated(event, intfs)
+                return self._process_peer_initiated(event, intfs, iport, lointf)
 
         return True     
 
@@ -380,11 +377,13 @@ class arp_handler(core.component):
                 r[p.port_no] = ipr
         return r
 
-    def _process_self_initiated(self, pktin, intfs):
+    def _process_self_initiated(self, pktin, intfs, iport, lointf):
         """Event handler for self_initiated packet
 
         @param pktin packet in event to handle
         @param intfs dictionary of interfaces (with ip range)
+        @param iport port no of local interface
+        @param lointf local interface address (ip, mac)
         @return false if processed else true
         """
         for portno,ipr in intfs.items():
@@ -397,17 +396,35 @@ class arp_handler(core.component):
                 setattr(pktin.dpkt["data"], 'sha', pu.array2byte_str(ipr[2]))
                 setattr(pktin.dpkt["data"], 'spa', pu.ip_val2binary(ipr[0]))
                 self.get_conn().send(flow.get_packet_out().pack()+\
-                                         pktin.dpkt.pack())               
-                return False
+                                         pktin.dpkt.pack())
+                return False                    
 
         return True
 
-    def _process_peer_initiated(self, pktin, intfs):
+    def _process_peer_initiated(self, pktin, intfs, iport, lointf):
         """Event handler for peer_initiated packet
 
         @param pktin packet in event to handle
         @param intfs dictionary of interfaces (with ip range)
-        @return false is processed else true
+        @param iport port no of local interface
+        @param lointf local interface address (ip, mac)
+        @return false
         """
-        return True
+        bcast = (pu.array2val(pktin.match.dl_dst)== 0xffffffffffff)
+        for portno,ipr in intfs.items():
+            if ((ipr[2] == pktin.match.dl_dst) or bcast):
+                flow = flows.exact_entry(pktin.match)
+                flow.set_buffer(pktin.pktin.buffer_id)
+                if (not bcast):
+                    flow.add_dl_rewrite(False, lointf[1])
+                flow.add_output(iport)
+
+                if (pktin.match.nw_proto == dpkt.arp.ARP_OP_REPLY):
+                    setattr(pktin.dpkt["data"], 'tha', pu.array2byte_str(lointf[1]))
+                setattr(pktin.dpkt["data"], 'tpa', pu.ip_val2binary(lointf[0]))
+                self.get_conn().send(flow.get_packet_out().pack()+\
+                                         pktin.dpkt.pack())
+                return False
+
+        return False
 
