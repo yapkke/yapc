@@ -22,6 +22,34 @@ import simplejson
 
 SOCK_NAME = "/etc/coin.sock"
 
+class component(yapc.component):
+    """Base class for COIN's component
+   
+    @author ykk
+    @date Jun 2011
+    """
+    def __init__(self, ofconn):
+        """Initialize
+
+        @param conn reference to connections
+        """
+        ##Reference to connections
+        self.conn = ofconn
+
+    def get_conn(self):
+        """Get connection
+
+        @return the one and only connection to send messages (None otherwise)
+        """
+        if (len(self.conn.db) > 1):
+            output.warn("More than one connection to COIN!",
+                        self.__class__.__name__)
+
+        for s,c in self.conn.db.items():
+            return c
+
+        return None
+
 class default_entries(default.default_entries):
     def __init__(self, server, ofconn):
         """Initialize
