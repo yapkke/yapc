@@ -14,6 +14,7 @@ import yapc.log.output as output
 import yapc.events.openflow as ofevents
 import yapc.comm.json as jsoncomm
 import yapc.util.memcacheutil as mc
+import yapc.pyopenflow as pyof
 import dpkt
 
 LOCAL_IP = "192.168.4.1"
@@ -308,10 +309,11 @@ class nat(core.coin_server):
             #Register ip range
             ipv4addr = self.ifmgr.ipv4_addr_n_mask(o["mif"])
             ipr = (pu.ip_string2val(ipv4addr["addr"]),
-                   pu.ip_string2val(ipv4addr["netmask"]))
+                   pu.ip_string2val(ipv4addr["netmask"]),
+                   pu.hex_str2array(self.ifmgr.ethernet_addr(o["mif"])))
             no = self.switch.if_name2dpid_port_mac(o["if"])[1]
             mc.set(nat.get_ip_range_key(no), ipr)
-            output.info(o["if"]+"("+str(no)+") has IP address %x and netmask %x" % ipr,
+            output.info(o["if"]+"("+str(no)+") has IP address %x and netmask %x" % (ipr[0], ipr[1]),
                         self.__class__.__name__)
             
     def dhclient_mirror(self, intf):
@@ -327,7 +329,7 @@ class nat(core.coin_server):
 
         return "executed"
 
-class arp_handler(yapc.component):
+class arp_handler(core.component):
     """Class to handle arp in COIN
 
     @author ykk
@@ -340,28 +342,25 @@ class arp_handler(yapc.component):
         @param conn reference to connections
         @param sfr send flow removed or not
         """
-        ##Reference to connections
-        self.conn = ofconn
+        core.component.__init__(self, ofconn)
 
         mc.get_client()
         server.register_event_handler(ofevents.pktin.name, self)
         
     def processevent(self, event):
-        """Event handler
+        """Event handler (for ARP only)
 
         @param event event to handle
-        @return true
+        @return false if processed else true
         """
-        if (isinstance(event, ofevents.pktin)):
+        if (isinstance(event, ofevents.pktin) and
+            event.match.dl_type == dpkt.ethernet.ETH_TYPE_ARP):
             iport = mc.get(nat.SW_INNER_PORT)
             intfs = self.get_intf_n_range()
             if (iport == None):
                 output.err("No inner port recorded!  Are we connected?",
                            self.__class__.__name__)
                 return True
-            else:
-                output.dbg("Good",
-                           self.__class__.__name__)
 
             if (event.match.in_port == iport):
                 return self._process_self_initiated(event, intfs)
@@ -386,9 +385,20 @@ class arp_handler(yapc.component):
 
         @param pktin packet in event to handle
         @param intfs dictionary of interfaces (with ip range)
-        @return true
+        @return false if processed else true
         """
-        
+        for portno,ipr in intfs.items():
+            if ((ipr[0] & ipr[1]) == (pktin.match.nw_dst & ipr[1])):
+                #Local address                
+                flow = flows.exact_entry(pktin.match)
+                flow.set_buffer(pktin.pktin.buffer_id)
+                flow.add_dl_rewrite(True, ipr[2])
+                flow.add_output(portno)               
+                setattr(pktin.dpkt["data"], 'sha', pu.array2byte_str(ipr[2]))
+                setattr(pktin.dpkt["data"], 'spa', pu.ip_val2binary(ipr[0]))
+                self.get_conn().send(flow.get_packet_out().pack()+\
+                                         pktin.dpkt.pack())               
+                return False
 
         return True
 
@@ -397,7 +407,7 @@ class arp_handler(yapc.component):
 
         @param pktin packet in event to handle
         @param intfs dictionary of interfaces (with ip range)
-        @return true
+        @return false is processed else true
         """
         return True
 
