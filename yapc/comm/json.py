@@ -27,6 +27,11 @@ class message(yapc.event):
         ##Message
         self.message = simplejson.loads(msg)
 
+    def reply(self, msg):
+        """Reply with a message
+        """
+        self.sock.send(simplejson.dumps(msg))
+
 class client:
     """JSON client connection
 
