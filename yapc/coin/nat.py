@@ -428,3 +428,97 @@ class arp_handler(core.component):
 
         return False
 
+class ip_handler(core.component):
+    """Class to handle local IP traffic
+
+    @author ykk
+    @date Jun 2011
+    """
+    def __init__(self, server, ofconn):
+        """Initialize
+
+        @param server yapc core
+        @param conn reference to connections
+        @param sfr send flow removed or not
+        """
+        core.component.__init__(self, ofconn)
+
+        mc.get_client()
+        server.register_event_handler(ofevents.pktin.name, self)
+        
+    def processevent(self, event):
+        """Event handler
+
+        @param event event to handle
+        @return false if processed else true
+        """
+        if isinstance(event, ofevents.pktin):
+            iport = mc.get(nat.SW_INNER_PORT)
+            intfs = self.get_intf_n_range()
+            lointf = mc.get(nat.SW_INNER_PORT_ADDR)
+            if (iport == None):
+                output.err("No inner port recorded!  Are we connected?",
+                           self.__class__.__name__)
+                return True
+
+            if (event.match.in_port == iport):
+                return self._process_self_initiated(event, intfs, iport, lointf)
+            else:
+                return self._process_peer_initiated(event, intfs, iport, lointf)
+
+        return True     
+
+    def get_intf_n_range(self):
+        """Retrieve dictionary of interface and their ip range
+        """
+        r = {}
+        sf = mc.get(nat.SW_FEATURE)
+        for p in sf.ports:
+            ipr = mc.get(nat.get_ip_range_key(p.port_no))
+            if (ipr != None):
+                r[p.port_no] = ipr
+        return r
+
+    def _process_self_initiated(self, pktin, intfs, iport, lointf):
+        """Event handler for self_initiated packet
+
+        @param pktin packet in event to handle
+        @param intfs dictionary of interfaces (with ip range)
+        @param iport port no of local interface
+        @param lointf local interface address (ip, mac)
+        @return false if processed else true
+        """
+        for portno,ipr in intfs.items():
+            if ((ipr[0] & ipr[1]) == (pktin.match.nw_dst & ipr[1])):
+                #Local address                
+                flow = flows.exact_entry(pktin.match)
+                flow.set_buffer(pktin.pktin.buffer_id)
+                flow.add_nw_rewrite(True, ipr[0])
+                flow.add_dl_rewrite(True, ipr[2])
+                flow.add_output(portno)
+                self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+                return False
+
+        return True
+
+    def _process_peer_initiated(self, pktin, intfs, iport, lointf):
+        """Event handler for peer_initiated packet
+
+        @param pktin packet in event to handle
+        @param intfs dictionary of interfaces (with ip range)
+        @param iport port no of local interface
+        @param lointf local interface address (ip, mac)
+        @return false
+        """
+        for portno,ipr in intfs.items():
+            if ((ipr[2] == pktin.match.dl_dst)):
+                flow = flows.exact_entry(pktin.match)
+                flow.set_buffer(pktin.pktin.buffer_id)
+                flow.add_nw_rewrite(False, lointf[0])
+                flow.add_dl_rewrite(False, lointf[1])
+                flow.add_output(iport)
+                self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+                return False
+
+        return False
+
