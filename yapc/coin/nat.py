@@ -503,6 +503,27 @@ class ip_handler(core.component):
                 self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
                 return False
 
+        if (pu.array2val(pktin.match.dl_dst)== 0xffffffffffff):
+            return True
+
+        #Global address
+        cport = self.select_intf(intfs)
+        if (cport != None):
+            gw = mc.get(nat.get_gw_key(cport))
+            gwmac = mc.get(nat.get_gw_mac_key(gw))
+            ipr = intfs[cport]
+            output.dbg("Sending packet on port "+str(cport)+" with IP %x" % ipr[0]+\
+                           " with gw "+str(gw)+"(mac:"+str(gwmac)+")",
+                       self.__class__.__name__)
+            flow = flows.exact_entry(pktin.match)
+            flow.set_buffer(pktin.pktin.buffer_id)
+            flow.add_nw_rewrite(True, ipr[0])
+            flow.add_dl_rewrite(True, ipr[2])
+            flow.add_dl_rewrite(False, pu.hex_str2array(gwmac))
+            flow.add_output(cport)
+            self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+            return False
+
         return True
 
     def _process_peer_initiated(self, pktin, intfs, iport, lointf):
@@ -514,6 +535,7 @@ class ip_handler(core.component):
         @param lointf local interface address (ip, mac)
         @return false
         """
+        bcast = (pu.array2val(pktin.match.dl_dst)== 0xffffffffffff)
         for portno,ipr in intfs.items():
             if ((ipr[2] == pktin.match.dl_dst)):
                 flow = flows.exact_entry(pktin.match)
@@ -523,6 +545,18 @@ class ip_handler(core.component):
                 flow.add_output(iport)
                 self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
                 return False
+
+        if (pu.array2val(pktin.match.dl_dst)== 0xffffffffffff):
+            return True
+
+        #Global address
+        flow = flows.exact_entry(pktin.match)
+        flow.set_buffer(pktin.pktin.buffer_id)
+        flow.add_nw_rewrite(False, lointf[0])
+        flow.add_dl_rewrite(False, lointf[1])
+        flow.add_output(iport)
+        self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+        return False
 
         return False
 
