@@ -66,12 +66,12 @@ class nat(core.coin_server):
         server.register_event_handler(jsoncomm.message.name,
                                       self)
 
-    def get_gw_key(intf):
+    def get_gw_key(portno):
         """Get memcache key for gw address for interface
 
-        @param intf interface name
+        @param portno port no of the interface
         """
-        return nat.GW_KEY_PREFIX+str(intf).replace(" ","_")
+        return nat.GW_KEY_PREFIX+str(portno).strip()
     get_gw_key = yapc.static_callable(get_gw_key)
 
     def get_gw_mac_key(ip):
@@ -85,7 +85,7 @@ class nat(core.coin_server):
     def get_ip_range_key(portno):
         """Get memcache key for IP address range for a particular interface
         
-        @param int interface name
+        @param portno port no of the interface
         """
         return nat.IP_RANGE_KEY_PREFIX+str(portno).strip()
     get_ip_range_key = yapc.static_callable(get_ip_range_key)
@@ -293,7 +293,8 @@ class nat(core.coin_server):
                 rc = yapc.priv_callback(self, o)
                 self.server.post_event(rc, 1)
         else:
-            mc.set(nat.get_gw_key(o["if"]), gw)
+            no = self.switch.if_name2dpid_port_mac(o["if"])[1]
+            mc.set(nat.get_gw_key(no), gw)
             output.info("Gateway of "+o["if"]+" is "+gw,
                         self.__class__.__name__)
             #Check for route
@@ -303,7 +304,6 @@ class nat(core.coin_server):
             ipr = (pu.ip_string2val(ipv4addr["addr"]),
                    pu.ip_string2val(ipv4addr["netmask"]),
                    pu.hex_str2array(self.ifmgr.ethernet_addr(o["mif"])))
-            no = self.switch.if_name2dpid_port_mac(o["if"])[1]
             mc.set(nat.get_ip_range_key(no), ipr)
             output.info(o["if"]+"("+str(no)+") has IP address %x and netmask %x" % (ipr[0], ipr[1]),
                         self.__class__.__name__)
@@ -463,6 +463,14 @@ class ip_handler(core.component):
                 return self._process_peer_initiated(event, intfs, iport, lointf)
 
         return True     
+
+    def select_intf(self, intfs):
+        """Get which interface to send
+
+        @return port no to send flow on
+        """
+        for port, ipr in intfs.items():
+            return port
 
     def get_intf_n_range(self):
         """Retrieve dictionary of interface and their ip range
