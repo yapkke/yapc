@@ -384,7 +384,7 @@ class arp_handler(core.component):
         @param intfs dictionary of interfaces (with ip range)
         @param iport port no of local interface
         @param lointf local interface address (ip, mac)
-        @return false if processed else true
+        @return false
         """
         for portno,ipr in intfs.items():
             if ((ipr[0] & ipr[1]) == (pktin.match.nw_dst & ipr[1])):
@@ -397,9 +397,7 @@ class arp_handler(core.component):
                 setattr(pktin.dpkt["data"], 'spa', pu.ip_val2binary(ipr[0]))
                 self.get_conn().send(flow.get_packet_out().pack()+\
                                          pktin.dpkt.pack())
-                return False                    
-
-        return True
+        return False
 
     def _process_peer_initiated(self, pktin, intfs, iport, lointf):
         """Event handler for peer_initiated packet
@@ -424,8 +422,6 @@ class arp_handler(core.component):
                 setattr(pktin.dpkt["data"], 'tpa', pu.ip_val2binary(lointf[0]))
                 self.get_conn().send(flow.get_packet_out().pack()+\
                                          pktin.dpkt.pack())
-                return False
-
         return False
 
 class ip_handler(core.component):
