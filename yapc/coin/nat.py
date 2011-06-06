@@ -15,6 +15,7 @@ import yapc.events.openflow as ofevents
 import yapc.comm.json as jsoncomm
 import yapc.util.memcacheutil as mc
 import yapc.pyopenflow as pyof
+import yapc.packet.ofaction as ofpkt
 import dpkt
 
 LOCAL_IP = "192.168.4.1"
@@ -393,8 +394,8 @@ class arp_handler(core.component):
                 flow.set_buffer(pktin.pktin.buffer_id)
                 flow.add_dl_rewrite(True, ipr[2])
                 flow.add_output(portno)               
-                setattr(pktin.dpkt["data"], 'sha', pu.array2byte_str(ipr[2]))
-                setattr(pktin.dpkt["data"], 'spa', pu.ip_val2binary(ipr[0]))
+                ofpkt.dl_rewrite(pktin.dpkt, True, ipr[2])
+                ofpkt.nw_rewrite(pktin.dpkt, True, ipr[0])
                 self.get_conn().send(flow.get_packet_out().pack()+\
                                          pktin.dpkt.pack())
         return False
@@ -418,8 +419,8 @@ class arp_handler(core.component):
                 flow.add_output(iport)
 
                 if (pktin.match.nw_proto == dpkt.arp.ARP_OP_REPLY):
-                    setattr(pktin.dpkt["data"], 'tha', pu.array2byte_str(lointf[1]))
-                setattr(pktin.dpkt["data"], 'tpa', pu.ip_val2binary(lointf[0]))
+                    ofpkt.dl_rewrite(pktin.dpkt, False, lointf[1])
+                ofpkt.nw_rewrite(pktin.dpkt, False, lointf[0])
                 self.get_conn().send(flow.get_packet_out().pack()+\
                                          pktin.dpkt.pack())
         return False
@@ -516,12 +517,20 @@ class ip_handler(core.component):
                            " with gw "+str(gw)+"(mac:"+str(gwmac)+")",
                        self.__class__.__name__)
             flow = flows.exact_entry(pktin.match)
-            flow.set_buffer(pktin.pktin.buffer_id)
             flow.add_nw_rewrite(True, ipr[0])
             flow.add_dl_rewrite(True, ipr[2])
             flow.add_dl_rewrite(False, pu.hex_str2array(gwmac))
             flow.add_output(cport)
-            self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+            if (pktin.pktin.buffer_id == flow.buffer_id):
+                ofpkt.nw_rewrite(pktin.dpkt, True, ipr[0])
+                ofpkt.dl_rewrite(pktin.dpkt, True, ipr[2])
+                ofpkt.dl_rewrite(pktin.dpkt, True, pu.hex_str2array(gwmac))
+                self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+                self.get_conn().send(flow.get_packet_out(pyof.OFPFC_ADD).pack()+\
+                                         pktin.dpkt.pack())
+            else:
+                flow.set_buffer(pktin.pktin.buffer_id)
+                self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
             return False
 
         return True
@@ -539,11 +548,18 @@ class ip_handler(core.component):
         for portno,ipr in intfs.items():
             if ((ipr[2] == pktin.match.dl_dst)):
                 flow = flows.exact_entry(pktin.match)
-                flow.set_buffer(pktin.pktin.buffer_id)
                 flow.add_nw_rewrite(False, lointf[0])
                 flow.add_dl_rewrite(False, lointf[1])
                 flow.add_output(iport)
-                self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+                if (pktin.pktin.buffer_id == flow.buffer_id):
+                    ofpkt.nw_rewrite(pktin.dpkt, False, lointf[0])
+                    ofpkt.dl_rewrite(pktin.dpkt, False, lointf[1])
+                    self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+                    self.get_conn().send(flow.get_packet_out(pyof.OFPFC_ADD).pack()+\
+                                             pktin.dpkt.pack())
+                else:
+                    flow.set_buffer(pktin.pktin.buffer_id)
+                    self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
                 return False
 
         if (pu.array2val(pktin.match.dl_dst)== 0xffffffffffff):
