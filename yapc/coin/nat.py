@@ -524,7 +524,7 @@ class ip_handler(core.component):
             if (pktin.pktin.buffer_id == flow.buffer_id):
                 ofpkt.nw_rewrite(pktin.dpkt, True, ipr[0])
                 ofpkt.dl_rewrite(pktin.dpkt, True, ipr[2])
-                ofpkt.dl_rewrite(pktin.dpkt, True, pu.hex_str2array(gwmac))
+                ofpkt.dl_rewrite(pktin.dpkt, False, pu.hex_str2array(gwmac))
                 self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
                 self.get_conn().send(flow.get_packet_out(pyof.OFPFC_ADD).pack()+\
                                          pktin.dpkt.pack())
