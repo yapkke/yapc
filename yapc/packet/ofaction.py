@@ -7,6 +7,7 @@
 #
 import dpkt
 import yapc.util.parse as pu
+import yapc.packet.ip as yip
 
 def nw_rewrite(pkt, rewrite_src, addr):
     """Rewrite network address
@@ -21,6 +22,8 @@ def nw_rewrite(pkt, rewrite_src, addr):
     address = pu.ip_val2binary(addr)
 
     if (pkt["type"] == dpkt.ethernet.ETH_TYPE_IP):
+        #Set sum to 0 else pack will produce the wrong checksum
+        setattr(pkt["data"], "sum", 0)
         if (rewrite_src):
             setattr(pkt["data"], "src", address)
         else:
