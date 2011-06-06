@@ -80,6 +80,13 @@ class default_entries(yapc.component):
         flowentry.hard_timeout = pyof.OFP_FLOW_PERMANENT
         self.entries.append(flowentry)
 
+    def add_perm_output(self, flowentry, port=pyof.OFPP_CONTROLLER,
+                        max_len=pyof.OFP_DEFAULT_MISS_SEND_LEN):
+        """Add permanent flow entry to install with output action appended
+        """
+        flowentry.add_output(port, max_len)
+        self.add_perm(flowentry)
+
     def processevent(self, event):
         """Event handler
 

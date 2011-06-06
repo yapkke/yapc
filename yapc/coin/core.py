@@ -63,16 +63,14 @@ class default_entries(default.default_entries):
                                  ofutil.PRIORITY['LOWEST'],
                                  pyof.OFP_FLOW_PERMANENT,
                                  pyof.OFP_FLOW_PERMANENT))
-        self.add_perm(flows.tcp_entry(action=flows.flow_entry.GET,
-                                      priority=ofutil.PRIORITY['LOWER']))
-        self.add_perm(flows.udp_entry(action=flows.flow_entry.GET,
-                                      priority=ofutil.PRIORITY['LOWER']))
-        self.add_perm(flows.icmp_entry(action=flows.flow_entry.GET,
-                                       priority=ofutil.PRIORITY['LOWER']))
-        ae = flows.arp_entry(action=flows.flow_entry.NONE,
-                        priority=ofutil.PRIORITY['LOWER'])
-        ae.add_output(max_len=65535)
-        self.add_perm(ae)
+        self.add_perm_output(flows.tcp_entry(priority=ofutil.PRIORITY['LOWER']),
+                             max_len=65535)
+        self.add_perm_output(flows.udp_entry(priority=ofutil.PRIORITY['LOWER']),
+                             max_len=65535)
+        self.add_perm_output(flows.icmp_entry(priority=ofutil.PRIORITY['LOWER']),
+                             max_len=65535)
+        self.add_perm_output(flows.arp_entry(priority=ofutil.PRIORITY['LOWER']),
+                             max_len=65535)
 
 class coin_server(yapc.component):
     """Class to handle connections and configuration for COIN
