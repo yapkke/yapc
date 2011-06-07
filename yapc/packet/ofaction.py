@@ -24,6 +24,10 @@ def nw_rewrite(pkt, rewrite_src, addr):
     if (pkt["type"] == dpkt.ethernet.ETH_TYPE_IP):
         #Set sum to 0 else pack will produce the wrong checksum
         setattr(pkt["data"], "sum", 0)
+        #Set UDP checksum
+        if (pkt["data"].p == 6 or pkt["data"].p == 17): ##TCP or UDP
+            setattr(pkt["data"]["data"], "sum", 0)
+
         if (rewrite_src):
             setattr(pkt["data"], "src", address)
         else:
