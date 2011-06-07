@@ -513,9 +513,7 @@ class ip_handler(core.component):
             gw = mc.get(nat.get_gw_key(cport))
             gwmac = mc.get(nat.get_gw_mac_key(gw))
             ipr = intfs[cport]
-            output.dbg("Sending packet on port "+str(cport)+" with IP %x" % ipr[0]+\
-                           " with gw "+str(gw)+"(mac:"+str(gwmac)+")",
-                       self.__class__.__name__)
+
             flow = flows.exact_entry(pktin.match)
             flow.add_nw_rewrite(True, ipr[0])
             flow.add_dl_rewrite(True, ipr[2])
