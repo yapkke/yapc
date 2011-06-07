@@ -7,6 +7,7 @@
 #
 import dpkt
 import yapc.util.openflow as ofutil
+import yapc.packet.ofaction as pktact
 import yapc.pyopenflow as pyof
 import yapc.log.output as output
 
@@ -22,6 +23,7 @@ UDP_MDNS = 5353
 UNBUFFERED_ID = 4294967295
 ##Default timeout value
 DEFAULT_TIMEOUT = 5
+
 
 class actions:
     """Class to provide management of ofp_actions list
@@ -84,7 +86,44 @@ class actions:
         """
         self.buffer_id = buffer_id
 
-class flow_entry(actions):
+class packet:
+    """Class to manipulate packet
+
+    @author ykk
+    @date June 2011
+    """
+    def __init__(self, dpkt=None):
+        """Initialize
+        """
+        ##Reference to packet
+        self.dpkt = dpkt
+    
+    def nw_rewrite(self, rewrite_src, addr):
+        """Add rewrite for IP address
+
+        @param rewrite_src boolean for indicated rewrite src or dst
+        @param addr address to rewrite to
+        @return success or not
+        """
+        if (self.dpkt != None):
+            pktact.nw_rewrite(rewrite_src, addr)
+            return True
+        return False
+
+    def dl_rewrite(self, rewrite_src, addr):
+        """Add rewrite for Ethernet address
+
+        @param rewrite_src boolean for indicated rewrite src or dst
+        @param addr address to rewrite to
+        @return success or not
+        """
+        if (self.dpkt != None):
+            pktact.dl_rewrite(rewrite_src, addr)
+            return True
+
+        return False
+            
+class flow_entry(actions, packet):
     """Class to provide some pre-formed flow entry
 
     @author ykk
@@ -94,10 +133,14 @@ class flow_entry(actions):
     DROP = 0
     GET = 1
     FLOOD = 2
-    def __init__(self, action=NONE):
+    def __init__(self, action=NONE, packet=None):
         """Initialize
+
+        @param action NONE (default), DROP, GET, FLOOD
+        @param packet dpkt parsed packet
         """
         actions.__init__(self)
+        packet.__init__(self, packet)
         ##Match
         self.match = pyof.ofp_match()
         ##Idle timeout
@@ -115,6 +158,24 @@ class flow_entry(actions):
             self.add_output(pyof.OFPP_CONTROLLER)
         elif (action == flow_entry.FLOOD):
             self.add_output(pyof.OFPP_FLOOD)
+
+    def add_nw_rewrite(self, rewrite_src, addr):
+        """Add rewrite for IP address (and rewrite packet if available)
+
+        @param rewrite_src boolean for indicated rewrite src or dst
+        @param addr address to rewrite to
+        """
+        actions.add_nw_rewrite(rewrite_src, addr)
+        packet.nw_rewrite(rewrite_src, addr)
+
+    def add_dl_rewrite(self, rewrite_src, addr):
+        """Add rewrite for Ethernet address (and rewrite packet if available)
+
+        @param rewrite_src boolean for indicated rewrite src or dst
+        @param addr address to rewrite to
+        """
+        actions.add_dl_rewrite(rewrite_src, addr)
+        packet.dl_rewrite(rewrite_src, addr)
 
     def set_in_port(self, in_port):
         """Set in_port in match
@@ -348,6 +409,25 @@ class flow_entry(actions):
 
         fm.header.xid = ofutil.get_xid()
         return fm
+
+    def install(self, conn, sock, command=pyof.OFPFC_MODIFY):
+        """Install flow
+        
+        @param conn OpenFlow connections
+        @param sock reference socket
+        @param command command for flow mod
+        """
+        self.install_flow(conn.db[sock], command=pyof.OFPFC_MODIFY)
+
+    def install_flow(self, conn, command):
+        """Install flow
+        
+        @param conn OpenFlow connection
+        @param command command for flow mod
+        """
+        conn.send(self.get_flow_mod(command).pack())
+        if (self.buffer_id != UNBUFFERED_ID):
+            conn.send(self.get_packet_out()+self.dpkt.pack())
 
 class exact_entry(flow_entry):
     """Flow entry with exact match
