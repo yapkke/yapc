@@ -24,6 +24,7 @@ class Database:
         self.connection = None
         ##List of tables
         self.tables = {}
+        self.get_tables()
 
     def open(self):
         """Open database
@@ -84,18 +85,42 @@ class Database:
         for tname,tab in self.tables.items():
             tab.flush_cache(close)
 
+    def parse_create_stat(self, stat):
+        """Parse create statment to get table name and column names
+        
+        @param stat statement to parse
+        @return (name, [column names])
+        """
+        name = stat[12:stat.index("(")].strip()
+        col = stat[stat.index("(")+1:stat.index(")")].split(",")
+        columns = []
+        for c in col:
+            columns.append(c.strip().split(" ")[0])
+        return (name, columns)
+
+    def get_tables(self):
+        """Retrieve tables from files
+        """
+        c = self.execute("SELECT * FROM sqlite_master", False)
+        for r in c:
+            (name, col) = self.parse_create_stat(r[4])
+            self.tables[name] = Table(name, col, db=self)
+        c.close()
+        self.close()
+
 class Table:
     """SQLite table
 
     @author ykk
     @date May 2011
     """
-    def __init__(self, name, columns=None, cs=100):
+    def __init__(self, name, columns=None, cs=100, db=None):
         """Initialize
 
         @param name name of table
         @param columns list of column names
         @param cs max cache size to maintain
+        @param db reference to database
         """
         ##Name of table
         self.name = name
@@ -108,7 +133,7 @@ class Table:
         ##Cache max
         self.cache_size = cs
         ##Reference to db
-        self.db = None
+        self.db = db
 
     def add_column(self, name):
         """Add column with name
@@ -183,10 +208,13 @@ class Table:
         """Execute the following:
            SELECT <select> FROM <table> WHERE <where>
 
+        Will not close database to allow cursor operation
+
         @param selection selection to return
         @param where where condition
+        @return cursor
         """
-        return self.db.execute(self.select_stmt(selection, where))
+        return self.db.execute(self.select_stmt(selection, where), False)
 
 class SqliteDB(Database, yapc.cleanup):
     """SQLite database with proper cleanup
