@@ -5,6 +5,7 @@
 #
 import sqlite3
 import yapc.interface as yapc
+import yapc.comm.json as jsoncomm
 import yapc.log.output as output
 
 class Database:
@@ -216,18 +217,37 @@ class Table:
         """
         return self.db.execute(self.select_stmt(selection, where), False)
 
-class SqliteDB(Database, yapc.cleanup):
+class SqliteDB(Database, yapc.cleanup, yapc.component):
     """SQLite database with proper cleanup
+
+    Allow forced flushing of caches too, with JSON message
+       {"type":"sqlite", "command":"flush"}
 
     @author ykk
     @date May 2011
     """
-    def __init__(self, server, filename):
+    def __init__(self, server, filename, jsonconn=None):
         """Initialize
         """
         Database.__init__(self, filename)
         server.register_cleanup(self)
         self.started = False
+        #Reference to JSON connections
+        self.jsonconn = jsonconn
+        if (self.jsonconn != None):
+            server.register_event_handler(jsoncomm.message.name, self)
+
+    def processevent(self, event):
+        """Process JSON commands
+        """
+        if (isinstance(event, jsoncomm.message)):
+            if (("type" in event.message) and (event.message["type"] == "sqlite")):
+                if (("command" in event.message) and (event.message["command"] == "flush")):
+                    self.flush()
+                    msg = {}
+                    msg["type"] = "sqlite"
+                    msg["status"] = "executed"
+                    event.message.reply(msg)
 
     def start(self, close=True):
         """Start/setup the database
