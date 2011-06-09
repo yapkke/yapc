@@ -68,6 +68,7 @@ class learningswitch(yapc.component):
         @param port port to send flow to
         """
         flow = flows.exact_entry(event.match)
+        flow.dpkt = event.dpkt
         if (self.send_flow_removed):
             flow.set_flow_removed_flag()
         flow.set_buffer(event.pktin.buffer_id)

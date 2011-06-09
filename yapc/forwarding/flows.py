@@ -133,14 +133,14 @@ class flow_entry(actions, packet):
     DROP = 0
     GET = 1
     FLOOD = 2
-    def __init__(self, action=NONE, packet=None):
+    def __init__(self, action=NONE, pkt=None):
         """Initialize
 
         @param action NONE (default), DROP, GET, FLOOD
         @param packet dpkt parsed packet
         """
         actions.__init__(self)
-        packet.__init__(self, packet)
+        packet.__init__(self, pkt)
         ##Match
         self.match = pyof.ofp_match()
         ##Idle timeout
@@ -165,8 +165,8 @@ class flow_entry(actions, packet):
         @param rewrite_src boolean for indicated rewrite src or dst
         @param addr address to rewrite to
         """
-        actions.add_nw_rewrite(rewrite_src, addr)
-        packet.nw_rewrite(rewrite_src, addr)
+        actions.add_nw_rewrite(self, rewrite_src, addr)
+        packet.nw_rewrite(self, rewrite_src, addr)
 
     def add_dl_rewrite(self, rewrite_src, addr):
         """Add rewrite for Ethernet address (and rewrite packet if available)
@@ -174,8 +174,8 @@ class flow_entry(actions, packet):
         @param rewrite_src boolean for indicated rewrite src or dst
         @param addr address to rewrite to
         """
-        actions.add_dl_rewrite(rewrite_src, addr)
-        packet.dl_rewrite(rewrite_src, addr)
+        actions.add_dl_rewrite(self, rewrite_src, addr)
+        packet.dl_rewrite(self, rewrite_src, addr)
 
     def set_in_port(self, in_port):
         """Set in_port in match
@@ -426,8 +426,8 @@ class flow_entry(actions, packet):
         @param command command for flow mod
         """
         conn.send(self.get_flow_mod(command).pack())
-        if (self.buffer_id != UNBUFFERED_ID):
-            conn.send(self.get_packet_out()+self.dpkt.pack())
+        if ((self.buffer_id != UNBUFFERED_ID) and (self.dpkt != None)):
+            conn.send(self.get_packet_out().pack()+self.dpkt.pack())
 
 class exact_entry(flow_entry):
     """Flow entry with exact match
