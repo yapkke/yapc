@@ -247,7 +247,7 @@ class SqliteDB(Database, yapc.cleanup, yapc.component):
                     msg = {}
                     msg["type"] = "sqlite"
                     msg["status"] = "executed"
-                    event.message.reply(msg)
+                    event.reply(msg)
 
     def start(self, close=True):
         """Start/setup the database

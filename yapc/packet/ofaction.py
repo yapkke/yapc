@@ -7,7 +7,6 @@
 #
 import dpkt
 import yapc.util.parse as pu
-import yapc.packet.ip as yip
 
 def nw_rewrite(pkt, rewrite_src, addr):
     """Rewrite network address
