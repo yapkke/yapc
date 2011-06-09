@@ -201,7 +201,7 @@ class Table:
         """
         r = "SELECT "+selection+" FROM "+self.name
         if (where != None):
-            r += "WHERE "+where
+            r += " WHERE "+where
         return r
 
     def select(self, selection="*", where=None):
