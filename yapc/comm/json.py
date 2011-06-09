@@ -12,6 +12,8 @@ import os
 import stat
 import select
 
+SOCK_NAME = "json.sock"
+
 class message(yapc.event):
     """JSON message event
 
@@ -38,7 +40,7 @@ class client:
     @author ykk
     @date Oct 2010
     """
-    def __init__(self, file="json.sock"):
+    def __init__(self, file=SOCK_NAME):
         """Initialize
         """
         ##Reference to socket
@@ -157,7 +159,7 @@ class jsonserver(yapc.cleanup):
     @date Oct 2010
     """
     def __init__(self, server,
-                 file='json.sock', backlog=10, jsonservermgr=None,
+                 file=SOCK_NAME, backlog=10, jsonservermgr=None,
                  forcebind=True):
         """Initialize
 
