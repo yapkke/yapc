@@ -2750,7 +2750,7 @@ class ofp_action_enqueue:
         Declare members and default values
         """
         self.type = OFPAT_ENQUEUE
-        self.len = OFP_ACTION_ENQUEUE_BTYES
+        self.len = OFP_ACTION_ENQUEUE_BYTES
         self.port = 0
         self.pad= [0,0,0,0,0,0]
         self.queue_id = 0
