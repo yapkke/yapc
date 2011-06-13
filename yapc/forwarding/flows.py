@@ -53,6 +53,14 @@ class actions:
         oao.port = port
         self.add(oao)
 
+    def add_enqueue(self, port, queue_id):
+        """Add enqueue action to the list
+        """
+        oae = pyof.ofp_action_enqueue()
+        oae.port = port
+        oae.queue_id = queue_id
+        self.add(oae)
+
     def add_nw_rewrite(self, rewrite_src, addr):
         """Add rewrite for IP address
 
