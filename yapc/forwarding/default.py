@@ -35,8 +35,10 @@ class floodpkt(yapc.component):
         """
         if (isinstance(event, ofevents.pktin)):
             flow = flows.exact_entry(event.match)
+            flow.dpkt = event.dpkt
             flow.set_buffer(event.pktin.buffer_id)
             flow.add_output(pyof.OFPP_FLOOD)
+            
            
             if (event.pktin.buffer_id == flows.UNBUFFERED_ID):
                 self.conn.send(event.sock, flow.get_packet_out().pack()+event.pkt)

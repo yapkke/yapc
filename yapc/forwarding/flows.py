@@ -410,8 +410,19 @@ class flow_entry(actions, packet):
         fm.header.xid = ofutil.get_xid()
         return fm
 
+    def send_packet(self, conn, sock):
+        """Send packet associated with flow
+
+        @param conn OpenFlow connections
+        @param sock reference socket
+        """
+        if ((self.buffer_id != UNBUFFERED_ID) and (self.dpkt != None)):
+            conn.send(self.get_packet_out().pack()+self.dpkt.pack())
+
     def install(self, conn, sock, command=pyof.OFPFC_MODIFY):
         """Install flow
+
+        Send flow mod and if needed a packet out to flush current packet
         
         @param conn OpenFlow connections
         @param sock reference socket
@@ -421,13 +432,13 @@ class flow_entry(actions, packet):
 
     def install_flow(self, conn, command):
         """Install flow
+
+        Send flow mod and if needed a packet out to flush current packet
         
         @param conn OpenFlow connection
         @param command command for flow mod
         """
         conn.send(self.get_flow_mod(command).pack())
-        if ((self.buffer_id != UNBUFFERED_ID) and (self.dpkt != None)):
-            conn.send(self.get_packet_out().pack()+self.dpkt.pack())
 
 class exact_entry(flow_entry):
     """Flow entry with exact match
