@@ -214,7 +214,7 @@ class flow_entry(actions, packet):
 
         @param src_ip value of IP address
         """
-        self.match.wildcards = self.match.wildcards & ~pyof.OFPFW_NW_SRC_ALL
+        self.match.wildcards = self.match.wildcards & ~pyof.OFPFW_NW_SRC_MASK
         self.match.nw_src = src_ip
 
     def set_nw_dst(self, dst_ip):
@@ -222,7 +222,7 @@ class flow_entry(actions, packet):
         
         @param dst_ip value of IP address
         """
-        self.match.wildcards = self.match.wildcards & ~pyof.OFPFW_NW_DST_ALL
+        self.match.wildcards = self.match.wildcards & ~pyof.OFPFW_NW_DST_MASK
         self.match.nw_dst = dst_ip
 
     def set_tp_src(self, tp_src):
