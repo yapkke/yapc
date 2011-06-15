@@ -70,24 +70,25 @@ class default_entries(yapc.component):
 
         server.register_event_handler(ofevents.features_reply.name, self)
 
-    def add(self, flowentry):
+    def add(self, flowentry, cmd=pyof.OFPFC_ADD):
         """Add flow entry to install
         """
-        self.entries.append(flowentry)
+        self.entries.append((flowentry, cmd))
 
-    def add_perm(self, flowentry):
+    def add_perm(self, flowentry, cmd=pyof.OFPFC_ADD):
         """Add permanent flow entry to install
         """
         flowentry.idle_timeout = pyof.OFP_FLOW_PERMANENT
         flowentry.hard_timeout = pyof.OFP_FLOW_PERMANENT
-        self.entries.append(flowentry)
+        self.entries.append((flowentry, cmd))
 
     def add_perm_output(self, flowentry, port=pyof.OFPP_CONTROLLER,
-                        max_len=pyof.OFP_DEFAULT_MISS_SEND_LEN):
+                        max_len=pyof.OFP_DEFAULT_MISS_SEND_LEN,
+                        cmd=pyof.OFPFC_ADD):
         """Add permanent flow entry to install with output action appended
         """
         flowentry.add_output(port, max_len)
-        self.add_perm(flowentry)
+        self.add_perm(flowentry, cmd)
 
     def processevent(self, event):
         """Event handler
@@ -95,8 +96,8 @@ class default_entries(yapc.component):
         @param event event to handle
         """
         if (isinstance(event, ofevents.features_reply)):
-            for fm in self.entries:
-                self.conn.send(event.sock,fm.get_flow_mod(pyof.OFPFC_ADD).pack())
+            for (fm, cmd) in self.entries:
+                self.conn.send(event.sock,fm.get_flow_mod(cmd).pack())
 
         return True
 
