@@ -97,6 +97,9 @@ class default_entries(yapc.component):
         """
         if (isinstance(event, ofevents.features_reply)):
             for (fm, cmd) in self.entries:
+                output.dbg("Sending default entry "+\
+                               fm.get_flow_mod(cmd).show().replace('\n','; '),
+                           self.__class__.__name__)
                 self.conn.send(event.sock,fm.get_flow_mod(cmd).pack())
 
         return True
