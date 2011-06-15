@@ -201,6 +201,14 @@ class flow_entry(actions, packet):
         self.match.wildcards = self.match.wildcards & ~pyof.OFPFW_DL_SRC
         self.match.dl_src = src_mac
 
+    def set_dl_type(self, dl_type):
+        """Set Ethernet type in match
+
+        @param dl_type Ethernet type
+        """
+        self.match.wildcards = self.match.wildcards & ~pyof.OFPFW_DL_TYPE
+        self.match.dl_type = dl_type
+
     def set_dl_dst(self, dst_mac):
         """Set destination mac address in match
         
