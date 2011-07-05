@@ -77,6 +77,13 @@ class rawsocketmgr(comm.sockmanager):
         self.scheduler = scheduler
         ##Max length to receive
         self.maxlen = maxlen
+        ##Private handler
+        self.handler = None
+
+    def make_priv(self, handler):
+        """Make the handling of this socket private
+        """
+        self.handler = handler
 
     def receive(self, sock, recvthread):
         """Receive new connection
@@ -84,5 +91,8 @@ class rawsocketmgr(comm.sockmanager):
         output.vvdbg("Receiving packet on raw socket "+str(sock),
                     self.__class__.__name__)        
         data = sock.recv(self.maxlen)
-        self.scheduler.post_event(message(sock, data))
-
+        if (self.handler == None):
+            self.scheduler.post_event(message(sock, data))
+        else:
+            self.scheduler.post_event(priv_callback(self.handler,
+                                                    message(sock, data)))
