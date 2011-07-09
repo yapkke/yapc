@@ -40,19 +40,25 @@ class flowsplitter(pp.bitw):
 class bitw_flowsplitter(yapc.daemon):
     def __init__(self):
         yapc.daemon.__init__(self)
+        ##External interface
         self.extintf = "eth1"
+        ##Internal interface
+        self.__intf = None
 
-    def configure_veth(self, intfmgr):
+    def configure_if(self, intfmgr):
+        intfmgr.set_ipv4_addr(self.extintf, "0.0.0.0")
+        
         intfmgr.add_veth()
         intfmgr.set_eth_addr(intfmgr.veth[0].names[1],
                              intfmgr.ethernet_addr(self.extintf))
+        self.__intf = intfmgr.veth[0].names[1]
         intfmgr.up(intfmgr.veth[0].names[0])
 
     def run(self):
         server = core.core()
         intfmgr=neti.interfacemgr(server)
 
-        self.configure_veth(intfmgr)
+        self.configure_if(intfmgr)
         fs = flowsplitter(server, self.extintf,
                           intfmgr.veth[0].names[0])
 
