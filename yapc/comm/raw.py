@@ -39,6 +39,9 @@ class rawsocket(yapc.component, yapc.cleanup):
 
         Install client connection into receive thread
         """
+        #Name of interface
+        self.intf = intf
+
         #Create client connection
         self.sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW)
         self.sock.bind((intf,port))
@@ -94,5 +97,5 @@ class rawsocketmgr(comm.sockmanager):
         if (self.handler == None):
             self.scheduler.post_event(message(sock, data))
         else:
-            self.scheduler.post_event(priv_callback(self.handler,
-                                                    message(sock, data)))
+            self.scheduler.post_event(yapc.priv_callback(self.handler,
+                                                         message(sock, data)))
