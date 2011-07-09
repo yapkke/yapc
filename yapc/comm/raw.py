@@ -34,10 +34,12 @@ class rawsocket(yapc.component, yapc.cleanup):
     @author ykk
     @date July 2011
     """
-    def __init__(self, server, intf, port=0, rawmgr=None):
+    def __init__(self, server, intf, port=3, rawmgr=None):
         """Initialize
 
         Install client connection into receive thread
+
+        3 is ETH_P_ALL in Linux
         """
         #Name of interface
         self.intf = intf
