@@ -593,14 +593,16 @@ class interfacemgr(eth_ipv4_addr_mgr, route_mgr, wifi_mgr, arp_mgr,
     @author ykk
     @date Feb 2011
     """
-    def __init__(self, server):
+    def __init__(self, server, veth_cleanup=True):
         """Initialize
 
         @param server yapc core
+        @param veth_cleanup clean up veth
         """
         route_mgr.__init__(self)
         arp_mgr.__init__(self)
-        self.veth_init_clean()
+        if (veth_cleanup):
+            self.veth_init_clean()
         ##List of veth
         self.veth = []
 
