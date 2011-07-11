@@ -82,7 +82,7 @@ class bitw(base):
 
         Simply send on the other side
         """
-        pkt = process(rawmsg.message)
+        pkt = self.process(rawmsg.message)
         if (rawmsg.sock == self.intf1.sock):
             self.intf2.sock.send(pkt)
         if (rawmsg.sock == self.intf2.sock):
