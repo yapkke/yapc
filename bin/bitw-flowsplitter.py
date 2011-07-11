@@ -8,6 +8,7 @@ import yapc.util.parse as pu
 import sys
 import getopt
 import dpkt
+import socket
 
 class flowsplitter(pp.bitw):
     """A base class for Bump-in-the-wire
@@ -25,24 +26,26 @@ class flowsplitter(pp.bitw):
         """
         pp.bitw.__init__(self, server, intf, extintf)
         self.extintf = extintf
-        self.ip = ip
+        self.ip = []
+        for i in ip:
+            self.ip.append(pu.ip_string2binary(i))
         self.__index = 0
         output.info("Setting up flow splitter from "+extintf+" to "+intf+\
                         " for splitting flow among "+str(self.ip),
                     self.__class__.__name__)
 
 
-    def process(self, packet):
+    def process(self, packet, intf):
         """Process packet
         """
         pkt = dpkt.ethernet.Ethernet(packet)
         if ((pkt["type"] == dpkt.ethernet.ETH_TYPE_IP) and
-            (pkt["data"]["dst"] == pu.ip_string2binary(self.ip[0])) and
+            (pkt["data"]["dst"] == self.ip[0]) and
             (pkt["data"]["p"] == 6)):
 
-            pkt["data"]["dst"] = self.ip[self.__index]
-            pkt["data"]["sum"] = 0
-            pkt["data"]["data"]["sum"] = 0
+            setattr(pkt["data"], "dst", self.ip[self.__index])
+            setattr(pkt["data"], "sum", 0)
+            setattr(pkt["data"]["data"], "sum", 0)
 
             self.__index += 1
             if (self.__index >= len(self.ip)):

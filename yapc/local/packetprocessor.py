@@ -82,15 +82,16 @@ class bitw(base):
 
         Simply send on the other side
         """
-        pkt = self.process(rawmsg.message)
         if (rawmsg.sock == self.intf1.sock):
+            pkt = self.process(rawmsg.message, self.intf1.intf)
             self.intf2.sock.send(pkt)
         if (rawmsg.sock == self.intf2.sock):
+            pkt = self.process(rawmsg.message, self.intf2.intf)
             self.intf1.sock.send(pkt)
         
         return True
 
-    def process(self, packet):
+    def process(self, packet, intf):
         """Process packet
 
         Does nothing (to be overridden)
