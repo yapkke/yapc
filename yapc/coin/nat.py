@@ -17,6 +17,7 @@ import yapc.util.memcacheutil as mc
 import yapc.pyopenflow as pyof
 import yapc.packet.ofaction as ofpkt
 import dpkt
+import simplejson
 
 LOCAL_IP = "192.168.4.1"
 LOCAL_GW = "192.168.4.254"
@@ -513,6 +514,10 @@ class ip_handler(core.component):
             gw = mc.get(nat.get_gw_key(cport))
             gwmac = mc.get(nat.get_gw_mac_key(gw))
             ipr = intfs[cport]
+            if ((gw == None) or (gwmac == None)):
+                output.warn("Packet ignored since gateway for interface not found!",
+                            self.__class__.__name__)
+                return
 
             flow = flows.exact_entry(pktin.match)
             flow.add_nw_rewrite(True, ipr[0])
