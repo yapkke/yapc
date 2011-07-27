@@ -54,7 +54,7 @@ class nat(core.coin_server):
         core.coin_server.__init__(self, server, ofconn, jsonconn, False)
         ##Mode
         self.config["mode"] = "Multi-Homed (NATed)"
-        self.config["select_interface"] = "random"
+        self.config["select_interface"] = "first"
         ##Reference to local interface
         self.loif = None
         ##Mirror interfaces (indexed by primary interface)
@@ -482,16 +482,28 @@ class ip_handler(core.component):
         if (self.coin == None):
             output.warn("No COIN server reference provided.  Default to random choice of interface",
                         self.__class__.__name__)
-            return self.random_select_intf(intfs)
+            return self.first_select_intf(intfs)
 
-        if (self.coin.config["select_interface"] == "random"):
+        if (self.coin.config["select_interface"] == "first"):
+            return self.first_select_intf(intfs)
+        elif (self.coin.config["select_interface"] == "random"):
             return self.random_select_intf(intfs)
         elif (self.coin.config["select_interface"] == "round_robin"):
             return self.round_robin_select_intf(intfs)
         else:
             output.warn("Unknown selection configuration!",
                         self.__class__.__name__)
-            return self.random_select_intf(intfs)
+            return self.first_select_intf(intfs)
+
+    def first_select_intf(self, intfs):
+        """Get which interface to send (always return first)
+
+        @return port no to send flow on and None if nothing to choose from
+        """
+        c = intfs.keys()[0]
+        output.dbg("Port "+str(c)+" "+str(intfs[c])+" selected 'cos it is first interface",
+                   self.__class__.__name__)
+        return c
 
     def random_select_intf(self, intfs):
         """Get which interface to send (random choice)
