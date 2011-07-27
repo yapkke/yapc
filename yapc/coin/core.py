@@ -28,13 +28,15 @@ class component(yapc.component):
     @author ykk
     @date Jun 2011
     """
-    def __init__(self, ofconn):
+    def __init__(self, ofconn, coin=None):
         """Initialize
 
         @param conn reference to connections
         """
         ##Reference to connections
         self.conn = ofconn
+        ##Reference to COIN
+        self.coin = coin
 
     def get_conn(self):
         """Get connection

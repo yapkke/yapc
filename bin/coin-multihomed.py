@@ -57,7 +57,7 @@ class coin_server(yapc.daemon):
 
         #Flow management
         arph = coinnat.arp_handler(server, ofconn.connections)
-        iph = coinnat.ip_handler(server, ofconn.connections)
+        iph = coinnat.ip_handler(server, ofconn.connections, coinserver)
 
         #Add interfaces
         coinserver.setup(self.interfaces)

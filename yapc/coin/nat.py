@@ -54,6 +54,7 @@ class nat(core.coin_server):
         core.coin_server.__init__(self, server, ofconn, jsonconn, False)
         ##Mode
         self.config["mode"] = "Multi-Homed (NATed)"
+        self.config["select_interface"] = "random"
         ##Reference to local interface
         self.loif = None
         ##Mirror interfaces (indexed by primary interface)
@@ -433,18 +434,21 @@ class ip_handler(core.component):
     @author ykk
     @date Jun 2011
     """
-    def __init__(self, server, ofconn):
+    def __init__(self, server, ofconn, coin=None):
         """Initialize
 
         @param server yapc core
         @param conn reference to connections
         @param sfr send flow removed or not
         """
-        core.component.__init__(self, ofconn)
+        core.component.__init__(self, ofconn, coin)
 
         mc.get_client()
         server.register_event_handler(ofevents.pktin.name, self)
         
+        ##Reference to last interface chosen
+        self.__last_intf_choosen = 0
+
     def processevent(self, event):
         """Event handler
 
@@ -475,8 +479,42 @@ class ip_handler(core.component):
         if (len(intfs) == 0):
             return None
 
+        if (self.coin == None):
+            output.warn("No COIN server reference provided.  Default to random choice of interface",
+                        self.__class__.__name__)
+            return self.random_select_intf(intfs)
+
+        if (self.coin.config["select_interface"] == "random"):
+            return self.random_select_intf(intfs)
+        elif (self.coin.config["select_interface"] == "round_robin"):
+            return self.round_robin_select_intf(intfs)
+        else:
+            output.warn("Unknown selection configuration!",
+                        self.__class__.__name__)
+            return self.random_select_intf(intfs)
+
+    def random_select_intf(self, intfs):
+        """Get which interface to send (random choice)
+
+        @return port no to send flow on and None if nothing to choose from
+        """
         c = random.choice(intfs.keys())
-        output.dbg("Port "+str(c)+" "+str(intfs[c])+" selected",
+        output.dbg("Port "+str(c)+" "+str(intfs[c])+" randomly selected",
+                   self.__class__.__name__)
+        return c
+
+    def round_robin_select_intf(self, intfs):
+        """Get which interface to send (round robin)
+
+        @return port no to send flow on and None if nothing to choose from
+        """
+        choices = intfs.keys()
+
+        self.__last_intf_choosen += 1
+        if (self.__last_intf_choosen >= len(choices)):
+            self.__last_intf_choosen = 0
+        c = choices[self.__last_intf_choosen]
+        output.dbg("Port "+str(c)+" "+str(intfs[c])+" selected via round robin",
                    self.__class__.__name__)
         return c
 
