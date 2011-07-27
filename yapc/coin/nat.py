@@ -18,6 +18,7 @@ import yapc.pyopenflow as pyof
 import yapc.packet.ofaction as ofpkt
 import dpkt
 import simplejson
+import random
 
 LOCAL_IP = "192.168.4.1"
 LOCAL_GW = "192.168.4.254"
@@ -469,10 +470,15 @@ class ip_handler(core.component):
     def select_intf(self, intfs):
         """Get which interface to send
 
-        @return port no to send flow on
+        @return port no to send flow on and None if nothing to choose from
         """
-        for port, ipr in intfs.items():
-            return port
+        if (len(intfs) == 0):
+            return None
+
+        c = random.choice(intfs.keys())
+        output.dbg("Port "+str(c)+" "+str(intfs[c])+" selected",
+                   self.__class__.__name__)
+        return c
 
     def get_intf_n_range(self):
         """Retrieve dictionary of interface and their ip range
