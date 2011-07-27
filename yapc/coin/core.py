@@ -243,9 +243,17 @@ class coin_server(yapc.component):
         reply = {}
         reply["type"] = "coin"
         
-        if (event.message["command"] == "get_mode"):
-            reply["subtype"] = "mode"
-            reply["mode"] = str(self.get_config("mode"))
+        if (event.message["command"] == "get_all_config"):
+            reply["subtype"] = "config"
+            reply["value"] = self.config
+        elif (event.message["command"] == "get_config"):
+            reply["subtype"] = "config"
+            reply["value"] = self.get_config(event.message["name"])
+        elif (event.message["command"] == "set_config"):
+            reply["subtype"] = "config"
+            reply["previous value"] = self.get_config(event.message["name"])
+            self.set_config(event.message["name"], event.message["value"])
+            reply["current value"] = str(self.get_config(event.message["name"]))
         elif (event.message["command"] == "get_eth_interfaces"):
             reply["subtype"] = "interfaces"
             reply["interfaces"] = self.ifmgr.ethernet_ipv4_addresses()

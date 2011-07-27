@@ -21,12 +21,14 @@ def usage():
     print "-v/--verbose\n\tVerbose output"
     print "-s/--sock\n\tSocket to communicate to (default: "+coin.SOCK_NAME+")"
     print  "Commands:"
-    print "get_mode\n\tGet current mode of COIN"
     print "get_interfaces\n\tGet current interfaces in datapath/controlled by COIN"
     print "get_eth_interfaces\n\tGet current Ethernet interfaces of device"
     print "add_if [name]\n\tAdd interface to COIN"
     print "del_if [name]\n\tDelete interface from COIN"
     print "create_lo_intf [name]\n\tCreate a new local interface in COIN"
+    print "get_all_config\n\tRetrieve all configuration"
+    print "get_config [name]\n\tRetrieve configuration with name given"
+    print "set_config [name] [value]\n\tConfigure name with value given"
     print "dhclient [name]\n\tExecute dhclient on interface in COIN"
 
 #Parse options and arguments
@@ -56,13 +58,16 @@ for opt,arg in opts:
         sys.exit(2)
 
 zero_arg_cmds = ["get_interfaces",
-                 "get_eth_interfaces", "get_mode"]
+                 "get_eth_interfaces", "get_all_config"]
 one_arg_cmds = ["add_if","del_if",
-                "create_lo_intf", "dhclient"]
+                "create_lo_intf", "dhclient",
+                "get_config"]
+two_arg_cmds = ["set_config"]
 
 if (len(args) < 1 or
     ((args[0] not in zero_arg_cmds) and 
-     (args[0] not in one_arg_cmds))):
+     (args[0] not in one_arg_cmds) and
+     (args[0] not in two_arg_cmds))):
     print "Missing or unknown command!"
     usage()
     sys.exit(2)
@@ -91,8 +96,12 @@ elif (args[0] == "create_lo_intf" or args[0] == "dhclient"):
 else:
     msg["subtype"] = "global"
 
-if (args[0] in one_arg_cmds):
+if ((args[0] in one_arg_cmds) or 
+    (args[0] in two_arg_cmds)):
     msg["name"] = args[1]
+
+if (args[0] in two_arg_cmds):
+    msg["value"] = args[2]
 
 sock = jsoncomm.client(sock)
 output.dbg("Sending "+simplejson.dumps(msg),"coin-client")
