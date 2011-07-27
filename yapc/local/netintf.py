@@ -36,9 +36,12 @@ class eth_ipv4_addr_mgr:
     def ipv4_addr_n_mask(self, intf):
         """Return IP address and mask of interface
         
-        @return dictionary of IP address and mask
+        @return dictionary of IP address and mask (else None)
         """
-        return self.ethernet_ipv4_addresses(intf)[netifaces.AF_INET][0]
+        try:
+            return self.ethernet_ipv4_addresses(intf)[netifaces.AF_INET][0]
+        except KeyError:
+            return None
 
     def ethernet_ipv4_addresses(self, intf=None):
         """Return Ethernet + IPv4 addresses for specified interface or all interfaces
