@@ -54,7 +54,7 @@ class nat(core.coin_server):
         core.coin_server.__init__(self, server, ofconn, jsonconn, False)
         ##Mode
         self.config["mode"] = "Multi-Homed (NATed)"
-        self.config["select_interface"] = "first"
+        self.config["select_interface"] = 1
         ##Reference to local interface
         self.loif = None
         ##Mirror interfaces (indexed by primary interface)
@@ -482,26 +482,35 @@ class ip_handler(core.component):
         if (self.coin == None):
             output.warn("No COIN server reference provided.  Default to random choice of interface",
                         self.__class__.__name__)
-            return self.first_select_intf(intfs)
+            return self.select_nth_intf(intfs, 1)
 
-        if (self.coin.config["select_interface"] == "first"):
-            return self.first_select_intf(intfs)
-        elif (self.coin.config["select_interface"] == "random"):
+        if (self.coin.config["select_interface"] == "random"):
             return self.random_select_intf(intfs)
         elif (self.coin.config["select_interface"] == "round_robin"):
             return self.round_robin_select_intf(intfs)
+        elif (isinstance(self.coin.config["select_interface"], int)):
+            return self.select_nth_intf(intfs, self.coin.config["select_interface"])
         else:
-            output.warn("Unknown selection configuration!",
-                        self.__class__.__name__)
-            return self.first_select_intf(intfs)
+            value = 1
+            try:
+                value = int(self.coin.config["select_interface"])
+                self.coin.set_config("select_interface", value)
+            except ValueError:
+                output.warn("Unknown selection configuration!",
+                            self.__class__.__name__)
+            return self.select_nth_intf(intfs, value)
 
-    def first_select_intf(self, intfs):
-        """Get which interface to send (always return first)
+    def select_nth_intf(self, intfs, index=1):
+        """Get which interface to send (always return nth interface else last)
 
         @return port no to send flow on and None if nothing to choose from
         """
         c = intfs.keys()[0]
-        output.dbg("Port "+str(c)+" "+str(intfs[c])+" selected 'cos it is first interface",
+        i = index-1
+        if ((i > 0) and (i < len(intfs))):
+            c = intfs.keys()[i]
+        output.dbg("Port "+str(c)+" "+str(intfs[c])+" selected 'cos it is "+\
+                       str(index)+"st/nd/rd/th interface",
                    self.__class__.__name__)
         return c
 
