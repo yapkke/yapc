@@ -27,7 +27,7 @@ class interface_stat(yapc.component):
         self.lastresult = None
     
         output.vdbg(self.get_stat())
-        server.post_event(yapc.priv_callback(self), 5)    
+        server.post_event(yapc.priv_callback(self), self.interval) 
 
     def processevent(self, event):
         """Process event
@@ -37,7 +37,7 @@ class interface_stat(yapc.component):
         """
         if (isinstance(event, yapc.priv_callback)):
             output.vdbg(self.get_stat())
-            self._server.post_event(yapc.priv_callback(self), 5)
+            self._server.post_event(yapc.priv_callback(self), self.interval)
 
         return True
 
@@ -85,6 +85,15 @@ class interface_bandwidth(interface_stat):
     @author ykk
     @date Auguest 2011
     """
+    def __init__(self, server, interval=5, procfile="/proc/net/dev"):
+        """Initialize
+
+        @param server yapc core
+        @param interval interval to look
+        @param procfile file to look into
+        """
+        interface_stat.__init__(self, server, interval, procfile)
+
     def processevent(self, event):
         """Process event
 
@@ -94,21 +103,22 @@ class interface_bandwidth(interface_stat):
         if (isinstance(event, yapc.priv_callback)):
             lastr = self.lastresult
             r = self.get_stat()
-            
+            output.vdbg(r)
+
             for k,v in r.items():
                 for k2 in ["transmit", "receive"]:
                     try:
                         v[k2]["bps"] = (float(v[k2]["bytes"] - lastr[k][k2]["bytes"])/
                                         (v["timestamp"]-lastr[k]["timestamp"]))
-                        v[k2]["pps"] = (v[k2]["packets"] - lastr[k][k2]["packets"]/
+                        v[k2]["pps"] = (float(v[k2]["packets"] - lastr[k][k2]["packets"])/
                                         (v["timestamp"]-lastr[k]["timestamp"]))
                     except KeyError:
                         output.warn("Interface "+str(k)+" is new or removed",
                                     self.__class__.__name__)
 
-            output.vdbg(str(self), self.__class__.__name__)
+            output.dbg(str(self), self.__class__.__name__)
 
-            self._server.post_event(yapc.priv_callback(self), 5)
+            self._server.post_event(yapc.priv_callback(self), self.interval)
 
         return True
     
@@ -120,4 +130,6 @@ class interface_bandwidth(interface_stat):
         for k, v in self.lastresult.items():
             s += "Interface %s transmitted at %.2f bps and received at %.2f bps\n" % \
                 (k, v["transmit"]["bps"], v["receive"]["bps"])
+            s += "Interface %s transmitted at %.2f pps and received at %.2f pps\n" % \
+                (k, v["transmit"]["pps"], v["receive"]["pps"])
         return s
