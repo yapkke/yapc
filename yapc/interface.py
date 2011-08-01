@@ -24,7 +24,7 @@ class priv_callback(event):
     @date Oct 2010
     """
     name = "Private Callback"
-    def __init__(self, handler, magic):
+    def __init__(self, handler, magic=None):
         """Initialize
         
         @param handler object to handle event
