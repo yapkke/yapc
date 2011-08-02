@@ -26,8 +26,7 @@ class interface_stat(yapc.component):
         ##Last result
         self.lastresult = None
     
-        output.vdbg(self.get_stat())
-        server.post_event(yapc.priv_callback(self), self.interval) 
+        server.post_event(yapc.priv_callback(self), 0) 
 
     def processevent(self, event):
         """Process event
@@ -104,6 +103,10 @@ class interface_bandwidth(interface_stat):
             lastr = self.lastresult
             r = self.get_stat()
             output.vdbg(r)
+
+            if (lastr == None):
+                self._server.post_event(yapc.priv_callback(self), self.interval)
+                return True
 
             for k,v in r.items():
                 for k2 in ["transmit", "receive"]:
