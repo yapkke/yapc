@@ -108,7 +108,7 @@ class interface_bandwidth(interface_stat):
             for k,v in r.items():
                 for k2 in ["transmit", "receive"]:
                     try:
-                        v[k2]["bps"] = (float(v[k2]["bytes"] - lastr[k][k2]["bytes"])/
+                        v[k2]["bps"] = (float(v[k2]["bytes"] - lastr[k][k2]["bytes"])*8.0/
                                         (v["timestamp"]-lastr[k]["timestamp"]))
                         v[k2]["pps"] = (float(v[k2]["packets"] - lastr[k][k2]["packets"])/
                                         (v["timestamp"]-lastr[k]["timestamp"]))
@@ -117,7 +117,6 @@ class interface_bandwidth(interface_stat):
                                     self.__class__.__name__)
 
             output.dbg(str(self), self.__class__.__name__)
-
             self._server.post_event(yapc.priv_callback(self), self.interval)
 
         return True
