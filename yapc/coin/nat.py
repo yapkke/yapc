@@ -582,7 +582,7 @@ class ip_handler(core.component):
             if ((gw == None) or (gwmac == None)):
                 output.warn("Packet ignored since gateway for interface not found!",
                             self.__class__.__name__)
-                return
+                return False
 
             flow = flows.exact_entry(pktin.match)
             flow.add_nw_rewrite(True, ipr[0])
@@ -612,35 +612,60 @@ class ip_handler(core.component):
         @param lointf local interface address (ip, mac)
         @return false
         """
-        bcast = (pu.array2val(pktin.match.dl_dst)== 0xffffffffffff)
+        flow = flows.exact_entry(pktin.match)
         for portno,ipr in intfs.items():
-            if ((ipr[2] == pktin.match.dl_dst)):
-                flow = flows.exact_entry(pktin.match)
-                flow.add_nw_rewrite(False, lointf[0])
-                flow.add_dl_rewrite(False, lointf[1])
-                flow.add_output(iport)
-                if (pktin.pktin.buffer_id == flow.buffer_id):
-                    ofpkt.nw_rewrite(pktin.dpkt, False, lointf[0])
-                    ofpkt.dl_rewrite(pktin.dpkt, False, lointf[1])
-                    self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
-                    self.get_conn().send(flow.get_packet_out(pyof.OFPFC_ADD).pack()+\
-                                             pktin.dpkt.pack())
-                else:
-                    flow.set_buffer(pktin.pktin.buffer_id)
-                    self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+            if ((ipr[0] & ipr[1]) == (pktin.match.nw_src & ipr[1])):
+                if ((ipr[2] == pktin.match.dl_dst)):
+                    flow.add_nw_rewrite(False, lointf[0])
+                    flow.add_dl_rewrite(False, lointf[1])
+                    flow.add_output(iport)
+                    if (pktin.pktin.buffer_id == flow.buffer_id):
+                        ofpkt.nw_rewrite(pktin.dpkt, False, lointf[0])
+                        ofpkt.dl_rewrite(pktin.dpkt, False, lointf[1])
+                        self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+                        self.get_conn().send(flow.get_packet_out(pyof.OFPFC_ADD).pack()+\
+                                                 pktin.dpkt.pack())
+                    else:
+                        flow.set_buffer(pktin.pktin.buffer_id)
+                        self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
                 return False
 
         if (pu.array2val(pktin.match.dl_dst)== 0xffffffffffff):
             return True
 
         #Global address
-        flow = flows.exact_entry(pktin.match)
         flow.set_buffer(pktin.pktin.buffer_id)
         flow.add_nw_rewrite(False, lointf[0])
         flow.add_dl_rewrite(False, lointf[1])
         flow.add_output(iport)
-        self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
-        return False
+        if (pktin.pktin.buffer_id == flow.buffer_id):
+            ofpkt.nw_rewrite(pktin.dpkt, False, lointf[0])
+            ofpkt.dl_rewrite(pktin.dpkt, False, lointf[1])
+            self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+            self.get_conn().send(flow.get_packet_out(pyof.OFPFC_ADD).pack()+\
+                                     pktin.dpkt.pack())
+        else:
+            flow.set_buffer(pktin.pktin.buffer_id)
+            self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+        
+        gw = mc.get(nat.get_gw_key(flow.match.in_port))
+        gwmac = mc.get(nat.get_gw_mac_key(gw))
+        if (gwmac == None):
+            return False
+        try:
+            ipr = intfs[flow.match.in_port]
+        except KeyError:
+            return False
 
+        rflow = flow.reverse(iport)
+        rflow.match.nw_src = lointf[0]
+        rflow.match.dl_src = lointf[1]
+        rflow.match.wildcards -= pyof.OFPFW_DL_DST
+        rflow.add_nw_rewrite(True, ipr[0])
+        rflow.add_dl_rewrite(True, ipr[2])
+        rflow.add_dl_rewrite(False, pu.hex_str2array(gwmac))
+        rflow.add_output(flow.match.in_port)
+        self.get_conn().send(rflow.get_flow_mod(pyof.OFPFC_ADD).pack())
+        
         return False
 
