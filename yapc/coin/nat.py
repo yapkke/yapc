@@ -455,7 +455,8 @@ class ip_handler(core.component):
         @param event event to handle
         @return false if processed else true
         """
-        if isinstance(event, ofevents.pktin):
+        if (isinstance(event, ofevents.pktin) and
+            event.match.dl_type == dpkt.ethernet.ETH_TYPE_IP):
             iport = mc.get(nat.SW_INNER_PORT)
             intfs = self.get_intf_n_range()
             lointf = mc.get(nat.SW_INNER_PORT_ADDR)
@@ -509,8 +510,8 @@ class ip_handler(core.component):
         i = index-1
         if ((i > 0) and (i < len(intfs))):
             c = intfs.keys()[i]
-        output.dbg("Port "+str(c)+" "+str(intfs[c])+" selected 'cos it is "+\
-                       str(index)+"st/nd/rd/th interface",
+        output.vdbg("Port "+str(c)+" "+str(intfs[c])+" selected 'cos it is "+\
+                        str(index)+"st/nd/rd/th interface",
                    self.__class__.__name__)
         return c
 
@@ -520,8 +521,8 @@ class ip_handler(core.component):
         @return port no to send flow on and None if nothing to choose from
         """
         c = random.choice(intfs.keys())
-        output.dbg("Port "+str(c)+" "+str(intfs[c])+" randomly selected",
-                   self.__class__.__name__)
+        output.vdbg("Port "+str(c)+" "+str(intfs[c])+" randomly selected",
+                    self.__class__.__name__)
         return c
 
     def round_robin_select_intf(self, intfs):
@@ -535,8 +536,8 @@ class ip_handler(core.component):
         if (self.__last_intf_choosen >= len(choices)):
             self.__last_intf_choosen = 0
         c = choices[self.__last_intf_choosen]
-        output.dbg("Port "+str(c)+" "+str(intfs[c])+" selected via round robin",
-                   self.__class__.__name__)
+        output.vdbg("Port "+str(c)+" "+str(intfs[c])+" selected via round robin",
+                    self.__class__.__name__)
         return c
 
     def get_intf_n_range(self):
