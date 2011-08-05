@@ -66,6 +66,18 @@ class infolog(yapc.component):
 
         return True       
     
+class base(yapc.component):
+    """Basic class for component that export information
+   
+    @author ykk
+    @date August 2011
+    """
+    def eventname(self):
+        """Provide name for event used to publish data
+        
+        @return list of event name
+        """
+        return []
 
 class publish(yapc.event):
     """Basic event to publish data
@@ -74,12 +86,19 @@ class publish(yapc.event):
     changed.  However, event_specific name (eventname) should be
     changed.)
 
+    Must provide key,value representation for storage
+
     @author ykk
     @date August 2011
     """
     name = "Publish event"
     eventname = "Basic"
-
+    def get_dict(self):
+        """Provide dict (with key, value pair) to represent event
+       
+        @return array of dict to represent event
+        """
+        return []
 
 class subscribe(yapc.event):
     """Basic event to subscribe to data
@@ -89,7 +108,6 @@ class subscribe(yapc.event):
     """
     name = "Subscribe event"
 
-
 class query(yapc.event):
     """Basic event to query for data
 
@@ -98,7 +116,6 @@ class query(yapc.event):
     """
     name = "Query event"
     queryname = "Basic"
-
 
 class probe(yapc.event):
     """Basic event to probe for data

@@ -1,6 +1,7 @@
 ##Local network state
 import yapc.interface as yapc
 import yapc.log.output as output
+import yapc.coin.information as coininfo
 import os
 import time
 
@@ -135,3 +136,73 @@ class interface_bandwidth(interface_stat):
             s += "Interface %s transmitted at %.2f pps and received at %.2f pps\n" % \
                 (k, v["transmit"]["pps"], v["receive"]["pps"])
         return s
+
+class coin_bw_info(coininfo.publish):
+    """Event to publish bandwidth used
+
+    @author ykk
+    @date August 2011
+    """
+    eventname = "Interface Bandwidth Used Information"
+    def __init__(self):
+        """Initialize
+        """
+        self.values = []
+
+    def add(self, intf_name, tx_bps, tx_pps, rx_bps, rx_pps):
+        """Add interface reading
+
+        @param intf_name name of interface
+        @param tx_bps bits per sec transmitted
+        @param tx_pps packets per sec transmitted
+        @param rx_bps bits per sec received
+        @param rx_pps packets per sec received
+        """
+        i = {}
+        i["interface"] =  intf_name
+        i["tx_bps"] = tx_bps
+        i["tx_pps"] = tx_pps
+        i["rx_bps"] = rx_bps
+        i["rx_pps"] = rx_pps
+        self.values.append(i)
+        
+    def get_dict(self):
+        return self.values[:]
+
+class coin_intf_bandwidth(interface_bandwidth,coininfo.base):
+    """Class to extend interface bandwidth to COIN information base
+    
+    @author ykk
+    @date August 2011
+    """
+    def __init__(self, server, interval=5, procfile="/proc/net/dev"):
+        """Initialize
+
+        @param server yapc core
+        @param interval interval to look
+        @param procfile file to look into
+        """
+        interface_bandwidth.__init__(self, server, interval, procfile)
+        
+    def eventname(self):
+        """Provide name for event used to publish data
+        
+        @return list of event name
+        """
+        return [coin_bw_info.eventname]
+
+    def processevent(self, event):
+        if (isinstance(event, yapc.priv_callback)):
+            ##Refresh readings
+            interface_bandwidth.processevent(self, event)
+
+            cbi = coin_bw_info()
+            for k,v in self.lastresult.items():
+                try:
+                    cbi.add(k, v["transmit"]["bps"], v["transmit"]["pps"],
+                            v["receive"]["bps"],  v["receive"]["pps"])
+                except KeyError:
+                    pass
+            self._server.post_event(cbi)
+
+        return True
