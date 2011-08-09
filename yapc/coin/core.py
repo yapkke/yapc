@@ -71,7 +71,7 @@ class default_entries(default.default_entries):
                              max_len=65535)
         self.add_perm_output(flows.icmp_entry(priority=ofutil.PRIORITY['LOWER']),
                              max_len=65535)
-        self.add_perm_output(flows.arp_entry(priority=ofutil.PRIORITY['LOWER']),
+        self.add_perm_output(flows.arp_entry(priority=ofutil.PRIORITY['HIGH']),
                              max_len=65535)
 
 class coin_server(yapc.component):

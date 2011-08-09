@@ -305,12 +305,14 @@ class nat(core.coin_server):
             self.check_default_route()
              #Register ip range
             ipv4addr = self.ifmgr.ipv4_addr_n_mask(o["mif"])
+            if (ipv4addr ==  None):
+                return
             ipr = (pu.ip_string2val(ipv4addr["addr"]),
                    pu.ip_string2val(ipv4addr["netmask"]),
                    pu.hex_str2array(self.ifmgr.ethernet_addr(o["mif"])))
             mc.set(nat.get_ip_range_key(no), ipr)
             output.info(o["if"]+"("+str(no)+") has IP address %x and netmask %x" % (ipr[0], ipr[1]),
-                        self.__class__.__name__)
+                            self.__class__.__name__)
             #Call for ARP
             rc = yapc.priv_callback(self, 
                                     {"type":"arp","tried":0, "ip":gw, "if":o["mif"]})
@@ -364,9 +366,9 @@ class arp_handler(core.component):
                 return True
 
             if (event.match.in_port == iport):
-                return self._process_self_initiated(event, intfs, iport, lointf)
+                return self._process_outbound(event, intfs, iport, lointf)
             else:
-                return self._process_peer_initiated(event, intfs, iport, lointf)
+                return self._process_inbound(event, intfs, iport, lointf)
 
         return True     
 
@@ -381,8 +383,8 @@ class arp_handler(core.component):
                 r[p.port_no] = ipr
         return r
 
-    def _process_self_initiated(self, pktin, intfs, iport, lointf):
-        """Event handler for self_initiated packet
+    def _process_outbound(self, pktin, intfs, iport, lointf):
+        """Event handler for outbound ARP packets
 
         @param pktin packet in event to handle
         @param intfs dictionary of interfaces (with ip range)
@@ -392,19 +394,26 @@ class arp_handler(core.component):
         """
         for portno,ipr in intfs.items():
             if ((ipr[0] & ipr[1]) == (pktin.match.nw_dst & ipr[1])):
-                #Local address                
                 flow = flows.exact_entry(pktin.match)
-                flow.set_buffer(pktin.pktin.buffer_id)
-                flow.add_dl_rewrite(True, ipr[2])
-                flow.add_output(portno)               
-                ofpkt.dl_rewrite(pktin.dpkt, True, ipr[2])
-                ofpkt.nw_rewrite(pktin.dpkt, True, ipr[0])
-                self.get_conn().send(flow.get_packet_out().pack()+\
-                                         pktin.dpkt.pack())
+                if (flow.buffer_id != pktin.pktin.buffer_id):
+                    output.warn("Buffered outbound ARP packet (cannot be rewritten properly)!",
+                                self.__class__.__name__)
+                else:
+                    flow.add_output(portno)
+                    ofpkt.dl_rewrite(pktin.dpkt, True, ipr[2])
+                    ofpkt.nw_rewrite(pktin.dpkt, True, ipr[0])
+                    self.get_conn().send(flow.get_packet_out().pack()+\
+                                             pktin.dpkt.pack())
+                    output.dbg("ARP to "+pu.ip_val2string(pktin.match.nw_dst)+\
+                                   " sent to port "+str(portno),
+                               self.__class__.__name__)
+                return False
+        output.warn("ARP for "+pu.ip_val2string(pktin.match.nw_dst)+" unknown subnet",
+                    self.__class__.__name__)
         return False
 
-    def _process_peer_initiated(self, pktin, intfs, iport, lointf):
-        """Event handler for peer_initiated packet
+    def _process_inbound(self, pktin, intfs, iport, lointf):
+        """Event handler for inbound ARP packets
 
         @param pktin packet in event to handle
         @param intfs dictionary of interfaces (with ip range)
@@ -412,20 +421,26 @@ class arp_handler(core.component):
         @param lointf local interface address (ip, mac)
         @return false
         """
-        bcast = (pu.array2val(pktin.match.dl_dst)== 0xffffffffffff)
-        for portno,ipr in intfs.items():
-            if ((ipr[2] == pktin.match.dl_dst) or bcast):
-                flow = flows.exact_entry(pktin.match)
-                flow.set_buffer(pktin.pktin.buffer_id)
-                if (not bcast):
-                    flow.add_dl_rewrite(False, lointf[1])
-                flow.add_output(iport)
-
-                if (pktin.match.nw_proto == dpkt.arp.ARP_OP_REPLY):
-                    ofpkt.dl_rewrite(pktin.dpkt, False, lointf[1])
-                ofpkt.nw_rewrite(pktin.dpkt, False, lointf[0])
-                self.get_conn().send(flow.get_packet_out().pack()+\
-                                         pktin.dpkt.pack())
+        try:
+            ipr = intfs[pktin.match.in_port]
+        except KeyError:
+            output.vdbg("ARP packet received on unknown/uninitialized interface",
+                        self.__class__.__name__)
+            return False
+            
+        flow = flows.exact_entry(pktin.match)
+        if (flow.buffer_id != pktin.pktin.buffer_id):
+            output.warn("Buffered inbound ARP packet (cannot be rewritten properly)!",
+                        self.__class__.__name__)
+        elif(flow.match.nw_dst != ipr[0]):
+            output.vdbg("Inbound ARP packet not destined for this host, ignored.",
+                        self.__class__.__name__)            
+        else:
+            flow.add_output(iport)
+            ofpkt.dl_rewrite(pktin.dpkt, False, lointf[1])
+            ofpkt.nw_rewrite(pktin.dpkt, False, lointf[0])
+            self.get_conn().send(flow.get_packet_out().pack()+\
+                                     pktin.dpkt.pack())
         return False
 
 class ip_handler(core.component):
