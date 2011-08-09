@@ -437,7 +437,8 @@ class arp_handler(core.component):
                         self.__class__.__name__)            
         else:
             flow.add_output(iport)
-            ofpkt.dl_rewrite(pktin.dpkt, False, lointf[1])
+            if (pu.array2val(pktin.match.dl_dst) != 0xffffffffffff):
+                ofpkt.dl_rewrite(pktin.dpkt, False, lointf[1])
             ofpkt.nw_rewrite(pktin.dpkt, False, lointf[0])
             self.get_conn().send(flow.get_packet_out().pack()+\
                                      pktin.dpkt.pack())
