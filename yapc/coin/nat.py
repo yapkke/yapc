@@ -404,8 +404,8 @@ class arp_handler(core.component):
                     ofpkt.nw_rewrite(pktin.dpkt, True, ipr[0])
                     self.get_conn().send(flow.get_packet_out().pack()+\
                                              pktin.dpkt.pack())
-                    output.dbg("ARP to "+pu.ip_val2string(pktin.match.nw_dst)+\
-                                   " sent to port "+str(portno),
+                    output.vdbg("ARP to "+pu.ip_val2string(pktin.match.nw_dst)+\
+                                    " sent to port "+str(portno),
                                self.__class__.__name__)
                 return False
         output.warn("ARP for "+pu.ip_val2string(pktin.match.nw_dst)+" unknown subnet",
