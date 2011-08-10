@@ -482,9 +482,9 @@ class ip_handler(core.component):
                 return True
 
             if (event.match.in_port == iport):
-                return self._process_self_initiated(event, intfs, iport, lointf)
+                return self._process_outbound(event, intfs, iport, lointf)
             else:
-                return self._process_peer_initiated(event, intfs, iport, lointf)
+                return self._process_inbound(event, intfs, iport, lointf)
 
         return True     
 
@@ -567,8 +567,8 @@ class ip_handler(core.component):
                 r[p.port_no] = ipr
         return r
 
-    def _process_self_initiated(self, pktin, intfs, iport, lointf):
-        """Event handler for self_initiated packet
+    def _process_outbound(self, pktin, intfs, iport, lointf):
+        """Event handler for outbound IP packet
 
         @param pktin packet in event to handle
         @param intfs dictionary of interfaces (with ip range)
@@ -576,19 +576,25 @@ class ip_handler(core.component):
         @param lointf local interface address (ip, mac)
         @return false if processed else true
         """
+        flow = flows.exact_entry(pktin.match)
+
         for portno,ipr in intfs.items():
             if ((ipr[0] & ipr[1]) == (pktin.match.nw_dst & ipr[1])):
-                #Local address                
-                flow = flows.exact_entry(pktin.match)
+                #Local address
                 flow.set_buffer(pktin.pktin.buffer_id)
                 flow.add_nw_rewrite(True, ipr[0])
                 flow.add_dl_rewrite(True, ipr[2])
                 flow.add_output(portno)
-                self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+                if (flow.buffer_id != pktin.pktin.buffer_id):
+                    flow.set_buffer(pktin.pktin.buffer_id)
+                    self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+                else:
+                    self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+                    ofpkt.nw_rewrite(pktin.dpkt, True, ipr[0])
+                    ofpkt.dl_rewrite(pktin.dpkt, True, ipr[2])
+                    self.get_conn().send(flow.get_packet_out(pyof.OFPFC_ADD).pack()+\
+                                             pktin.dpkt.pack())
                 return False
-
-        if (pu.array2val(pktin.match.dl_dst)== 0xffffffffffff):
-            return True
 
         #Global address
         cport = self.select_intf(intfs)
@@ -601,27 +607,26 @@ class ip_handler(core.component):
                             self.__class__.__name__)
                 return False
 
-            flow = flows.exact_entry(pktin.match)
             flow.add_nw_rewrite(True, ipr[0])
             flow.add_dl_rewrite(True, ipr[2])
             flow.add_dl_rewrite(False, pu.hex_str2array(gwmac))
             flow.add_output(cport)
-            if (pktin.pktin.buffer_id == flow.buffer_id):
+            if (pktin.pktin.buffer_id != flow.buffer_id):
+                flow.set_buffer(pktin.pktin.buffer_id)
+                self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+            else:
+                self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
                 ofpkt.nw_rewrite(pktin.dpkt, True, ipr[0])
                 ofpkt.dl_rewrite(pktin.dpkt, True, ipr[2])
                 ofpkt.dl_rewrite(pktin.dpkt, False, pu.hex_str2array(gwmac))
-                self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
                 self.get_conn().send(flow.get_packet_out(pyof.OFPFC_ADD).pack()+\
                                          pktin.dpkt.pack())
-            else:
-                flow.set_buffer(pktin.pktin.buffer_id)
-                self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
             return False
 
         return True
 
-    def _process_peer_initiated(self, pktin, intfs, iport, lointf):
-        """Event handler for peer_initiated packet
+    def _process_inbound(self, pktin, intfs, iport, lointf):
+        """Event handler for inbound packet
 
         @param pktin packet in event to handle
         @param intfs dictionary of interfaces (with ip range)
@@ -629,60 +634,46 @@ class ip_handler(core.component):
         @param lointf local interface address (ip, mac)
         @return false
         """
+        try:
+            ipr = intfs[pktin.match.in_port]
+        except KeyError:
+            output.vdbg("IP packet received on unknown/uninitialized interface",
+                        self.__class__.__name__)
+            return False
+
+        if ((ipr[2] != pktin.match.dl_dst)):
+            return False
+
         flow = flows.exact_entry(pktin.match)
-        for portno,ipr in intfs.items():
-            if ((ipr[0] & ipr[1]) == (pktin.match.nw_src & ipr[1])):
-                if ((ipr[2] == pktin.match.dl_dst)):
-                    flow.add_nw_rewrite(False, lointf[0])
-                    flow.add_dl_rewrite(False, lointf[1])
-                    flow.add_output(iport)
-                    if (pktin.pktin.buffer_id == flow.buffer_id):
-                        ofpkt.nw_rewrite(pktin.dpkt, False, lointf[0])
-                        ofpkt.dl_rewrite(pktin.dpkt, False, lointf[1])
-                        self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
-                        self.get_conn().send(flow.get_packet_out(pyof.OFPFC_ADD).pack()+\
-                                                 pktin.dpkt.pack())
-                    else:
-                        flow.set_buffer(pktin.pktin.buffer_id)
-                        self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
-                return False
-
-        if (pu.array2val(pktin.match.dl_dst)== 0xffffffffffff):
-            return True
-
-        #Global address
-        flow.set_buffer(pktin.pktin.buffer_id)
         flow.add_nw_rewrite(False, lointf[0])
         flow.add_dl_rewrite(False, lointf[1])
         flow.add_output(iport)
-        if (pktin.pktin.buffer_id == flow.buffer_id):
-            ofpkt.nw_rewrite(pktin.dpkt, False, lointf[0])
-            ofpkt.dl_rewrite(pktin.dpkt, False, lointf[1])
-            self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
-            self.get_conn().send(flow.get_packet_out(pyof.OFPFC_ADD).pack()+\
-                                     pktin.dpkt.pack())
-        else:
+        if (pktin.pktin.buffer_id != flow.buffer_id):
             flow.set_buffer(pktin.pktin.buffer_id)
             self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
-        
+        else:
+            self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+            ofpkt.nw_rewrite(pktin.dpkt, False, lointf[0])
+            ofpkt.dl_rewrite(pktin.dpkt, False, lointf[1])
+            self.get_conn().send(flow.get_packet_out(pyof.OFPFC_ADD).pack()+\
+                                     pktin.dpkt.pack())
+
         gw = mc.get(nat.get_gw_key(flow.match.in_port))
         gwmac = mc.get(nat.get_gw_mac_key(gw))
         if (gwmac == None):
             return False
-        try:
-            ipr = intfs[flow.match.in_port]
-        except KeyError:
-            return False
 
-        rflow = flow.reverse(iport)
-        rflow.match.nw_src = lointf[0]
-        rflow.match.dl_src = lointf[1]
-        rflow.match.wildcards -= pyof.OFPFW_DL_DST
-        rflow.add_nw_rewrite(True, ipr[0])
-        rflow.add_dl_rewrite(True, ipr[2])
-        rflow.add_dl_rewrite(False, pu.hex_str2array(gwmac))
-        rflow.add_output(flow.match.in_port)
-        self.get_conn().send(rflow.get_flow_mod(pyof.OFPFC_ADD).pack())
-        
+        if ((ipr[0] & ipr[1]) != (pktin.match.nw_src & ipr[1])):
+            #Global address
+            rflow = flow.reverse(iport)
+            rflow.match.nw_src = lointf[0]
+            rflow.match.dl_src = lointf[1]
+            rflow.match.wildcards -= pyof.OFPFW_DL_DST
+            rflow.add_nw_rewrite(True, ipr[0])
+            rflow.add_dl_rewrite(True, ipr[2])
+            rflow.add_dl_rewrite(False, pu.hex_str2array(gwmac))
+            rflow.add_output(flow.match.in_port)
+            self.get_conn().send(rflow.get_flow_mod(pyof.OFPFC_ADD).pack())
+
         return False
 
