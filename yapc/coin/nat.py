@@ -464,6 +464,7 @@ class ip_handler(core.component):
         
         ##Reference to last interface chosen
         self.__last_intf_choosen = 0
+        self.cookie = 0
 
     def processevent(self, event):
         """Event handler
@@ -607,20 +608,34 @@ class ip_handler(core.component):
                             self.__class__.__name__)
                 return False
 
+            #Outbound
             flow.add_nw_rewrite(True, ipr[0])
             flow.add_dl_rewrite(True, ipr[2])
             flow.add_dl_rewrite(False, pu.hex_str2array(gwmac))
             flow.add_output(cport)
             if (pktin.pktin.buffer_id != flow.buffer_id):
                 flow.set_buffer(pktin.pktin.buffer_id)
-                self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+                self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD, cookie=self.cookie).pack())
+                self.cookie += 1
             else:
-                self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+                self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD, cookie=self.cookie).pack())
+                self.cookie += 1
                 ofpkt.nw_rewrite(pktin.dpkt, True, ipr[0])
                 ofpkt.dl_rewrite(pktin.dpkt, True, ipr[2])
                 ofpkt.dl_rewrite(pktin.dpkt, False, pu.hex_str2array(gwmac))
                 self.get_conn().send(flow.get_packet_out(pyof.OFPFC_ADD).pack()+\
                                          pktin.dpkt.pack())
+
+            #Inbound
+            rflow = flow.reverse(cport)
+            rflow.match.nw_dst = ipr[0]
+            rflow.match.dl_dst = ipr[2]
+            rflow.add_nw_rewrite(False, lointf[0])
+            rflow.add_dl_rewrite(False, lointf[1])
+            rflow.add_output(iport)
+            self.get_conn().send(rflow.get_flow_mod(pyof.OFPFC_ADD, cookie=self.cookie).pack())
+            self.cookie += 1
+
             return False
 
         return True
@@ -650,9 +665,11 @@ class ip_handler(core.component):
         flow.add_output(iport)
         if (pktin.pktin.buffer_id != flow.buffer_id):
             flow.set_buffer(pktin.pktin.buffer_id)
-            self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+            self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD, cookie=self.cookie).pack())
+            self.cookie += 1
         else:
-            self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+            self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD, cookie=self.cookie).pack())
+            self.cookie += 1
             ofpkt.nw_rewrite(pktin.dpkt, False, lointf[0])
             ofpkt.dl_rewrite(pktin.dpkt, False, lointf[1])
             self.get_conn().send(flow.get_packet_out(pyof.OFPFC_ADD).pack()+\
@@ -668,12 +685,15 @@ class ip_handler(core.component):
             rflow = flow.reverse(iport)
             rflow.match.nw_src = lointf[0]
             rflow.match.dl_src = lointf[1]
-            rflow.match.wildcards -= pyof.OFPFW_DL_DST
             rflow.add_nw_rewrite(True, ipr[0])
             rflow.add_dl_rewrite(True, ipr[2])
             rflow.add_dl_rewrite(False, pu.hex_str2array(gwmac))
             rflow.add_output(flow.match.in_port)
-            self.get_conn().send(rflow.get_flow_mod(pyof.OFPFC_ADD).pack())
+            if ((rflow.match.wildcards & pyof.OFPFW_DL_TYPE) != 0):
+                output.dbg(rflow.match.show(),
+                           self.__class__.__name__)
+            self.get_conn().send(rflow.get_flow_mod(pyof.OFPFC_ADD, cookie=self.cookie).pack())
+            self.cookie += 1
 
         return False
 
