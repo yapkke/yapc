@@ -32,14 +32,16 @@ class Database:
         """
         if (self.connection == None):
             self.connection = sqlite3.connect(self.filename)
-            output.dbg("Opening database "+self.filename)
+            output.vdbg("Opening database "+self.filename,
+                        self.__class__.__name__)
             self.connection.row_factory = sqlite3.Row
         
     def close(self):
         """Close database
         """
         if (self.connection != None):
-            output.dbg("Closing database")
+            output.vdbg("Closing database",
+                        self.__class__.__name__)
             self.connection.commit()
             self.connection.close()
             self.connection = None
@@ -160,6 +162,8 @@ class Table:
         @param db reference to database
         """
         self.db = db
+        output.vdbg("Create table "+self.name+" in "+str(db),
+                    self.__class__.__name__)
         db.execute(self.create_stmt())
 
     def add_row(self, row):
