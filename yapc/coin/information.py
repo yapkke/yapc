@@ -94,12 +94,13 @@ class infolog(yapc.component):
                 for k in logger.get_col_names():
                     d.append(i[k])
                 logger.table.add_row(tuple(d))
-                output.dbg("Recorded measurement of "+str(i),
+                output.vdbg("Recorded measurement of "+str(i),
                             self.__class__.__name__)
                 
         elif isinstance(event, query):
             #Query event
-            pass
+            output.dbg("Query "+str(event.get_query()),
+                       self.__class__.__name__)
 
         return True       
 
@@ -172,6 +173,14 @@ class query(yapc.event):
     """
     name = "Query event"
     queryname = "Basic"
+    def __init__(self, condition=None):
+        """Initialize
+
+        @param condition statement
+        """
+        ##Condition
+        self.condition = condition
+
     def get_query(self):
         """Get SQL query to issue
 
