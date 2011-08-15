@@ -1,6 +1,7 @@
 ##Information plane for COIN
-
 import yapc.interface as yapc
+import yapc.log.output as output
+import yapc.log.sqlite as sqlite
 
 class core(yapc.component):
     """COIN's information plane.
@@ -37,19 +38,41 @@ class core(yapc.component):
     def __init__(self, server):
         """Initialize
         """
+        ##Reference to yapc's core
+        self.server = server
+        ##Reference to infolog
         self.infolog = infolog(server)
-        
 
+    def start(self):
+        """Start database
+        """
+        self.infolog.db.start()
+        
 class infolog(yapc.component):
     """Information logging facility that accepts queries.
 
     @author ykk
     @date August 2011
     """
-    def __init__(self, server):
+    def __init__(self, server, filename="coin.sqlite"):
         """Initialize
         """
+        ##Reference to core
+        self.server = server
+        ##Referece to logger
+        self.loggers = {}
+        ##Database
+        self.db = sqlite.SqliteDB(server, filename)
+
         self.server.register_event_handler(publish.name, self)
+
+    def register_logger(self, name, logger):
+        """Register logger for publish event in COIN
+
+        @param name name of event
+        @param logger logger to log event
+        """
+        self.loggers[name] = logger
 
     def processevent(self, event):
         """Process publish and query events
@@ -59,25 +82,57 @@ class infolog(yapc.component):
         """
         if isinstance(event, publish):
             #Publish event
-            pass
+            try:
+                logger = self.loggers[event.eventname]
+            except KeyError:
+                output.warn("No logger registered for "+event.eventname+"!",
+                            self.__class__.__name__)
+                return True
+
+            for i in event.get_dict():
+                d = []
+                for k in logger.get_col_names():
+                    d.append(i[k])
+                logger.table.add_row(tuple(d))
+                output.dbg("Recorded measurement of "+str(i),
+                            self.__class__.__name__)
+                
         elif isinstance(event, query):
             #Query event
             pass
 
         return True       
-    
-class base(yapc.component):
+
+class base(yapc.component,sqlite.SqliteLogger):
     """Basic class for component that export information
-   
+
     @author ykk
     @date August 2011
     """
+    def __init__(self, coin, loggername):
+        """Initialize
+        
+        @param coin COIN's core
+        @param name loggername of logger
+        """
+        sqlite.SqliteLogger.__init__(self, coin.infolog.db, loggername)
+        coin.infolog.register_logger(self.eventname(), self)
+        
+    def get_col_names(self):
+        """Get names of columns
+        """
+        output.warn("get_col_names should overloaded",
+                    self.__class__.__name__)
+        return []
+
     def eventname(self):
         """Provide name for event used to publish data
         
-        @return list of event name
+        @return event name
         """
-        return []
+        output.warn("eventname should overloaded",
+                    self.__class__.__name__)
+        return None
 
 class publish(yapc.event):
     """Basic event to publish data
@@ -93,6 +148,7 @@ class publish(yapc.event):
     """
     name = "Publish event"
     eventname = "Basic"
+    keys = []
     def get_dict(self):
         """Provide dict (with key, value pair) to represent event
        
@@ -116,6 +172,12 @@ class query(yapc.event):
     """
     name = "Query event"
     queryname = "Basic"
+    def get_query(self):
+        """Get SQL query to issue
+
+        @return string with SQL query
+        """
+        return ""
 
 class probe(yapc.event):
     """Basic event to probe for data
