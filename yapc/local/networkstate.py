@@ -120,7 +120,6 @@ class interface_bandwidth(interface_stat):
                         output.warn("Interface "+str(k)+" is new or removed",
                                     self.__class__.__name__)
 
-            output.dbg(str(self), self.__class__.__name__)
             self._server.post_event(yapc.priv_callback(self), self.interval)
 
         return True
@@ -144,12 +143,16 @@ class coin_bw_info(coininfo.publish):
     @date August 2011
     """
     eventname = "Interface Bandwidth Used Information"
+    keys = ["interface",
+            "tx_bps", "tx_pps",
+            "rx_bps", "rx_pps", 
+            "timestamp"]
     def __init__(self):
         """Initialize
         """
         self.values = []
 
-    def add(self, intf_name, tx_bps, tx_pps, rx_bps, rx_pps):
+    def add(self, intf_name, tx_bps, tx_pps, rx_bps, rx_pps, timestamp=None):
         """Add interface reading
 
         @param intf_name name of interface
@@ -157,8 +160,13 @@ class coin_bw_info(coininfo.publish):
         @param tx_pps packets per sec transmitted
         @param rx_bps bits per sec received
         @param rx_pps packets per sec received
+        @param timestamp timestamp of reading
         """
         i = {}
+        if (timestamp==None):
+            i["timestamp"] = time.time()
+        else:
+            i["timestamp"] = timestamp
         i["interface"] =  intf_name
         i["tx_bps"] = tx_bps
         i["tx_pps"] = tx_pps
@@ -169,27 +177,71 @@ class coin_bw_info(coininfo.publish):
     def get_dict(self):
         return self.values[:]
 
+class bandwidth_query(coininfo.query):
+    """Class to query bandwidth
+
+    @author ykk
+    @date Aug 2011
+    """
+    queryname = "Query Interface Bandwidth Used"
+    MODE_TOTAL = 0
+    def __init__(self, mode, interfaces=None):
+        """Initialize
+
+        @param interfaces list of interfaces to return result
+        """
+        ##List of interfaces to query
+        self.interfaces = interfaces
+        if (self.interfaces == None):
+            self.interfaces = []
+        ##Mode of query
+        self.mode = mode
+        ##Condition
+        self.condition = None
+
+    def get_query(self, tablename):
+        """Return SQL query
+
+        @return string with SQL query
+        """
+        s = "SELECT"
+        if (self.mode == bandwidth_query.MODE_TOTAL_MAX):
+            ##Query for maximum of total
+            s += " interface,MAX(tx_bps+rx_bps)"
+        s += " FROM "+tablename
+        if (self.condition != None):
+            s += " WHERE "+self.condition
+        return s
+    
 class coin_intf_bandwidth(interface_bandwidth,coininfo.base):
     """Class to extend interface bandwidth to COIN information base
     
     @author ykk
     @date August 2011
     """
-    def __init__(self, server, interval=5, procfile="/proc/net/dev"):
+    def __init__(self, coin, interval=5, procfile="/proc/net/dev", 
+                 loggername="bandwidth_monitoring"):
         """Initialize
 
         @param server yapc core
         @param interval interval to look
         @param procfile file to look into
+        @param name name of logger
         """
-        interface_bandwidth.__init__(self, server, interval, procfile)
-        
+        interface_bandwidth.__init__(self, coin.server, interval, procfile)
+        coininfo.base.__init__(self, coin, loggername)
+
+    def get_col_names(self):
+        """Get names of columns
+        """
+        return coin_bw_info.keys
+
     def eventname(self):
         """Provide name for event used to publish data
         
         @return list of event name
         """
-        return [coin_bw_info.eventname]
+        return coin_bw_info.eventname
 
     def processevent(self, event):
         if (isinstance(event, yapc.priv_callback)):
