@@ -3,6 +3,7 @@ import yapc.interface as yapc
 import yapc.log.output as output
 import yapc.comm.json as jsoncomm
 import yapc.log.sqlite as sqlite
+import sqlite3
 
 class core(yapc.component):
     """COIN's information plane.
@@ -153,16 +154,17 @@ class infolog(yapc.component):
             try:
                 logger = self.loggers[event.table]
             except KeyError:
-                output.warn("No logger registered for "+event.table+"!  Hence, no querying.",
+                output.warn("No logger registered for "+str(event.table)+"!  Hence, no querying.",
                             self.__class__.__name__)
                 return True
             
             self.db.flush()
 
+            q = event.get_query()
             try:
-                r = logger.table.select(event.selection, event.condition)
+                r = logger.table.select(q[0], q[1], q[2])
             except sqlite3.OperationalError:
-                output.warn(logger.table.select_stmt(event.selection, event.condition)+" failed",
+                output.warn(logger.table.select_stmt(q[0], q[1], q[2])+" failed",
                             self.__class__.__name__)
                 
             #Extract result

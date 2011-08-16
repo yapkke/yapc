@@ -184,13 +184,13 @@ class bandwidth_query(coininfo.query):
     @date Aug 2011
     """
     queryname = "Query Interface Bandwidth Used"
-    MODE_TOTAL = 0
+    MODE_TOTAL_MAX = 0
     def __init__(self, mode, interfaces=None):
         """Initialize
 
         @param interfaces list of interfaces to return result
         """
-        coininfo.query.__init__(self)
+        coininfo.query.__init__(self, coin_bw_info.eventname)
         ##List of interfaces to query
         self.interfaces = interfaces
         if (self.interfaces == None):
@@ -205,18 +205,20 @@ class bandwidth_query(coininfo.query):
         for i in self.interfaces:
             ilist += "interface="+str(i)
             ilist += " or"
-        return self.condition+" and ("+ilist[:-3]+")"
+        return ilist[:-3]
 
     def get_query(self):
         """Return SQL query
 
         @return (selection, where)
         """
-        s = ""
+        s = "*"
         if (self.mode == bandwidth_query.MODE_TOTAL_MAX):
             ##Query for maximum of total
-            s.append("interface,MAX(tx_bps+rx_bps)")
-        return (s, self.get_condition())
+            s = "interface,MAX(tx_bps+rx_bps)"
+        output.dbg(str((s, self.get_condition(), None)),
+                   self.__class__.__name__)
+        return (s, self.get_condition(), None)
     
 class coin_intf_bandwidth(interface_bandwidth,coininfo.base):
     """Class to extend interface bandwidth to COIN information base

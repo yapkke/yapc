@@ -11,6 +11,7 @@ import yapc.forwarding.flows as flows
 import yapc.util.openflow as ofutil
 import yapc.util.parse as pu
 import yapc.log.output as output
+import yapc.local.networkstate as ns
 import yapc.events.openflow as ofevents
 import yapc.comm.json as jsoncomm
 import yapc.util.memcacheutil as mc
@@ -450,18 +451,29 @@ class ip_handler(core.component):
     @author ykk
     @date Jun 2011
     """
-    def __init__(self, server, ofconn, coin=None):
+    def __init__(self, server, ofconn, coin=None, bwinterval=10):
         """Initialize
 
         @param server yapc core
         @param conn reference to connections
         @param sfr send flow removed or not
+        @param coin reference to COIN
+        @oaram bwinterval interval to query for bandwidth
         """
         core.component.__init__(self, ofconn, coin)
+        
+        self.server = server
 
         mc.get_client()
         server.register_event_handler(ofevents.pktin.name, self)
         
+        ##Interval to maintain bandwidth
+        self.bwinterval = bwinterval
+        self.bandwidth = {}
+        
+        if (self.bwinterval != 0):
+            self.server.post_event(yapc.priv_callback(self), 0)
+
         ##Reference to last interface chosen
         self.__last_intf_choosen = 0
         self.cookie = 0
@@ -472,7 +484,26 @@ class ip_handler(core.component):
         @param event event to handle
         @return false if processed else true
         """
-        if (isinstance(event, ofevents.pktin) and
+        if (isinstance(event, yapc.priv_callback)):
+            sf = mc.get(nat.SW_FEATURE)
+            if (sf != None):
+                bwquery = ns.bandwidth_query(ns.bandwidth_query.MODE_TOTAL_MAX)
+                for p in sf.ports:
+                    if (mc.get(nat.get_ip_range_key(p.port_no)) != None):
+                        #Port exist
+                        bwquery.interfaces.append(p.name)
+                if (len(bwquery.interfaces) != 0):
+                    self.server.post_event(bwquery)
+                    output.dbg("Query for bandwidth for "+str(bwquery.interfaces),
+                               self.__class__.__name__)
+                        
+
+            #Query for bandwidth of intervals
+            if (self.bwinterval != 0):
+                self.server.post_event(yapc.priv_callback(self), self.bwinterval)
+
+        elif (isinstance(event, ofevents.pktin) and
+            #Handle packet in
             event.match.dl_type == dpkt.ethernet.ETH_TYPE_IP):
             iport = mc.get(nat.SW_INNER_PORT)
             intfs = self.get_intf_n_range()
@@ -506,6 +537,8 @@ class ip_handler(core.component):
             return self.random_select_intf(intfs)
         elif (self.coin.config["select_interface"] == "round_robin"):
             return self.round_robin_select_intf(intfs)
+        elif (self.coin.config["select_interface"] == "bandwidth"):
+            return self.bandwidth_select_intf(intfs)
         elif (isinstance(self.coin.config["select_interface"], int)):
             return self.select_nth_intf(intfs, self.coin.config["select_interface"])
         else:
@@ -539,6 +572,17 @@ class ip_handler(core.component):
         """
         c = random.choice(intfs.keys())
         output.vdbg("Port "+str(c)+" "+str(intfs[c])+" randomly selected",
+                    self.__class__.__name__)
+        return c
+
+    def bandwidth_select_intf(self, intfs):
+        """Get which interface to send (largest bandwidth)
+
+        @return port no to send flow on and None if nothing to choose from
+        """
+        print str(intfs)
+        c = random.choice(intfs.keys())
+        output.dbg("Port "+str(c)+" "+str(intfs[c])+" randomly selected",
                     self.__class__.__name__)
         return c
 
