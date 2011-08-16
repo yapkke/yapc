@@ -10,8 +10,10 @@ import yapc.comm.json as jsoncomm
 import yapc.events.openflow as ofevents
 import yapc.log.output as output
 import yapc.coin.core as coin
+import yapc.coin.information as coini
 import yapc.coin.nat as coinnat
 import yapc.coin.ovs as coinovs
+import yapc.local.networkstate as ns
 import yapc.netstate.switches as switches
 import yapc.netstate.swhost as switchhost
 import yapc.forwarding.default as default
@@ -46,7 +48,11 @@ class coin_server(yapc.daemon):
         #COIN main server, maintaining connections
         coinserver = coinnat.nat(server, ofconn.connections,
                                  jsonconn.connections)
-       
+        coin_info = coini.core(server)
+
+        #Information components
+        bwm = ns.coin_intf_bandwidth(coin_info)
+
         #Network status
         sw = switches.dp_features(server)
         swhost = switchhost.mac2sw_binding(server)
@@ -66,6 +72,7 @@ class coin_server(yapc.daemon):
                              sw, coinserver)
         server.order_cleanup(ofconn, ovs)
 
+        coin_info.start()
         server.run()       
         sys.exit(0)
         
