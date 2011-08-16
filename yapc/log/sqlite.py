@@ -197,16 +197,19 @@ class Table:
                             self.data_cache, close)
         self.data_cache = []
 
-    def select_stmt(self, selection="*", where=None):
+    def select_stmt(self, selection="*", where=None, groupby=None):
         """Create the following:
-           SELECT <select> FROM <table> WHERE <where>
+           SELECT <select> FROM <table> WHERE <where> GROUP BY <groupby>
 
         @param selection selection to return
         @param where where condition
+        @param groupby group by condition
         """
         r = "SELECT "+selection+" FROM "+self.name
         if (where != None):
             r += " WHERE "+where
+        if (groupby != None):
+            r += " GROUP BY "+groupby
         return r
 
     def select(self, selection="*", where=None):

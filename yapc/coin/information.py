@@ -1,6 +1,7 @@
 ##Information plane for COIN
 import yapc.interface as yapc
 import yapc.log.output as output
+import yapc.comm.json as jsoncomm
 import yapc.log.sqlite as sqlite
 
 class core(yapc.component):
@@ -47,6 +48,48 @@ class core(yapc.component):
         """Start database
         """
         self.infolog.db.start()
+
+class jsonquery(yapc.component):
+    """Class to convert JSON messages to queries
+    
+    @author ykk
+    @date August 2011
+    """
+    def __init__(self, server, jsonconn):
+        """Initialize
+
+        @param server yapc core
+        @param jsonconn JSON connections
+        """
+        ##Reference to server
+        self.server = server
+        ##JSON connections
+        self.jsonconnections = jsonconn
+
+        server.register_event_handler(jsoncomm.message.name, self)
+    
+    def processevent(self, event):
+        """Process events
+        
+        @param event event
+        """
+        if (isinstance(event, jsoncomm.message) and
+            event.message["type"] == "coin" and
+            event.message["command"] == "query"):
+            output.dbg("Received query "+str(event.message),
+                       self.__class__.__name__)
+            self.server.post_event(query(event.message["name"],
+                                         event.message["selection"],
+                                         event.message["condition"]))
+
+            reply = {}
+            reply["type"] = "coin"
+            reply["subtype"] = "query response"
+            
+
+            self.jsonconnections.db[event.sock].send(reply)
+
+        return True            
         
 class infolog(yapc.component):
     """Information logging facility that accepts queries.
@@ -65,6 +108,7 @@ class infolog(yapc.component):
         self.db = sqlite.SqliteDB(server, filename)
 
         self.server.register_event_handler(publish.name, self)
+        self.server.register_event_handler(query.name, self)
 
     def register_logger(self, name, logger):
         """Register logger for publish event in COIN
@@ -85,7 +129,7 @@ class infolog(yapc.component):
             try:
                 logger = self.loggers[event.eventname]
             except KeyError:
-                output.warn("No logger registered for "+event.eventname+"!",
+                output.warn("No logger registered for "+event.eventname+"! Hence data dropped.",
                             self.__class__.__name__)
                 return True
 
@@ -99,8 +143,20 @@ class infolog(yapc.component):
                 
         elif isinstance(event, query):
             #Query event
-            output.dbg("Query "+str(event.get_query()),
-                       self.__class__.__name__)
+            try:
+                logger = self.loggers[event.table]
+            except KeyError:
+                output.warn("No logger registered for "+event.table+"!  Hence, no querying.",
+                            self.__class__.__name__)
+                return True
+            
+            try:
+                r = logger.table.select(event.selection, event.condition)
+            except sqlite3.OperationalError:
+                output.warn(logger.table.select_stmt(event.selection, event.condition)+" failed",
+                            self.__class__.__name__)
+            for l in r:
+                output.dbg(l)
 
         return True       
 
@@ -173,20 +229,56 @@ class query(yapc.event):
     """
     name = "Query event"
     queryname = "Basic"
-    def __init__(self, condition=None):
+    def __init__(self, table=None, selection=None, condition=None, groupby=None):
         """Initialize
 
-        @param condition statement
+        @param name name of logger/eventname of publish event
+        @param selection selection
+        @param condition condition for query
+        @param groupby group by condition
         """
+        ##Table
+        self.table = table
+        ##Selection
+        self.selection = selection
         ##Condition
         self.condition = condition
+        ##Group by
+        self.groupby = groupby
+
+    def check(self):
+        """Check conditions
+        """
+        if (self.selection.strip() == ""):
+            self.selection = None
+        if (self.condition.strip() == ""):
+            self.condition = None
+        if (self.groupby.strip() == ""):
+            self.groupby = None
 
     def get_query(self):
         """Get SQL query to issue
 
-        @return string with SQL query
+        @return (selection, condition)
         """
-        return ""
+        self.check()
+        return (self.selection, self.condition, self.groupby)
+
+class queryresponse(yapc.event):
+    """Query response event
+
+    @author ykk
+    @date August 2011
+    """
+    name = "Query response event"
+    queryname = "Basic"
+    def __init__(self, query):
+        """Initialize
+
+        @param query reference to query
+        """
+        ##Reference to query
+        self.query = query
 
 class probe(yapc.event):
     """Basic event to probe for data
