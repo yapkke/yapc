@@ -166,7 +166,8 @@ class infolog(yapc.component):
             except sqlite3.OperationalError:
                 output.warn(logger.table.select_stmt(q[0], q[1], q[2])+" failed",
                             self.__class__.__name__)
-                
+                return True
+
             #Extract result
             qresponse = queryresponse(event)
             for row in r:

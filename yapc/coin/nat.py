@@ -7,6 +7,7 @@
 #
 import yapc.interface as yapc
 import yapc.coin.core as core
+import yapc.coin.information as coini
 import yapc.forwarding.flows as flows
 import yapc.util.openflow as ofutil
 import yapc.util.parse as pu
@@ -451,7 +452,7 @@ class ip_handler(core.component):
     @author ykk
     @date Jun 2011
     """
-    def __init__(self, server, ofconn, coin=None, bwinterval=10):
+    def __init__(self, server, ofconn, coin=None, bwinterval=30):
         """Initialize
 
         @param server yapc core
@@ -469,10 +470,14 @@ class ip_handler(core.component):
         
         ##Interval to maintain bandwidth
         self.bwinterval = bwinterval
-        self.bandwidth = {}
+        self.max_bw_port = None
         
+        ##Reference to switch feature
+        self.__sf = None
+
         if (self.bwinterval != 0):
             self.server.post_event(yapc.priv_callback(self), 0)
+        server.register_event_handler(coini.queryresponse.name, self)
 
         ##Reference to last interface chosen
         self.__last_intf_choosen = 0
@@ -485,22 +490,27 @@ class ip_handler(core.component):
         @return false if processed else true
         """
         if (isinstance(event, yapc.priv_callback)):
-            sf = mc.get(nat.SW_FEATURE)
-            if (sf != None):
+            self.__sf = mc.get(nat.SW_FEATURE)
+            if (self.__sf != None):
                 bwquery = ns.bandwidth_query(ns.bandwidth_query.MODE_TOTAL_MAX)
-                for p in sf.ports:
+                for p in self.__sf.ports:
                     if (mc.get(nat.get_ip_range_key(p.port_no)) != None):
                         #Port exist
                         bwquery.interfaces.append(p.name)
                 if (len(bwquery.interfaces) != 0):
                     self.server.post_event(bwquery)
-                    output.dbg("Query for bandwidth for "+str(bwquery.interfaces),
-                               self.__class__.__name__)
                         
-
             #Query for bandwidth of intervals
             if (self.bwinterval != 0):
                 self.server.post_event(yapc.priv_callback(self), self.bwinterval)
+
+        elif (isinstance(event, coini.queryresponse) and 
+              isinstance(event.query, ns.bandwidth_query)):
+            for p in self.__sf.ports:
+                if (event.response[0]["interface"] == p.name):
+                    self.max_bw_port = p.port_no
+                    output.vdbg("Port "+str(p.port_no)+"("+str(p.name)+") has most bandwidth",
+                                self.__class__.__name__)
 
         elif (isinstance(event, ofevents.pktin) and
             #Handle packet in
@@ -580,10 +590,14 @@ class ip_handler(core.component):
 
         @return port no to send flow on and None if nothing to choose from
         """
-        print str(intfs)
-        c = random.choice(intfs.keys())
-        output.dbg("Port "+str(c)+" "+str(intfs[c])+" randomly selected",
-                    self.__class__.__name__)
+        c = self.max_bw_port
+        if (c == None):
+            c = random.choice(intfs.keys())
+            output.dbg("Port "+str(c)+" "+str(intfs[c])+" randomly selected",
+                       self.__class__.__name__)
+        else:
+            output.dbg("Port "+str(c)+" "+str(intfs[c])+" selected as max bandwidth",
+                       self.__class__.__name__)
         return c
 
     def round_robin_select_intf(self, intfs):

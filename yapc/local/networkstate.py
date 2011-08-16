@@ -203,8 +203,8 @@ class bandwidth_query(coininfo.query):
         """
         ilist = ""
         for i in self.interfaces:
-            ilist += "interface="+str(i)
-            ilist += " or"
+            ilist += "interface=\""+str(i)+"\""
+            ilist += " or "
         return ilist[:-3]
 
     def get_query(self):
@@ -216,8 +216,6 @@ class bandwidth_query(coininfo.query):
         if (self.mode == bandwidth_query.MODE_TOTAL_MAX):
             ##Query for maximum of total
             s = "interface,MAX(tx_bps+rx_bps)"
-        output.dbg(str((s, self.get_condition(), None)),
-                   self.__class__.__name__)
         return (s, self.get_condition(), None)
     
 class coin_intf_bandwidth(interface_bandwidth,coininfo.base):
