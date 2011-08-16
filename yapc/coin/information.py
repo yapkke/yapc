@@ -66,8 +66,12 @@ class jsonquery(yapc.component):
         ##JSON connections
         self.jsonconnections = jsonconn
 
+        self.__q = {}
+
         server.register_event_handler(jsoncomm.message.name, self)
-    
+        server.register_event_handler(queryresponse.name, self)
+        
+
     def processevent(self, event):
         """Process events
         
@@ -78,16 +82,19 @@ class jsonquery(yapc.component):
             event.message["command"] == "query"):
             output.dbg("Received query "+str(event.message),
                        self.__class__.__name__)
-            self.server.post_event(query(event.message["name"],
-                                         event.message["selection"],
-                                         event.message["condition"]))
+            q = query(event.message["name"],
+                      event.message["selection"],
+                      event.message["condition"])
+            self.server.post_event(q)
+            self.__q[q] = event.sock
 
+        elif (isinstance(event, queryresponse)):
             reply = {}
             reply["type"] = "coin"
             reply["subtype"] = "query response"
-            
-
-            self.jsonconnections.db[event.sock].send(reply)
+            reply["reply"] = event.response
+            self.jsonconnections.db[self.__q[event.query]].send(reply)
+            del self.__q[event.query]
 
         return True            
         
@@ -149,15 +156,23 @@ class infolog(yapc.component):
                 output.warn("No logger registered for "+event.table+"!  Hence, no querying.",
                             self.__class__.__name__)
                 return True
-            
+
             try:
                 r = logger.table.select(event.selection, event.condition)
             except sqlite3.OperationalError:
                 output.warn(logger.table.select_stmt(event.selection, event.condition)+" failed",
                             self.__class__.__name__)
-            for l in r:
-                output.dbg(l)
+                
+            #Extract result
+            qresponse = queryresponse(event)
+            for row in r:
+                res = {}
+                for k in row.keys():
+                    res[k] = row[k]
+                qresponse.response.append(res)
+            r.close()
 
+            self.server.post_event(qresponse)
         return True       
 
 class base(yapc.component,sqlite.SqliteLogger):
@@ -272,13 +287,18 @@ class queryresponse(yapc.event):
     """
     name = "Query response event"
     queryname = "Basic"
-    def __init__(self, query):
+    def __init__(self, query, response=None):
         """Initialize
 
         @param query reference to query
+        @oaram response array of dictionary containing response
         """
         ##Reference to query
         self.query = query
+        ##Response
+        self.response = response
+        if (self.response == None):
+            self.response = []
 
 class probe(yapc.event):
     """Basic event to probe for data
