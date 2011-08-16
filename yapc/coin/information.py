@@ -65,7 +65,7 @@ class jsonquery(yapc.component):
         self.server = server
         ##JSON connections
         self.jsonconnections = jsonconn
-
+        ##ongoing queries
         self.__q = {}
 
         server.register_event_handler(jsoncomm.message.name, self)
@@ -156,6 +156,8 @@ class infolog(yapc.component):
                 output.warn("No logger registered for "+event.table+"!  Hence, no querying.",
                             self.__class__.__name__)
                 return True
+            
+            self.db.flush()
 
             try:
                 r = logger.table.select(event.selection, event.condition)

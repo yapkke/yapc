@@ -189,8 +189,8 @@ class Table:
                         self.__class__.__name__)
             return
 
-        output.dbg("Flush cache of "+str(len(self.data_cache))+" items",
-                   self.__class__.__name__)
+        output.vdbg("Flush cache of "+str(len(self.data_cache))+" items",
+                    self.__class__.__name__)
         stmt = "?,"*len(self.columns)
         self.db.executemany("INSERT INTO "+self.name+\
                                 " VALUES ("+stmt[:-1]+")",
