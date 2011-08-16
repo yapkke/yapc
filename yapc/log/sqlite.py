@@ -212,7 +212,7 @@ class Table:
             r += " GROUP BY "+groupby
         return r
 
-    def select(self, selection="*", where=None):
+    def select(self, selection="*", where=None, groupby=None):
         """Execute the following:
            SELECT <select> FROM <table> WHERE <where>
 
@@ -220,9 +220,10 @@ class Table:
 
         @param selection selection to return
         @param where where condition
+        @param groupby group by condition
         @return cursor
         """
-        return self.db.execute(self.select_stmt(selection, where), False)
+        return self.db.execute(self.select_stmt(selection, where, groupby), False)
 
 class SqliteDB(Database, yapc.cleanup, yapc.component):
     """SQLite database with proper cleanup
