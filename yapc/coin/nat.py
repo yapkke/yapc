@@ -570,7 +570,7 @@ class ip_handler(core.component):
         i = index-1
         if ((i > 0) and (i < len(intfs))):
             c = intfs.keys()[i]
-        output.vdbg("Port "+str(c)+" "+str(intfs[c])+" selected 'cos it is "+\
+        output.dbg("Port "+str(c)+" "+str(intfs[c])+" selected 'cos it is "+\
                         str(index)+"st/nd/rd/th interface",
                    self.__class__.__name__)
         return c
@@ -581,8 +581,8 @@ class ip_handler(core.component):
         @return port no to send flow on and None if nothing to choose from
         """
         c = random.choice(intfs.keys())
-        output.vdbg("Port "+str(c)+" "+str(intfs[c])+" randomly selected",
-                    self.__class__.__name__)
+        output.dbg("Port "+str(c)+" "+str(intfs[c])+" randomly selected",
+                   self.__class__.__name__)
         return c
 
     def bandwidth_select_intf(self, intfs):
