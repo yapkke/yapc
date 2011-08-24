@@ -57,6 +57,7 @@ class nat(core.coin_server):
         ##Mode
         self.config["mode"] = "Multi-Homed (NATed)"
         self.config["select_interface"] = 1
+        self.config["dns_select_interface"] = None
         ##Reference to local interface
         self.loif = None
         ##Mirror interfaces (indexed by primary interface)
@@ -524,7 +525,7 @@ class ip_handler(core.component):
                 return True
 
             if (event.match.in_port == iport):
-                return self._process_outbound(event, intfs, iport, lointf)
+                return self._process_outbound(event, intfs, iport, lointf) 
             else:
                 return self._process_inbound(event, intfs, iport, lointf)
 
@@ -656,7 +657,13 @@ class ip_handler(core.component):
                 return False
 
         #Global address
-        cport = self.select_intf(intfs)
+        if ((pktin.match.nw_proto == 17) and
+            (pktin.match.tp_dst == 53) and
+            (self.coin.config["dns_select_interface"] != None)):
+            cport = self.dns_select_intf(intfs)
+        else:
+            cport = self.select_intf(intfs)
+
         if (cport != None):
             gw = mc.get(nat.get_gw_key(cport))
             gwmac = mc.get(nat.get_gw_mac_key(gw))
@@ -754,4 +761,36 @@ class ip_handler(core.component):
             self.cookie += 1
 
         return False
+
+    def dns_select_intf(self, intfs):
+        """Get which interface to send
+
+        @return port no to send flow on and None if nothing to choose from
+        """
+        if (len(intfs) == 0):
+            return None
+
+        if (self.coin == None):
+            output.warn("No COIN server reference provided.  Default to random choice of interface",
+                        self.__class__.__name__)
+            return self.select_nth_intf(intfs, 1)
+
+        if (self.coin.config["dns_select_interface"] == "random"):
+            return self.random_select_intf(intfs)
+        elif (self.coin.config["dns_select_interface"] == "round_robin"):
+            return self.round_robin_select_intf(intfs)
+        elif (self.coin.config["dns_select_interface"] == "bandwidth"):
+            return self.bandwidth_select_intf(intfs)
+        elif (isinstance(self.coin.config["dns_select_interface"], int)):
+            return self.select_nth_intf(intfs, 
+                                        self.coin.config["dns_select_interface"])
+        else:
+            value = 1
+            try:
+                value = int(self.coin.config["dns_select_interface"])
+                self.coin.set_config("dns_select_interface", value)
+            except ValueError:
+                output.warn("Unknown selection configuration!",
+                            self.__class__.__name__)
+            return self.select_nth_intf(intfs, value)
 
