@@ -612,8 +612,8 @@ class ip_handler(core.component):
         if (self.__last_intf_choosen >= len(choices)):
             self.__last_intf_choosen = 0
         c = choices[self.__last_intf_choosen]
-        output.vdbg("Port "+str(c)+" "+str(intfs[c])+" selected via round robin",
-                    self.__class__.__name__)
+        output.dbg("Port "+str(c)+" "+str(intfs[c])+" selected via round robin",
+                   self.__class__.__name__)
         return c
 
     def get_intf_n_range(self):
@@ -660,8 +660,10 @@ class ip_handler(core.component):
         if ((pktin.match.nw_proto == 17) and
             (pktin.match.tp_dst == 53) and
             (self.coin.config["dns_select_interface"] != None)):
+            output.dbg("DNS packet",self.__class__.__name__)
             cport = self.dns_select_intf(intfs)
         else:
+            output.dbg("non-DNS packet",self.__class__.__name__)
             cport = self.select_intf(intfs)
 
         if (cport != None):
