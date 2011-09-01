@@ -248,6 +248,14 @@ class route_entry(route_entry_flags):
             self.use = int(i[6])
             self.iface = i[7]
 
+    def is_default(self):
+        """Check if route is default route
+
+        @return route is default or not
+        """
+        return (self.destination == "0.0.0.0")
+
+
     def __str__(self):
         """Return string represention
         """
@@ -285,6 +293,13 @@ class route_mgr:
         """Get currently cache route
         """
         return self.__routes[:]
+
+    def del_default_routes(self):
+        """Delete all default route
+        """
+        for r in self.__routes:
+            if r.is_default():
+                self.del_route("default", r.gateway, r.mask, r.iface)
 
     def get_gateways(self, intf=None):
         """Get all the gateway
