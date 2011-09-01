@@ -46,7 +46,7 @@ class bridge(core.coin_server):
         server.register_event_handler(jsoncomm.message.name,
                                       self)
 
-    def setup(self, interfaces):
+    def setup(self, interfaces, inner_mac=None):
         """Add interfaces
         
         @param interfaces list of interfaces
@@ -55,9 +55,17 @@ class bridge(core.coin_server):
         self.loif = self.add_loif("local")
         self.add_interfaces(interfaces)
 
-        #ifup each interface
+        #Clean up device setting
         for i in range(0, len(interfaces)):
             self.ifmgr.up(interfaces[i])
+            self.ifmgr.set_ipv4_addr(interfaces[i], "0.0.0.0")
+        self.ifmgr.del_default_routes()
+
+        if (inner_mac == None) and (len(interfaces) > 0):
+            inner_mac = self.ifmgr.ethernet_addr(interfaces[0])
+
+        if (inner_mac != None):
+            self.ifmgr.set_eth_addr(self.loif.client_intf, inner_mac)
 
     def update_sw_feature(self):
         """Update switch feature in memcache
