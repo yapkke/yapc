@@ -101,6 +101,29 @@ def get_xid():
         
     return last_xid
 
+def get_flow_id(ofp_match, ignore_l2=False):
+    """Generate flow id based on ofp_match
+
+    id has the following properties:
+    * is the same for packets of the same TCP/UDP flow
+    * is the same for packets for the same bidirectional flow
+    """
+    t1 = ofp_match.dl_type
+    t2 = ofp_match.nw_proto
+    daddr = [pu.array2val(ofp_match.dl_src), pu.array2val(ofp_match.dl_src)]
+    d1 = min(daddr)
+    d2 = max(daddr)
+    naddr = [ofp_match.nw_src, ofp_match.nw_dst]
+    n1 = min(naddr)
+    n2 = max(naddr)
+    taddr = [ofp_match.tp_src, ofp_match.tp_dst]
+    t1 = min(taddr)
+    t2 = max(taddr)
+    if (ignore_l2):
+        return hash((t1,t2,n1,n2,t1,t2))
+    else:
+        return hash((t1,t2,d1,d2,n1,n2,t1,t2))
+
 def get_ofp_match(in_port, packet):
     """Generate ofp_match from raw packet
 
