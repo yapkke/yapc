@@ -10,6 +10,7 @@ import yapc.log.output as output
 import yapc.util.memcacheutil as mc
 import yapc.events.openflow as ofevents
 import yapc.comm.json as jsoncomm
+import yapc.comm.udpjson as udpjson
 import yapc.forwarding.flows as flows
 import yapc.pyopenflow as pyof
 import simplejson
@@ -165,8 +166,6 @@ class traffic_handler(core.component):
         """
         core.component.__init__(self, ofconn, coin)
         
-        self.server = server
-
         mc.get_client()
         server.register_event_handler(ofevents.pktin.name, self)
 
@@ -253,4 +252,33 @@ class traffic_handler(core.component):
                    self.__class__.__name__)
         return c
 
+class host_move(core.component):
+    """Class to handle address change
+    
+    @author ykk
+    @date Sept 2011
+    """
+    def __init__(self, server, ofconn, coin=None):
+        """Initialize
+
+        @param server yapc core
+        @param conn reference to connections
+        @param sfr send flow removed or not
+        @param coin reference to COIN
+        @oaram bwinterval interval to query for bandwidth
+        """
+        core.component.__init__(self, ofconn, coin)
         
+        server.register_event_handler(udpjson.message.name, self)
+
+    def processevent(self, event):
+        """Event handler
+
+        @param event event to handle
+        @return True
+        """
+        if isinstance(event, udpjson.message):
+            output.dbg(str(event.json_message),
+                       self.__class__.__name__)
+        
+        return True
