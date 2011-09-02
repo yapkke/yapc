@@ -10,6 +10,7 @@ import yapc.coin.bridge as coinbr
 import yapc.coin.ovs as coinovs
 import yapc.comm.openflow as ofcomm
 import yapc.comm.json as jsoncomm
+import yapc.comm.udpjson as udpjson
 import yapc.events.openflow as ofevents
 import yapc.netstate.switches as switches
 import yapc.log.output as output
@@ -25,12 +26,15 @@ class coin_bridge(yapc.daemon):
         self.forcejson = False
         ##Socket to talk to
         self.sock = coin.SOCK_NAME
+        ##UDP port
+        self.port = udpjson.SOCK_PORT
 
     def run(self):
         server = core.core()
         ofconn = ofcomm.ofserver(server)
         jsonconn = jsoncomm.jsonserver(server, file=self.sock, 
                                        forcebind=self.forcejson)
+        ujson = udpjson.jsonudpserver(server, self.port)
 
         #OpenFlow Parser
         ofparse = ofevents.parser(server)

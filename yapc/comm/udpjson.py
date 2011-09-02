@@ -7,6 +7,8 @@ import yapc.comm.udp as udp
 import yapc.comm.basejson as bjson
 import simplejson
 
+SOCK_PORT = 2605
+
 class message(udp.message):
     """UDP message with JSON
     
@@ -17,7 +19,7 @@ class message(udp.message):
     def __init__(self, sock, msg, addr):
         """JSON UDP message event
         """
-        udp.message.__init__(self, sock, msg, addr):
+        udp.message.__init__(self, sock, msg, addr)
         bjson.message.__init__(self, msg)
 
     def reply(self, message):
