@@ -45,6 +45,9 @@ class coin_bridge(yapc.daemon):
         ovs = coinovs.switch(server, jsonconn.connections)
         coinserver.switch = ovs
 
+        #Flow management
+        trafh = coinbr.traffic_handler(server, ofconn.connections, coinserver)
+
         #Add interfaces
         coinserver.setup(self.interfaces)
 

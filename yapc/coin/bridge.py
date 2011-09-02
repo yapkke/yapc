@@ -10,6 +10,8 @@ import yapc.log.output as output
 import yapc.util.memcacheutil as mc
 import yapc.events.openflow as ofevents
 import yapc.comm.json as jsoncomm
+import yapc.forwarding.flows as flows
+import yapc.pyopenflow as pyof
 import simplejson
 
 class bridge(core.coin_server):
@@ -32,6 +34,7 @@ class bridge(core.coin_server):
         core.coin_server.__init__(self, server, ofconn, jsonconn, False)
         ##Mode
         self.config["mode"] = "Multi-Homed (Bridged)"
+        self.config["select_interface"] = 1
         ##Reference to local interface
         self.loif = None
         
@@ -144,3 +147,110 @@ class bridge(core.coin_server):
             return None
 
         return reply
+
+class traffic_handler(core.component):
+    """Class to handle traffic
+
+    @author ykk
+    @date Sept 2011
+    """
+    def __init__(self, server, ofconn, coin=None):
+        """Initialize
+
+        @param server yapc core
+        @param conn reference to connections
+        @param sfr send flow removed or not
+        @param coin reference to COIN
+        @oaram bwinterval interval to query for bandwidth
+        """
+        core.component.__init__(self, ofconn, coin)
+        
+        self.server = server
+
+        mc.get_client()
+        server.register_event_handler(ofevents.pktin.name, self)
+
+    def processevent(self, event):
+        """Event handler
+
+        @param event event to handle
+        @return false if processed else true
+        """
+        if isinstance(event, ofevents.pktin):
+            iport = mc.get(bridge.SW_INNER_PORT)
+            intfs = self.get_ext_intf()
+            if (iport == None):
+                output.err("No inner port recorded!  Are we connected?",
+                           self.__class__.__name__)
+                return True
+
+            flow = flows.exact_entry(event.match)
+            if (event.match.in_port == iport):
+                flow.add_output(self.get_out_port(intfs))
+            else:
+                flow.add_output(iport)
+
+            if (flow.buffer_id != event.pktin.buffer_id):
+                flow.set_buffer(event.pktin.buffer_id)
+                self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+            else:
+                self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+                self.get_conn().send(flow.get_packet_out(pyof.OFPFC_ADD).pack()+\
+                                         event.dpkt.pack())
+                return False
+
+        return True     
+
+    def get_ext_intf(self):
+        """Retrieve dictionary of external ports
+        """
+        r = {}
+        sf = mc.get(bridge.SW_FEATURE)
+        iport = mc.get(bridge.SW_INNER_PORT)
+        for p in sf.ports:
+            if (p.port_no != iport) and (p.port_no <= pyof.OFPP_MAX):
+                r[p.port_no] = p.name
+            
+        return r
+
+    def get_out_port(self, intfs):
+        """Get output port for outbound traffic
+
+        @param intfs interfaces to choose from
+        """
+        if (len(intfs) == 0):
+            return None
+
+        if (self.coin == None):
+            output.warn("No COIN server reference provided.  Default to random choice of interface",
+                        self.__class__.__name__)
+            return self.select_nth_intf(intfs, 1)
+
+        if (isinstance(self.coin.config["select_interface"], int)):
+            return self.select_nth_intf(intfs, self.coin.config["select_interface"])
+        else:
+            value = 1
+            try:
+                value = int(self.coin.config["select_interface"])
+                self.coin.set_config("select_interface", value)
+            except ValueError:
+                output.warn("Unknown selection configuration!",
+                            self.__class__.__name__)
+            return self.select_nth_intf(intfs, value)
+
+
+    def select_nth_intf(self, intfs, index=1):
+        """Get which interface to send (always return nth interface else last)
+
+        @return port no to send flow on and None if nothing to choose from
+        """
+        c = intfs.keys()[0]
+        i = index-1
+        if ((i > 0) and (i < len(intfs))):
+            c = intfs.keys()[i]
+        output.dbg("Port "+str(c)+" "+str(intfs[c])+" selected 'cos it is "+\
+                        str(index)+"st/nd/rd/th interface",
+                   self.__class__.__name__)
+        return c
+
+        
