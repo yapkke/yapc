@@ -1,7 +1,5 @@
 ##Generic OpenFlow events
 #
-# 
-#
 # @author ykk
 # @date Feb 2011
 #
@@ -10,6 +8,55 @@ import yapc.log.output as output
 import yapc.comm.openflow as ofcomm
 import yapc.pyopenflow as pyof
 import yapc.util.openflow as ofutil
+
+class action_unpacker:
+    """Class that implements functions to unpack actions
+    
+    @author ykk
+    @date Sept 2011
+    """
+    def unpack_action(self, string):
+        """Unpack action
+        
+        @param string binary string of actions
+        @return (action, remaining)
+        """
+        remaining = string
+        action = None
+
+        ah = pyof.ofp_action_header()
+        ah.unpack(string)
+        if (ah.type == pyof.OFPAT_OUTPUT):
+            action = pyof.ofp_action_output()
+            remaining = action.unpack(string)
+        else:
+            output.warn("Unhandled action type "+str(ah.type)+"!",
+                        self.__class__.__name__)
+            return (None, remaining[ah.len:])
+
+        return (action, remaining)
+
+    def unpack_actions(self, string, actions=None):
+        """Unpack actions
+
+        @param string string with actions encoded
+        @param actions list to add actions into
+        @return list of actions
+        """
+        remaining = string
+        if (actions == None):
+            actions = []
+
+        while (len(remaining) >= pyof.OFP_ACTION_HEADER_BYTES):
+            (action, remaining) = self.unpack_action(remaining)
+            actions.append(action)
+        
+        if (len(remaining) > 0):
+            output.warn("Action array is of irregular length with "+\
+                            str(len(remaining))+" bytes remaining.",
+                        self.__class__.__name__)
+            
+        return actions
 
 class parser(yapc.component):
     """OpenFlow parser that generates OpenFlow events
@@ -57,7 +104,20 @@ class parser(yapc.component):
                 self.scheduler.post_event(port_status(event.sock,
                                                       event.message))
 
+            elif (event.header.type == pyof.OFPT_STATS_REPLY):
+                self.handle_stats_reply(event)
+
         return True
+
+    def handle_stats_reply(self, event):
+        """Handle stats reply
+        """
+        stats_reply = pyof.ofp_stats_reply()
+        reply = stats_reply.unpack(event.message)
+        if (stats_reply.type == pyof.OFPST_FLOW):
+            self.scheduler.post_event(flow_stats(event.sock,
+                                                 event.message,
+                                                 stats_reply, reply))
 
 class error(ofcomm.message):
     """Error in OpenFlow
@@ -223,4 +283,46 @@ class pktin(ofcomm.message):
             output.vdbg(str(`self.dpkt`),
                         self.__class__.__name__)
     
+class flow_stats(ofcomm.message, action_unpacker):
+    """Flow stats in OpenFlow
+
+    @author ykk
+    @date Sept 2011
+    """
+    name = "OpenFlow Flow Stats Reply"
+    def __init__(self, sock, msg, stats_reply=None, reply=None):
+        """Initialize
+
+        @param sock reference to socket
+        @param msg message
+        """
+        ofcomm.message.__init__(self, sock, msg)
+
+        ##Stats reply header
+        self.stats_reply = stats_reply
+        
+        remaining = reply
+        if (self.stats_reply == None) or (remaining == None):
+            self.stats_reply = pyof.ofp_stats_reply()
+            remaining = self.stats_reply.unpack(msg)
+        
+        ##Flow stats of individual flows
+        self.flows = []
+        while (len(remaining) >= pyof.OFP_FLOW_STATS_BYTES):
+            flow = pyof.ofp_flow_stats()
+            flow.unpack(remaining)
+            self.unpack_actions(remaining[pyof.OFP_FLOW_STATS_BYTES:flow.length], flow.actions)
+            remaining = remaining[flow.length:]
+            self.flows.append(flow)
+
+        if (len(remaining) > 0):
+            output.warn("Flow stats reply is of irregular length with "+\
+                            str(len(remaining))+" bytes remaining.",
+                        self.__class__.__name__)
+        output.dbg("Received "+str(len(self.flows))+" flow stats.",
+                   self.__class__.__name__)
+        output.dbg("Received "+str(self.flows[0].actions)+" flow stats.",
+                   self.__class__.__name__)
+
+
         
