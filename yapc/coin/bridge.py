@@ -276,6 +276,7 @@ class host_move(core.component):
         self.ip_change = {}
 
         server.register_event_handler(udpjson.message.name, self)
+        server.register_event_handler(ofevents.flow_stats.name, self)
 
     def processevent(self, event):
         """Event handler
@@ -285,8 +286,39 @@ class host_move(core.component):
         """
         if isinstance(event, udpjson.message):
             self._handle_json(event)
-        
+        elif isinstance(event, ofevents.flow_stats):
+            self._handle_change(event)
+
         return True
+
+    def _handle_change(self, flow_stats):
+        """Handle flows to be changed based on flow stats reply
+        
+        @param flow_stats flow_stats event
+        """
+        for f in flow_stats.flows:
+            for (old, new) in self.ip_change.items():
+                if (f.match.nw_src == old):
+                    flow = flows.exact_entry(f.match,
+                                             priority=f.priority,
+                                             idle_timeout=f.idle_timeout,
+                                             hard_timeout=f.hard_timeout)
+                    flow.set_nw_src(new)
+                    flow.add_nw_rewrite(True, old)
+                    flow.actions.extend(f.actions)
+                    self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD, f.cookie).pack())
+                    output.dbg(str(f)+" has old source IP", 
+                               self.__class__.__name__)
+                elif (f.match.nw_dst == old):
+                    flow = flows.exact_entry(f.match,
+                                             priority=f.priority,
+                                             idle_timeout=f.idle_timeout,
+                                             hard_timeout=f.hard_timeout)
+                    flow.add_nw_rewrite(False, new)
+                    flow.actions.extend(f.actions)
+                    self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_MODIFY, f.cookie).pack())
+                    output.dbg(str(f)+" has old destination IP", 
+                               self.__class__.__name__)
 
     def _handle_json(self, jsonmsg):
         """Handle JSON message

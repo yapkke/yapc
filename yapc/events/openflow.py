@@ -319,10 +319,5 @@ class flow_stats(ofcomm.message, action_unpacker):
             output.warn("Flow stats reply is of irregular length with "+\
                             str(len(remaining))+" bytes remaining.",
                         self.__class__.__name__)
-        output.dbg("Received "+str(len(self.flows))+" flow stats.",
+        output.vdbg("Received "+str(len(self.flows))+" flow stats.",
                    self.__class__.__name__)
-        output.dbg("Received "+str(self.flows[0].actions)+" flow stats.",
-                   self.__class__.__name__)
-
-
-        
