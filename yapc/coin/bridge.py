@@ -278,7 +278,7 @@ class host_move(core.component):
         @return True
         """
         if isinstance(event, udpjson.message):
-            output.dbg(str(event.json_message),
+            output.dbg(str(event.json_msg),
                        self.__class__.__name__)
         
         return True

@@ -5,11 +5,12 @@
 #
 import yapc.comm.udp as udp
 import yapc.comm.basejson as bjson
+import yapc.log.output as output
 import simplejson
 
 SOCK_PORT = 2605
 
-class message(udp.message):
+class message(udp.message, bjson.message):
     """UDP message with JSON
     
     @author ykk
