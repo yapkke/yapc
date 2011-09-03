@@ -13,7 +13,9 @@ import yapc.comm.json as jsoncomm
 import yapc.comm.udpjson as udpjson
 import yapc.forwarding.flows as flows
 import yapc.pyopenflow as pyof
+import yapc.util.parse as pu
 import simplejson
+import dpkt
 
 class bridge(core.coin_server):
     """Class to handle connections and configuration for COIN in Bridge mode
@@ -255,6 +257,8 @@ class traffic_handler(core.component):
 class host_move(core.component):
     """Class to handle address change
     
+    Code does not handle IP changes to local IP (since we need to arp in that case)
+
     @author ykk
     @date Sept 2011
     """
@@ -268,7 +272,9 @@ class host_move(core.component):
         @oaram bwinterval interval to query for bandwidth
         """
         core.component.__init__(self, ofconn, coin)
-        
+        ##Keep state of new ip indexed by old ip
+        self.ip_change = {}
+
         server.register_event_handler(udpjson.message.name, self)
 
     def processevent(self, event):
@@ -278,7 +284,28 @@ class host_move(core.component):
         @return True
         """
         if isinstance(event, udpjson.message):
-            output.dbg(str(event.json_msg),
-                       self.__class__.__name__)
+            self._handle_json(event)
         
         return True
+
+    def _handle_json(self, jsonmsg):
+        """Handle JSON message
+        """
+        ##Add change to list
+        old_ip = pu.ip_string2val(jsonmsg.json_msg["ip_prev"][0])
+        self.ip_change[old_ip] = pu.ip_string2val(jsonmsg.json_msg["ip_new"][0])
+
+        ##Send for flow stats
+        flow = flows.ethertype_entry(dpkt.ethernet.ETH_TYPE_IP)
+        flow.set_nw_src(old_ip)
+        (sr, fsr) = flow.get_flow_stats_request()
+        self.get_conn().send(sr.pack()+fsr.pack())
+
+        flow = flows.ethertype_entry(dpkt.ethernet.ETH_TYPE_IP)
+        flow.set_nw_dst(old_ip)
+        (sr, fsr) = flow.get_flow_stats_request()
+        self.get_conn().send(sr.pack()+fsr.pack())
+        
+        output.dbg(str(self.ip_change),
+                   self.__class__.__name__)
+        
