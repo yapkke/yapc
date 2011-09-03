@@ -426,6 +426,22 @@ class flow_entry(actions, packet):
         fm.header.xid = ofutil.get_xid()
         return fm
 
+    def get_flow_stats_request(self, out_port=pyof.OFPP_NONE, table_id=0xff):
+        """Function to return flow_stats_request for a matching flow
+        
+        @return (ofp_stats_request, ofp_flow_stats_request)
+        """
+        sr = pyof.ofp_stats_request()
+        sr.header.xid = ofutil.get_xid()
+        sr.type = pyof.OFPST_FLOW
+
+        fsr = pyof.ofp_flow_stats_request()
+        fsr.match = self.match
+        fsr.table_id = table_id
+        fsr.out_port = out_port
+
+        return (sr, fsr)
+
     def send_packet(self, conn, sock):
         """Send packet associated with flow
 
