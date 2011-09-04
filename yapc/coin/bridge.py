@@ -16,6 +16,7 @@ import yapc.pyopenflow as pyof
 import yapc.util.parse as pu
 import simplejson
 import dpkt
+import time
 
 class bridge(core.coin_server):
     """Class to handle connections and configuration for COIN in Bridge mode
@@ -262,18 +263,22 @@ class host_move(core.component):
     @author ykk
     @date Sept 2011
     """
-    def __init__(self, server, ofconn, coin=None):
+    def __init__(self, server, ofconn, coin=None, timeout=1):
         """Initialize
 
         @param server yapc core
         @param conn reference to connections
         @param sfr send flow removed or not
         @param coin reference to COIN
-        @oaram bwinterval interval to query for bandwidth
+        @oaram timeout amount of time before timing out host move
         """
         core.component.__init__(self, ofconn, coin)
         ##Keep state of new ip indexed by old ip
         self.ip_change = {}
+        ##Amount to wait for timeout
+        self.timeout = timeout
+        ##Last check time
+        self.__lastcheck = time.time()
 
         server.register_event_handler(udpjson.message.name, self)
         server.register_event_handler(ofevents.flow_stats.name, self)
@@ -296,6 +301,7 @@ class host_move(core.component):
         
         @param flow_stats flow_stats event
         """
+        self.check_timeout()
         for f in flow_stats.flows:
             for (old, new) in self.ip_change.items():
                 if (f.match.nw_src == old):
@@ -303,21 +309,32 @@ class host_move(core.component):
                                              priority=f.priority,
                                              idle_timeout=f.idle_timeout,
                                              hard_timeout=f.hard_timeout)
-                    flow.set_nw_src(new)
+                    flow.set_nw_src(new[0])
                     flow.add_nw_rewrite(True, old)
                     flow.actions.extend(f.actions)
                     self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD, f.cookie).pack())
-                    output.dbg(str(f)+" has old source IP", 
+                    output.dbg(str(f)+" has old source IP (flow rule is added)", 
                                self.__class__.__name__)
                 elif (f.match.nw_dst == old):
                     flow = flows.exact_entry(f.match,
                                              priority=f.priority,
                                              idle_timeout=f.idle_timeout,
                                              hard_timeout=f.hard_timeout)
-                    flow.add_nw_rewrite(False, new)
+                    flow.add_nw_rewrite(False, new[0])
                     flow.actions.extend(f.actions)
                     self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_MODIFY, f.cookie).pack())
-                    output.dbg(str(f)+" has old destination IP", 
+                    output.dbg(str(f)+" has old destination IP (flow rule is modified)", 
+                               self.__class__.__name__)
+
+    def check_timeout(self):
+        """Check and timeout host move ip changes
+        """
+        if (int(time.time()) > int(self.__lastcheck)):
+            self.__lastcheck = time.time()
+            for old, new in self.ip_change.items():
+                if (new[1]+self.timeout < time.time()):
+                    del self.ip_change[old]
+                    output.dbg("Timeout "+str(old)+"->"+str(new[0]),
                                self.__class__.__name__)
 
     def _handle_json(self, jsonmsg):
@@ -325,7 +342,8 @@ class host_move(core.component):
         """
         ##Add change to list
         old_ip = pu.ip_string2val(jsonmsg.json_msg["ip_prev"][0])
-        self.ip_change[old_ip] = pu.ip_string2val(jsonmsg.json_msg["ip_new"][0])
+        self.ip_change[old_ip] = (pu.ip_string2val(jsonmsg.json_msg["ip_new"][0]),
+                                  time.time())
 
         ##Send for flow stats
         flow = flows.ethertype_entry(dpkt.ethernet.ETH_TYPE_IP)
@@ -337,7 +355,4 @@ class host_move(core.component):
         flow.set_nw_dst(old_ip)
         (sr, fsr) = flow.get_flow_stats_request()
         self.get_conn().send(sr.pack()+fsr.pack())
-        
-        output.dbg(str(self.ip_change),
-                   self.__class__.__name__)
-        
+         
