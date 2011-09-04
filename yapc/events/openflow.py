@@ -29,6 +29,9 @@ class action_unpacker:
         if (ah.type == pyof.OFPAT_OUTPUT):
             action = pyof.ofp_action_output()
             remaining = action.unpack(string)
+        elif (ah.type == pyof.OFPAT_SET_NW_SRC) or (ah.type == pyof.OFPAT_SET_NW_DST):
+            action = pyof.ofp_action_nw_addr()
+            remaining = action.unpack(string)
         else:
             output.warn("Unhandled action type "+str(ah.type)+"!",
                         self.__class__.__name__)
