@@ -437,8 +437,8 @@ class indirection(traffic_handler):
             #Indirection given?
             if (flow.match.nw_src in self.m2m):
                 from_ip = flow.match.nw_dst
-                from_eth = flow.match.dl_dst
-                to_eth = flow.match.dl_src
+                from_eth = flow.match.dl_dst[:]
+                to_eth = flow.match.dl_src[:]
                 to_ip = self.m2m[from_ip][0]
 
                 flow.add_nw_rewrite(True, from_ip)
@@ -446,8 +446,21 @@ class indirection(traffic_handler):
                 flow.add_nw_rewrite(False, to_ip)
                 flow.add_dl_rewrite(False, to_eth)
                 
-                ofpkt.nw_rewrite(event.dpkt, True, old_ip)
+                ofpkt.nw_rewrite(event.dpkt, True, from_ip)
+                ofpkt.dl_rewrite(event.dpkt, True, from_eth)
+                ofpkt.nw_rewrite(event.dpkt, False, to_ip)
+                ofpkt.dl_rewrite(event.dpkt, False, to_eth)
 
+                flow.add_output(py.OFPP_IN_PORT)
+                
+                if (flow.buffer_id != event.pktin.buffer_id):
+                    flow.set_buffer(event.pktin.buffer_id)
+                    self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+                else:
+                    self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+                    self.get_conn().send(flow.get_packet_out(pyof.OFPFC_ADD).pack()+\
+                                        event.dpkt.pack())
+                    
                 output.dbg("Indirecting flow...",
                            self.__class__.__name__)
 
