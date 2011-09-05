@@ -13,6 +13,7 @@ import yapc.comm.json as jsoncomm
 import yapc.comm.udpjson as udpjson
 import yapc.forwarding.flows as flows
 import yapc.pyopenflow as pyof
+import yapc.packet.ofaction as ofpkt
 import yapc.util.parse as pu
 import simplejson
 import dpkt
@@ -158,7 +159,7 @@ class traffic_handler(core.component):
     @author ykk
     @date Sept 2011
     """
-    def __init__(self, server, ofconn, coin=None):
+    def __init__(self, server, ofconn, coin=None, eventReg=True):
         """Initialize
 
         @param server yapc core
@@ -170,7 +171,9 @@ class traffic_handler(core.component):
         core.component.__init__(self, ofconn, coin)
         
         mc.get_client()
-        server.register_event_handler(ofevents.pktin.name, self)
+
+        if (eventReg):
+            server.register_event_handler(ofevents.pktin.name, self)
 
     def processevent(self, event):
         """Event handler
@@ -255,7 +258,7 @@ class traffic_handler(core.component):
                    self.__class__.__name__)
         return c
 
-class host_move(core.component):
+class host_move(traffic_handler):
     """Class to handle address change
     
     Code does not handle IP changes to local IP (since we need to arp in that case)
@@ -263,7 +266,7 @@ class host_move(core.component):
     @author ykk
     @date Sept 2011
     """
-    def __init__(self, server, ofconn, coin=None, timeout=1):
+    def __init__(self, server, ofconn, coin=None, timeout=30):
         """Initialize
 
         @param server yapc core
@@ -272,14 +275,15 @@ class host_move(core.component):
         @param coin reference to COIN
         @oaram timeout amount of time before timing out host move
         """
-        core.component.__init__(self, ofconn, coin)
-        ##Keep state of new ip indexed by old ip
+        traffic_handler.__init__(self, server, ofconn, coin, False)
+        ##Keep state of old ip indexed by new ip
         self.ip_change = {}
         ##Amount to wait for timeout
         self.timeout = timeout
         ##Last check time
         self.__lastcheck = time.time()
 
+        server.register_event_handler(ofevents.pktin.name, self)
         server.register_event_handler(udpjson.message.name, self)
         server.register_event_handler(ofevents.flow_stats.name, self)
 
@@ -289,7 +293,49 @@ class host_move(core.component):
         @param event event to handle
         @return True
         """
-        if isinstance(event, udpjson.message):
+        if isinstance(event, ofevents.pktin):
+            self.check_timeout()
+            iport = mc.get(bridge.SW_INNER_PORT)
+            intfs = self.get_ext_intf()
+            if (iport == None):
+                output.err("No inner port recorded!  Are we connected?",
+                           self.__class__.__name__)
+                return True
+
+            flow = flows.exact_entry(event.match)
+            
+            #Change IP?
+            if (flow.match.nw_src in self.ip_change):
+                new_ip = flow.match.nw_src
+                old_ip = self.ip_change[new_ip][0]
+
+                flow.add_nw_rewrite(True, old_ip)
+                ofpkt.nw_rewrite(event.dpkt, True, old_ip)
+                output.dbg("Adding rewrite for changing flow",
+                           self.__class__.__name__)
+
+                ipflow = flows.ethertype_entry(dpkt.ethernet.ETH_TYPE_IP)
+                ipflow.set_nw_dst(old_ip)
+                (sr, fsr) = ipflow.get_flow_stats_request()
+                self.get_conn().send(sr.pack()+fsr.pack())
+
+            #Decide output port
+            if (event.match.in_port == iport):
+                flow.add_output(self.get_out_port(intfs))
+            else:
+                flow.add_output(iport)
+
+            #Send appropriately
+            if (flow.buffer_id != event.pktin.buffer_id):
+                flow.set_buffer(event.pktin.buffer_id)
+                self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+            else:
+                self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD).pack())
+                self.get_conn().send(flow.get_packet_out(pyof.OFPFC_ADD).pack()+\
+                                         event.dpkt.pack())
+                return False
+            
+        elif isinstance(event, udpjson.message):
             self._handle_json(event)
         elif isinstance(event, ofevents.flow_stats):
             self._handle_change(event)
@@ -303,24 +349,24 @@ class host_move(core.component):
         """
         self.check_timeout()
         for f in flow_stats.flows:
-            for (old, new) in self.ip_change.items():
-                if (f.match.nw_src == old):
+            for (new, old) in self.ip_change.items():
+                if (f.match.nw_src == old[0]):
                     flow = flows.exact_entry(f.match,
                                              priority=f.priority,
                                              idle_timeout=f.idle_timeout,
                                              hard_timeout=f.hard_timeout)
-                    flow.set_nw_src(new[0])
+                    flow.set_nw_src(new)
                     flow.add_nw_rewrite(True, old)
                     flow.actions.extend(f.actions)
                     self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD, f.cookie).pack())
                     output.dbg(str(f)+" has old source IP (flow rule is added)", 
                                self.__class__.__name__)
-                elif (f.match.nw_dst == old):
+                elif (f.match.nw_dst == old[0]):
                     flow = flows.exact_entry(f.match,
                                              priority=f.priority,
                                              idle_timeout=f.idle_timeout,
                                              hard_timeout=f.hard_timeout)
-                    flow.add_nw_rewrite(False, new[0])
+                    flow.add_nw_rewrite(False, new)
                     flow.actions.extend(f.actions)
                     self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_MODIFY, f.cookie).pack())
                     output.dbg(str(f)+" has old destination IP (flow rule is modified)", 
@@ -331,10 +377,10 @@ class host_move(core.component):
         """
         if (int(time.time()) > int(self.__lastcheck)):
             self.__lastcheck = time.time()
-            for old, new in self.ip_change.items():
-                if (new[1]+self.timeout < time.time()):
-                    del self.ip_change[old]
-                    output.dbg("Timeout "+str(old)+"->"+str(new[0]),
+            for new, old in self.ip_change.items():
+                if (old[1]+self.timeout < time.time()):
+                    del self.ip_change[new]
+                    output.dbg("Timeout "+str(old[0])+"->"+str(new),
                                self.__class__.__name__)
 
     def _handle_json(self, jsonmsg):
@@ -342,17 +388,17 @@ class host_move(core.component):
         """
         ##Add change to list
         old_ip = pu.ip_string2val(jsonmsg.json_msg["ip_prev"][0])
-        self.ip_change[old_ip] = (pu.ip_string2val(jsonmsg.json_msg["ip_new"][0]),
-                                  time.time())
+        new_ip = pu.ip_string2val(jsonmsg.json_msg["ip_new"][0])
+        self.ip_change[new_ip] = (old_ip, time.time())
 
         ##Send for flow stats
-        flow = flows.ethertype_entry(dpkt.ethernet.ETH_TYPE_IP)
-        flow.set_nw_src(old_ip)
-        (sr, fsr) = flow.get_flow_stats_request()
-        self.get_conn().send(sr.pack()+fsr.pack())
+        #flow = flows.ethertype_entry(dpkt.ethernet.ETH_TYPE_IP)
+        #flow.set_nw_src(old_ip)
+        #(sr, fsr) = flow.get_flow_stats_request()
+        #self.get_conn().send(sr.pack()+fsr.pack())
 
-        flow = flows.ethertype_entry(dpkt.ethernet.ETH_TYPE_IP)
-        flow.set_nw_dst(old_ip)
-        (sr, fsr) = flow.get_flow_stats_request()
-        self.get_conn().send(sr.pack()+fsr.pack())
+        #flow = flows.ethertype_entry(dpkt.ethernet.ETH_TYPE_IP)
+        #flow.set_nw_dst(old_ip)
+        #(sr, fsr) = flow.get_flow_stats_request()
+        #self.get_conn().send(sr.pack()+fsr.pack())
          
