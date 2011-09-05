@@ -164,7 +164,6 @@ class traffic_handler(core.component):
 
         @param server yapc core
         @param conn reference to connections
-        @param sfr send flow removed or not
         @param coin reference to COIN
         @oaram bwinterval interval to query for bandwidth
         """
@@ -257,6 +256,7 @@ class traffic_handler(core.component):
                         str(index)+"st/nd/rd/th interface",
                    self.__class__.__name__)
         return c
+    
 
 class host_move(traffic_handler):
     """Class to handle address change
@@ -271,7 +271,6 @@ class host_move(traffic_handler):
 
         @param server yapc core
         @param conn reference to connections
-        @param sfr send flow removed or not
         @param coin reference to COIN
         @oaram timeout amount of time before timing out host move
         """
@@ -391,14 +390,91 @@ class host_move(traffic_handler):
         new_ip = pu.ip_string2val(jsonmsg.json_msg["ip_new"][0])
         self.ip_change[new_ip] = (old_ip, time.time())
 
-        ##Send for flow stats
-        #flow = flows.ethertype_entry(dpkt.ethernet.ETH_TYPE_IP)
-        #flow.set_nw_src(old_ip)
-        #(sr, fsr) = flow.get_flow_stats_request()
-        #self.get_conn().send(sr.pack()+fsr.pack())
+class indirection(traffic_handler):
+    """Class to become indirection point
 
-        #flow = flows.ethertype_entry(dpkt.ethernet.ETH_TYPE_IP)
-        #flow.set_nw_dst(old_ip)
-        #(sr, fsr) = flow.get_flow_stats_request()
-        #self.get_conn().send(sr.pack()+fsr.pack())
+    Code assume both mobile and server are outside its subnet
+
+    @author ykk
+    @date Sept 2011
+    """
+    def __init__(self, server, ofconn, coin=None, timeout=60):
+        """Initialize
+
+        @param server yapc core
+        @param conn reference to connections
+        @param coin reference to COIN
+        @oaram timeout amount of time before timing out indirection
+        """
+        traffic_handler.__init__(self, server, ofconn, coin, False)
+        ##Keep state of server to mobile and vice versa
+        self.m2m = {}
+        ##Amount to wait for timeout
+        self.timeout = timeout
+        ##Last check time
+        self.__lastcheck = time.time()
+
+        server.register_event_handler(ofevents.pktin.name, self)
+        server.register_event_handler(udpjson.message.name, self)
+
+    def processevent(self, event):
+        """Event handler
+
+        @param event event to handle
+        @return True
+        """
+        if isinstance(event, ofevents.pktin):
+            self.check_timeout()
+            iport = mc.get(bridge.SW_INNER_PORT)
+            intfs = self.get_ext_intf()
+            if (iport == None):
+                output.err("No inner port recorded!  Are we connected?",
+                           self.__class__.__name__)
+                return True
+
+            flow = flows.exact_entry(event.match)
+            
+            #Indirection given?
+            if (flow.match.nw_src in self.m2m):
+                from_ip = flow.match.nw_dst
+                from_eth = flow.match.dl_dst
+                to_eth = flow.match.dl_src
+                to_ip = self.m2m[from_ip][0]
+
+                flow.add_nw_rewrite(True, from_ip)
+                flow.add_dl_rewrite(True, from_eth)
+                flow.add_nw_rewrite(False, to_ip)
+                flow.add_dl_rewrite(False, to_eth)
+                
+                ofpkt.nw_rewrite(event.dpkt, True, old_ip)
+
+                output.dbg("Indirecting flow...",
+                           self.__class__.__name__)
+
+                return False
+
+        elif isinstance(event, udpjson.message):
+            self._handle_json(event)
+
+        return True
+
+    def check_timeout(self):
+        """Check and timeout host move ip changes
+        """
+        if (int(time.time()) > int(self.__lastcheck)):
+            self.__lastcheck = time.time()
+            for from_m, to_m in self.m2m.items():
+                if (to_m[1]+self.timeout < time.time()):
+                    del self.m2m[from_m]
+                    output.dbg("Timeout "+str(from_m)+"->"+str(to_m[0]),
+                               self.__class__.__name__)
+
+    def _handle_json(self, jsonmsg):
+        """Handle JSON message
+        """
+        ##Add change to list
+        sip = pu.ip_string2val(jsonmsg.json_msg["server_ip"][0])
+        mip = pu.ip_string2val(jsonmsg.json_msg["mobile_ip"][0])
+        self.m2m[mip] = (sip, time.time())
+        self.m2m[sip] = (mip, time.time())
          
