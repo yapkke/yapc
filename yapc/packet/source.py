@@ -2,6 +2,7 @@
 #
 import yapc.log.output as output
 import pcap
+import dpkt
 
 class pcap_file:
     """Class to represent pcap file
@@ -30,7 +31,8 @@ class pcap_file:
         """
         pc = pcap.pcap(self.filename)
         for ts, pkt in pc:
-            self.packets.append((ts, pkt))
+            p = dpkt.ethernet.Ethernet(pkt)
+            self.packets.append((ts, p.pack()))
 
     def get_next(self):
         """Get the next timestamp and packet
