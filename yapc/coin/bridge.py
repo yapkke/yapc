@@ -357,7 +357,7 @@ class host_move(traffic_handler):
                     flow.set_nw_src(new)
                     flow.add_nw_rewrite(True, old)
                     flow.actions.extend(f.actions)
-                    self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_ADD, f.cookie).pack())
+                    self.get_conn().send(flow.get_flow_mod(pyof.OFPFC_MODIFY, f.cookie).pack())
                     output.dbg(str(f)+" has old source IP (flow rule is added)", 
                                self.__class__.__name__)
                 elif (f.match.nw_dst == old[0]):
