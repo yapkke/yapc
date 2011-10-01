@@ -263,7 +263,7 @@ class nat(core.coin_server):
         #Register ip range
         ipr = (pu.ip_string2val(ip),
                pu.ip_string2val(mask),
-               pu.hex_str2array("00:00:00:00:00:00"))
+               pu.hex_str2array(self.ifmgr.ethernet_addr(intf)))
         mc.set(nat.get_ip_range_key(no), ipr)
         output.info(intf+"("+str(no)+") has IP address %x and netmask %x" % (ipr[0], ipr[1]),
                     self.__class__.__name__)
@@ -271,6 +271,11 @@ class nat(core.coin_server):
         mc.set(nat.get_gw_mac_key(gw), gwmac)
         output.info("ARP of "+gw+" is "+str(gwmac),
                         self.__class__.__name__)
+        #Set local route
+        #self.ifmgr.add_route("-net "+\
+        #                         pu.ip_val2string(pu.ip_string2val(ip) & pu.ip_string2val(mask)),
+        #                     str(mask),
+        #                     str(self.loif.client_intf))
             
     def __arp_check(self, o):
         """Check ARP
