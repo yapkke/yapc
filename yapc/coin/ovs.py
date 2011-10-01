@@ -129,7 +129,7 @@ class switch(yapc.component, ovs.switch):
         reply["subtype"] = "ovs"
 
         if (event.message["command"] == "add_if"):
-            self.add_id(event.message["name"])
+            self.add_if(event.message["name"])
             reply["executed"] = True
         elif (event.message["command"] == "del_if"):
             self.datapaths[COIN_DP_NAME].del_if(event.message["name"])
