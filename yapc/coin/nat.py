@@ -236,12 +236,41 @@ class nat(core.coin_server):
             self.add_loif(event.message["name"])
         elif (event.message["command"] == "dhclient"):
             reply["dhclient result"] = self.dhclient_mirror(event.message["name"])
+        elif (event.message["command"] == "ifconfig"):
+            reply["dhclient result"] = "executed"
+            self.set_ifconfig(event.message)
+            output.dbg(str(event.message), self.__class__.__name__)
         else:
             output.dbg("Receive message "+str(event.message),
                        self.__class__.__name__)
             return None
 
         return reply
+
+    def set_ifconfig(self, msg):
+        """Does manual ifconfig
+        """
+        intf = msg["name"]
+        ip = msg["ipaddr"]
+        mask = msg["netmask"]
+        gw = msg["gwaddr"]
+        gwmac = msg["gwmac"]
+        no = self.switch.if_name2dpid_port_mac(intf)[1]
+        #Register gateway
+        mc.set(nat.get_gw_key(no), gw)
+        output.info("Gateway of "+intf+" is "+gw,
+                    self.__class__.__name__)
+        #Register ip range
+        ipr = (pu.ip_string2val(ip),
+               pu.ip_string2val(mask),
+               pu.hex_str2array("00:00:00:00:00:00"))
+        mc.set(nat.get_ip_range_key(no), ipr)
+        output.info(intf+"("+str(no)+") has IP address %x and netmask %x" % (ipr[0], ipr[1]),
+                    self.__class__.__name__)
+        #Regsiter mac address
+        mc.set(nat.get_gw_mac_key(gw), gwmac)
+        output.info("ARP of "+gw+" is "+str(gwmac),
+                        self.__class__.__name__)
             
     def __arp_check(self, o):
         """Check ARP
