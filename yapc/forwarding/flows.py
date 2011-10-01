@@ -22,8 +22,7 @@ UDP_MDNS = 5353
 ##Buffer id of unbuffered packet
 UNBUFFERED_ID = 4294967295
 ##Default timeout value
-DEFAULT_TIMEOUT = 60
-
+DEFAULT_TIMEOUT = 5
 
 class actions:
     """Class to provide management of ofp_actions list

@@ -611,7 +611,7 @@ class interfacemgr(eth_ipv4_addr_mgr, route_mgr, wifi_mgr, arp_mgr,
     @author ykk
     @date Feb 2011
     """
-    def __init__(self, server, veth_cleanup=True):
+    def __init__(self, server, veth_cleanup=False):
         """Initialize
 
         @param server yapc core
