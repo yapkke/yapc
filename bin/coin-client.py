@@ -29,7 +29,7 @@ def usage():
     print "get_all_config\n\tRetrieve all configuration"
     print "get_config [name]\n\tRetrieve configuration with name given"
     print "set_config [name] [value]\n\tConfigure name with value given"
-    print "ifconfig [name] [ip address] [gateway ip] [gateway mac address]\n\t"+\
+    print "ifconfig [name] [netmask] [ip address] [gateway ip] [gateway mac address]\n\t"+\
         "Assign ip address and gateway to interface"
     print "dhclient [name]\n\tExecute dhclient on interface in COIN"
     print "query [name] [selection] [condition]\n\tExecute SQL query on table of name"+\
@@ -68,14 +68,14 @@ one_arg_cmds = ["add_if","del_if",
                 "get_config"]
 two_arg_cmds = ["set_config"]
 three_arg_cmds = ["query"]
-four_arg_cmds = ["ifconfig"]
+five_arg_cmds = ["ifconfig"]
 
 if (len(args) < 1 or
     ((args[0] not in zero_arg_cmds) and 
      (args[0] not in one_arg_cmds) and
      (args[0] not in two_arg_cmds) and
      (args[0] not in three_arg_cmds) and
-     (args[0] not in four_arg_cmds))):
+     (args[0] not in five_arg_cmds))):
     print "Missing or unknown command!"
     usage()
     sys.exit(2)
@@ -98,8 +98,8 @@ if (args[0] in three_arg_cmds):
         usage()
         sys.exit(2)
 
-if (args[0] in four_arg_cmds):
-    if not (len(args) >= 5):
+if (args[0] in five_arg_cmds):
+    if not (len(args) >= 6):
         print "Missing values"
         usage()
         sys.exit(2)
@@ -128,7 +128,7 @@ else:
 if ((args[0] in one_arg_cmds) or 
     (args[0] in two_arg_cmds) or 
     (args[0] in three_arg_cmds) or 
-    (args[0] in four_arg_cmds)):
+    (args[0] in five_arg_cmds)):
     msg["name"] = args[1]
 
 if (args[0] in two_arg_cmds):
@@ -138,10 +138,11 @@ if (args[0] in three_arg_cmds):
     msg["selection"] = args[2]
     msg["condition"] = args[3]
 
-if (args[0] in four_arg_cmds):
+if (args[0] in five_arg_cmds):
     msg["ipaddr"] = args[2]
-    msg["gwaddr"] = args[3]
-    msg["gwmac"] = args[4]
+    msg["netmask"] = args[3]
+    msg["gwaddr"] = args[4]
+    msg["gwmac"] = args[5]
 
 sock = jsoncomm.client(sock)
 output.dbg("Sending "+simplejson.dumps(msg),"coin-client")
