@@ -127,15 +127,17 @@ class datapath:
             output.warn("Interface "+intf+" do not exist for deletion",
                         self.__class__.__name__)
 
-    def connect(self, controller, port=6633):
+    def connect(self, controller, port=6633, probe_interval=30):
         """Connect datapath to controller
         
         @param controller controller's IP address
         @param port port number
+        @param probe_interval interval to probe for controller in OVS
         """
         self.connected = True
         return cmd.run_cmd_screen("coin-ovs-"+self.name, 
                                   CONNECT+" "+self.name+\
+                                      " --inactivity-probe="+str(probe_interval)+\
                                       " tcp:"+controller+":"+str(port),
                                   self.__class__.__name__)
 
