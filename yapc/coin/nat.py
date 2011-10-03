@@ -691,16 +691,21 @@ class ip_handler(core.component):
                 return False
 
         #Global address
+        cportl = []
         if ((pktin.match.nw_proto == 17) and
             (pktin.match.tp_dst == 53) and
             (self.coin.config["dns_select_interface"] != None)):
             output.dbg("DNS packet",self.__class__.__name__)
-            cport = self.dns_select_intf(intfs)
+            tcport = self.dns_select_intf(intfs)
+            if (tcport != None):
+                cportl.append(tcport)
         else:
             output.dbg("non-DNS packet",self.__class__.__name__)
-            cport = self.select_intf(intfs)
+            tcport = self.select_intf(intfs)
+            if (tcport != None):
+                cportl.append(tcport)
 
-        if (cport != None):
+        for cport in cportl:
             gw = mc.get(nat.get_gw_key(cport))
             gwmac = mc.get(nat.get_gw_mac_key(gw))
             ipr = intfs[cport]
@@ -708,7 +713,7 @@ class ip_handler(core.component):
                 output.warn("Packet ignored since gateway for interface not found!",
                             self.__class__.__name__)
                 return False
-
+            
             #Outbound
             flow.add_nw_rewrite(True, ipr[0])
             flow.add_dl_rewrite(True, ipr[2])
@@ -726,7 +731,7 @@ class ip_handler(core.component):
                 ofpkt.dl_rewrite(pktin.dpkt, False, pu.hex_str2array(gwmac))
                 self.get_conn().send(flow.get_packet_out(pyof.OFPFC_ADD).pack()+\
                                          pktin.dpkt.pack())
-
+                    
             #Inbound
             rflow = flow.reverse(cport)
             rflow.match.nw_dst = ipr[0]
